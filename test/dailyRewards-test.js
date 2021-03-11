@@ -1,4 +1,6 @@
 const { expect } = require('chai');
+const chai = require('chai');
+chai.use(require('chai-string'));
 
 describe('DailyRewards', function() {
     it('test daily rewards', async function() {
@@ -13,7 +15,7 @@ describe('DailyRewards', function() {
             // This is obviously not the way to do this, but except throw doesn't seem to work here.
             expect(true, 'set rewards with no declaration').to.equal(false);
         } catch (exception) {
-            expect(exception.toString()).to.equal('Error: VM Exception while processing transaction: revert no rewards declared');
+            expect(exception.toString()).to.endsWith('revert no rewards declared');
         }
 
         console.info('declare rewards');
@@ -28,7 +30,7 @@ describe('DailyRewards', function() {
             // This is obviously not the way to do this, but except throw doesn't seem to work here.
             expect(true, 'set rewards with no declaration').to.equal(false);
         } catch (exception) {
-            expect(exception.toString()).to.equal('Error: VM Exception while processing transaction: revert rewards declared too recently');
+            expect(exception.toString()).to.endsWith('revert rewards declared too recently');
         }
 
         console.info('moving time to set rewards');
