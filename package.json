@@ -1,0 +1,37 @@
+{
+    "name": "BBSToken",
+    "description": "BBS token and related components.",
+    "keywords": [
+        "message",
+        "board",
+        "crypto",
+        "governance"
+    ],
+    "homepage": "https://deweb.io/",
+    "version": "0.0.1",
+    "author": {
+        "name": "Israel Levin",
+        "email": "israel@deweb.io",
+        "url": "http://deweb.io"
+    },
+    "contributors": [],
+    "config": {
+        "foo": "bar"
+    },
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/Creator-Eco/token.git"
+    },
+    "bugs": "http://github.com/Creator-Eco/token/issues",
+    "dependencies": {
+        "@openzeppelin/cli": "2.8.2",
+        "@openzeppelin/contracts": "3.4.1",
+        "ganache-cli": "^6.12.2"
+    },
+    "license": [
+        {
+            "type": "MIT",
+            "url": "http://www.opensource.org/licenses/mit-license.php"
+        }
+    ]
+}
