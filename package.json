@@ -25,7 +25,7 @@
     "bugs": "http://github.com/Creator-Eco/token/issues",
     "dependencies": {
         "@openzeppelin/cli": "2.8.2",
-        "@openzeppelin/contracts": "3.4.1",
+        "@openzeppelin/contracts": "^3.4.1",
         "ganache-cli": "^6.12.2"
     },
     "license": [
