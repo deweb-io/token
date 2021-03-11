@@ -8,8 +8,8 @@ pragma solidity >=0.7.0 <0.8.0;
  */
 contract DailyRewards {
 
-    uint256 public constant DECLARATION_INTERVAL = 10 seconds;
-    uint256 public constant REWARD_INTERVAL = 10 seconds;
+    uint256 public constant DECLARATION_INTERVAL = 1 days;
+    uint256 public constant REWARD_INTERVAL = 1 days;
 
     struct Reward {
         address beneficiary;
@@ -33,7 +33,7 @@ contract DailyRewards {
      * @param addressesToSet A list of addresses to reward.
      * @param rewardsToSet A mapping of the reward to give addresses.
      */
-    function declareReward(address[] memory addressesToSet, uint256[] memory rewardsToSet) external {
+    function declareRewards(address[] memory addressesToSet, uint256[] memory rewardsToSet) external {
         require(msg.sender == owner, "non-owner reward declaration");
         delete declaredRewards;
         for (uint256 i = 0; i < addressesToSet.length; i++) {
@@ -45,7 +45,7 @@ contract DailyRewards {
      /**
      * @dev Set the daily rewards as they were declared.
      */
-    function setReward() external {
+    function setRewards() external {
         require(declarationTimestamp > 0, "no rewards declared");
         require(block.timestamp - declarationTimestamp >= DECLARATION_INTERVAL, "rewards declared too recently");
         rewards = declaredRewards;

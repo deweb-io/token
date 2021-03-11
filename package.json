@@ -24,9 +24,13 @@
     },
     "bugs": "http://github.com/Creator-Eco/token/issues",
     "dependencies": {
-        "@openzeppelin/cli": "2.8.2",
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@openzeppelin/cli": "^2.8.2",
         "@openzeppelin/contracts": "^3.4.1",
-        "ganache-cli": "^6.12.2"
+        "@openzeppelin/hardhat-upgrades": "^1.6.0",
+        "chai": "^4.3.3",
+        "ethers": "^5.0.32",
+        "hardhat": "^2.1.1"
     },
     "license": [
         {
