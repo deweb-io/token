@@ -9,7 +9,7 @@ pragma solidity >=0.7.0 <0.8.0;
 contract DailyRewards {
 
     uint256 public constant DECLARATION_INTERVAL = 1 days;
-    uint256 public constant REWARD_INTERVAL = 1 days;
+    uint256 public constant DISTRIBUTION_INTERVAL = 1 days;
 
     struct Reward {
         address beneficiary;
@@ -19,7 +19,12 @@ contract DailyRewards {
     Reward[] public rewards;
     Reward[] public declaredRewards;
     uint256 public declarationTimestamp;
-    uint256 public lastDistributionTimestamp;
+    uint256 public distributionTimestamp;
+
+    event RewardsDeclared();
+    event RewardsSet();
+    event RewardDistributed(address beneficiary, uint256 amountBBS);
+    event RewardsDistributed();
 
     /**
      * @dev Set Owner
@@ -36,10 +41,11 @@ contract DailyRewards {
     function declareRewards(address[] memory addressesToSet, uint256[] memory rewardsToSet) external {
         require(msg.sender == owner, "non-owner reward declaration");
         delete declaredRewards;
-        for (uint256 i = 0; i < addressesToSet.length; i++) {
-            declaredRewards.push(Reward(addressesToSet[i], rewardsToSet[i]));
+        for (uint256 rewardIndex = 0; rewardIndex < addressesToSet.length; rewardIndex++) {
+            declaredRewards.push(Reward(addressesToSet[rewardIndex], rewardsToSet[rewardIndex]));
         }
         declarationTimestamp = block.timestamp;
+        emit RewardsDeclared();
     }
 
      /**
@@ -50,5 +56,18 @@ contract DailyRewards {
         require(block.timestamp - declarationTimestamp >= DECLARATION_INTERVAL, "rewards declared too recently");
         rewards = declaredRewards;
         declarationTimestamp = 0;
+        emit RewardsSet();
+    }
+
+     /**
+     * @dev Distribute the daily rewards as they were set.
+     */
+    function distributeRewards() external {
+        require(block.timestamp - distributionTimestamp >= DISTRIBUTION_INTERVAL, "rewards distributed too recently");
+        for (uint256 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
+            emit RewardDistributed(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
+        }
+        distributionTimestamp = block.timestamp;
+        emit RewardsDistributed();
     }
 }

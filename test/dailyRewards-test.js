@@ -18,11 +18,22 @@ describe('DailyRewards', function() {
             expect(exception.toString()).to.endsWith('revert no rewards declared');
         }
 
+        plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];
+
         console.info('declare rewards');
-        await dailyRewards.declareRewards([accounts[1].address], [123]);
-        let declaredRewards = await dailyRewards.declaredRewards(0);
-        expect(declaredRewards[0]).to.equal(accounts[1].address);
-        expect(declaredRewards[1].toNumber()).to.equal(123);
+        events = await dailyRewards.queryFilter('RewardsDeclared', (
+            await dailyRewards.declareRewards(...plannedRewards)).blockHash);
+
+        console.info('verify decleration event');
+        expect(events.length).to.equal(1);
+        expect(events[0].eventSignature).to.equal('RewardsDeclared()');
+
+        console.info('verify decleration var');
+        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            declaredReward = await dailyRewards.declaredRewards(rewardIndex);
+            expect(declaredReward[0]).to.equal(plannedRewards[0][rewardIndex]);
+            expect(declaredReward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
+        }
 
         console.info('trying to set rewards without waiting after declaration');
         try {
@@ -35,9 +46,49 @@ describe('DailyRewards', function() {
 
         console.info('moving time to set rewards');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DECLARATION_INTERVAL()).toNumber()]);
-        await dailyRewards.setRewards();
-        let rewards = await dailyRewards.rewards(0);
-        expect(rewards[0]).to.equal(accounts[1].address);
-        expect(rewards[1].toNumber()).to.equal(123);
+
+        console.info('set rewards');
+        events = await dailyRewards.queryFilter('RewardsSet', (
+            await dailyRewards.setRewards()).blockHash);
+
+        console.info('verify set event');
+        expect(events.length).to.equal(1);
+        expect(events[0].eventSignature).to.equal('RewardsSet()');
+
+        console.info('verify set var');
+        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            reward = await dailyRewards.rewards(rewardIndex);
+            expect(reward[0]).to.equal(plannedRewards[0][rewardIndex]);
+            expect(reward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
+        }
+
+        console.info('distributing rewards');
+        blockHash = (await dailyRewards.distributeRewards()).blockHash;
+
+        console.info('verify general distribute event');
+        events = await dailyRewards.queryFilter('RewardsDistributed', blockHash);
+        expect(events.length).to.equal(1);
+        expect(events[0].eventSignature).to.equal('RewardsDistributed()');
+
+        console.info('verify specific distribute events');
+        events = await dailyRewards.queryFilter('RewardDistributed', blockHash);
+        expect(events.length).to.equal(plannedRewards[0].length);
+        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            expect(events[rewardIndex].eventSignature).to.equal('RewardDistributed(address,uint256)');
+            expect(events[rewardIndex].args.beneficiary).to.equal(plannedRewards[0][rewardIndex]);
+            expect(events[rewardIndex].args.amountBBS.toNumber()).to.equal(plannedRewards[1][rewardIndex]);
+        }
+
+        console.info('trying to distribute rewards before distribution interval passed');
+        try {
+            await dailyRewards.distributeRewards();
+            // This is obviously not the way to do this, but except throw doesn't seem to work here.
+            expect(true, 'distributed rewards too often').to.equal(false);
+        } catch (exception) {
+            expect(exception.toString()).to.endsWith('revert rewards distributed too recently');
+        }
+
+        console.info('moving time to distribute rewards');
+        await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
     });
 });
