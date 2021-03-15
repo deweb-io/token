@@ -2,6 +2,8 @@
 
 pragma solidity >=0.7.0 <0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title Reward
  * @dev Set and distribute daily rewards.
@@ -16,6 +18,7 @@ contract DailyRewards {
         uint256 amountBBS;
     }
     address owner;
+    IERC20 bbsToken;
     Reward[] public rewards;
     Reward[] public declaredRewards;
     uint256 public declarationTimestamp;
@@ -29,8 +32,9 @@ contract DailyRewards {
     /**
      * @dev Set Owner
      */
-    constructor() {
+    constructor(address bbsTokenAddress) {
         owner = msg.sender;
+        bbsToken = IERC20(bbsTokenAddress);
     }
 
     /**
@@ -65,6 +69,7 @@ contract DailyRewards {
     function distributeRewards() external {
         require(block.timestamp - distributionTimestamp >= DISTRIBUTION_INTERVAL, "rewards distributed too recently");
         for (uint256 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
+            bbsToken.transfer(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
             emit RewardDistributed(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
         }
         distributionTimestamp = block.timestamp;

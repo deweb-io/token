@@ -5,9 +5,10 @@ chai.use(require('chai-string'));
 describe('DailyRewards', function() {
     it('test daily rewards', async function() {
         const accounts = await ethers.getSigners();
+        const BBSToken = await ethers.getContractFactory('BBSToken');
+        const bbsToken = await BBSToken.deploy(1000000);
         const DailyRewards = await ethers.getContractFactory('DailyRewards');
-        const dailyRewards = await DailyRewards.deploy();
-        await dailyRewards.deployed();
+        const dailyRewards = await DailyRewards.deploy(bbsToken.address);
 
         console.info('trying to set rewards without declaration');
         try {
@@ -19,6 +20,8 @@ describe('DailyRewards', function() {
         }
 
         plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];
+
+        await bbsToken.transfer(dailyRewards.address, 500000);
 
         console.info('declare rewards');
         events = await dailyRewards.queryFilter('RewardsDeclared', (
@@ -87,6 +90,13 @@ describe('DailyRewards', function() {
         } catch (exception) {
             expect(exception.toString()).to.endsWith('revert rewards distributed too recently');
         }
+
+        const account1Balance = await bbsToken.balanceOf(accounts[1].address);
+        expect(account1Balance.toNumber()).to.equal(123);
+        const account2Balance = await bbsToken.balanceOf(accounts[2].address);
+        expect(account2Balance.toNumber()).to.equal(234);
+        const account3Balance = await bbsToken.balanceOf(accounts[3].address);
+        expect(account3Balance.toNumber()).to.equal(345);
 
         console.info('moving time to distribute rewards');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
