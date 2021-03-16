@@ -73,13 +73,16 @@ describe('DailyRewards', function() {
         expect(events.length).to.equal(1);
         expect(events[0].eventSignature).to.equal('RewardsDistributed()');
 
-        console.info('verify specific distribute events');
+        console.info('verify distribution');
         events = await dailyRewards.queryFilter('RewardDistributed', blockHash);
         expect(events.length).to.equal(plannedRewards[0].length);
         for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            console.info('verify distribution event');
             expect(events[rewardIndex].eventSignature).to.equal('RewardDistributed(address,uint256)');
             expect(events[rewardIndex].args.beneficiary).to.equal(plannedRewards[0][rewardIndex]);
             expect(events[rewardIndex].args.amountBBS.toNumber()).to.equal(plannedRewards[1][rewardIndex]);
+            console.info('verifying distribution balance');
+            expect((await bbsToken.balanceOf(plannedRewards[0][rewardIndex])).toNumber()).to.equal(plannedRewards[1][rewardIndex]);
         }
 
         console.info('trying to distribute rewards before distribution interval passed');
@@ -90,13 +93,6 @@ describe('DailyRewards', function() {
         } catch (exception) {
             expect(exception.toString()).to.endsWith('revert rewards distributed too recently');
         }
-
-        const account1Balance = await bbsToken.balanceOf(accounts[1].address);
-        expect(account1Balance.toNumber()).to.equal(123);
-        const account2Balance = await bbsToken.balanceOf(accounts[2].address);
-        expect(account2Balance.toNumber()).to.equal(234);
-        const account3Balance = await bbsToken.balanceOf(accounts[3].address);
-        expect(account3Balance.toNumber()).to.equal(345);
 
         console.info('moving time to distribute rewards');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
