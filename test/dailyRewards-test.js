@@ -6,7 +6,7 @@ describe('DailyRewards', function() {
     it('test daily rewards', async function() {
         const accounts = await ethers.getSigners();
         const BBSToken = await ethers.getContractFactory('BBSToken');
-        const bbsToken = await BBSToken.deploy(1000000);
+        const bbsToken = await BBSToken.deploy();
         const DailyRewards = await ethers.getContractFactory('DailyRewards');
         const dailyRewards = await DailyRewards.deploy(bbsToken.address);
 
@@ -19,9 +19,11 @@ describe('DailyRewards', function() {
             expect(exception.toString()).to.endsWith('revert no rewards declared');
         }
 
-        plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];
-
+        console.info('minting tokens and transfer to dailyRewards');
+        await bbsToken.mint(1000000);
         await bbsToken.transfer(dailyRewards.address, 500000);
+
+        plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];
 
         console.info('declare rewards');
         events = await dailyRewards.queryFilter('RewardsDeclared', (
