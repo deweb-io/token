@@ -44,7 +44,22 @@ Boiler plate [OpenZeppelin ERC20](https://github.com/OpenZeppelin/openzeppelin-c
 
 Classic [eosio token](https://github.com/EOSIO/eosio.contracts/blob/master/contracts/eosio.token/src/eosio.token.cpp), in which only one account (the bridge contract, once it's up) can mint and burn tokens.
 
-Liat, please help :)
+#### Helper Scripts
+
+Our scripts use two environment files:
+- `./eosio/bbs.env`: the basic configuration, never altered by scripts
+- `./eosio/generated.env`: - configurations that are written by the scripts (append only)
+
+The first always takes precedence.
+
+The scripts themselves are:
+- `./eosio/env.sh`: setup our environment, load environment variables, define helper functions, keep an unlocked wallet - note that this script is meant to be sourced
+```shell
+. env.sh
+```
+- `./eosio/test_account.sh`: create a test account, fund it and buy some RAM
+
+We need to finish the script to deploy an actual token.
 
 ### Deployment Procedure
 
