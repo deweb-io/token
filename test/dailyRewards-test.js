@@ -99,4 +99,26 @@ describe('DailyRewards', function() {
         console.info('moving time to distribute rewards');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
     });
+
+    it('test declareRewards can be called only by the owner', async function() {
+        const accounts = await ethers.getSigners();
+        const BBSToken = await ethers.getContractFactory('BBSToken');
+        const bbsToken = await BBSToken.deploy();
+        const DailyRewards = await ethers.getContractFactory('DailyRewards');
+        const dailyRewards = await DailyRewards.deploy(bbsToken.address);
+
+        const plannedRewards = [[accounts[2].address, accounts[3].address, accounts[4].address], [123, 234, 345]];
+
+        const deployer = accounts[0].address;
+        expect(await bbsToken.owner()).to.equal(deployer);
+
+        await dailyRewards.transferOwnership(accounts[1].address);
+        expect(await dailyRewards.owner()).to.equal(accounts[1].address);
+
+        try {
+            await dailyRewards.declareRewards(...plannedRewards);
+        } catch(exception) {
+            expect(exception.toString()).to.endsWith('Ownable: caller is not the owner');
+        }
+    });
 });
