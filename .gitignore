@@ -1,3 +1,5 @@
+*.abi
+*.wasm
 .openzeppelin/
 artifacts/
 build/

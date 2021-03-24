@@ -11,7 +11,11 @@ store() {
 }
 
 kleos() {
-    cleos -u "$nodeos" "$@"
+    if [ "$nodeos" ]; then
+        cleos -u "$nodeos" "$@"
+    else
+        cleos "$@"
+    fi
 }
 
 from_json() {
