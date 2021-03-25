@@ -12,10 +12,10 @@ fi
 
 account_maker() {
     echo creating account $1
-    creation_response="$(curl "$faucet/create/$1")"
-    if [ "$(from_json .success "$creation_response")" = 'false' ]; then
-        echo "$creation_response" 1>&2
-        return 1
+    creation_response="$(curl -s "$faucet/create/$1")"
+    if [ "$(from_json .success "$creation_response")" = false ]; then
+        echo "failed creation: $creation_response" 1>&2
+        exit 1
     fi
     store owner_private_key "$(from_json .data.account.owner.privateKey "$creation_response")"
     store active_private_key "$(from_json .data.account.active.privateKey "$creation_response")"
@@ -28,10 +28,10 @@ kleos get account $account > /dev/null || account_maker $account
 
 account_funder() {
     echo funding account $1
-    funding_response="$(curl "$faucet/get_token/$account")"
-    if [ "$(from_json .success "$funding_response")" = 'false' ]; then
-        echo "$creation_response" 1>&2
-        return 1
+    funding_response="$(curl -s "$faucet/get_token/$account")"
+    if [ "$(from_json .success "$funding_response")" = false ]; then
+        echo "failed funding: $funding_response" 1>&2
+        exit 1
     fi
     kleos system buyram $account $account "10.0000 EOS" -p $account@active
     echo account funded $1

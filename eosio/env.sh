@@ -1,13 +1,13 @@
 # This file is meant to be sourced to get our environment going.
 set -a
-. generated.env
+. state.env
 . bbs.env
 set +a
 
 store() {
     local -n variable=$1
     variable="$2"
-    echo "$1='$variable'" >> generated.env
+    echo "$1='$variable'" >> state.env
 }
 
 kleos() {
@@ -19,7 +19,7 @@ kleos() {
 }
 
 from_json() {
-    node -pe "JSON.parse(process.argv[1])$1" $2
+    node -pe "JSON.parse(process.argv[1])$1" "$2"
 }
 
 echo making sure we have an unlocked wallet

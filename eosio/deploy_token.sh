@@ -2,16 +2,16 @@
 # Deploy a token if none is deployed.
 . env.sh
 
-if [ ! -f eosio.token.wasm ]; then
-    git clone https://github.com/EOSIO/eosio.contracts --branch v1.7.0 --single-branch
-    pushd eosio.contracts/contracts/eosio.token/
-    eosio-cpp -I include -o eosio.token.wasm src/eosio.token.cpp --abigen
+if [ ! -f Token.wasm ]; then
+    git clone https://github.com/bancorprotocol/contracts_eos --branch master --single-branch --depth 1
+    pushd contracts_eos/contracts/eos/Token
+    eosio-cpp ./Token.cpp
     popd
-    mv eosio.contracts/contracts/eosio.token/eosio.token.* .
-    rm -rf eosio.contracts/
+    mv contracts_eos/contracts/eos/Token/Token.{wasm,abi} .
+    rm -rf contracts_eos
 fi
 
-kleos set contract $account . ./eosio.token.wasm ./eosio.token.abi -p $account@active
+kleos set contract $account . ./Token.wasm ./Token.abi -p $account@active
 echo creating token
 kleos push action $account create '[ "'$account'", "1000000000.0000 BBS"]' -p $account@active
 echo getting balance

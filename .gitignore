@@ -4,6 +4,6 @@
 artifacts/
 build/
 cache/
-eosio/generated.env
+eosio/state.env
 node_modules/
 package-lock.json
