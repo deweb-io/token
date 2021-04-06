@@ -11,6 +11,7 @@ if [ ! -f Token.wasm ]; then
     rm -rf contracts_eos
 fi
 
+kleos set code $account . ./Token.wasm -p $account@active
 kleos set contract $account . ./Token.wasm ./Token.abi -p $account@active
 echo creating token
 kleos push action $account create '[ "'$account'", "1000000000.0000 BBS"]' -p $account@active

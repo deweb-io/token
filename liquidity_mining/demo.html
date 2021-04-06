@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LM Demo</title>
+    <link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css>
+    <style>
+body{
+    background-color: black;
+    color: #cccccc;
+}
+div.page{
+    width: 55em;
+    margin: auto;
+}
+form,table{
+    margin: auto;
+    width: 100%;
+    min-width: 100%;
+    padding: 1em;
+    margin-top: 1em;
+}
+table {
+    border-collapse: collapse;
+}
+form{
+    border: 1px dotted #333333;
+}
+input,button{
+    display: block;
+    margin: 1em;
+    background-color: #111111;
+    color: #dddddd;
+}
+tr,th,td{
+    font-family:'Lucida Console', monospace;
+    border: 1px solid #333333;
+    padding: 1em;
+}
+    </style>
+</head>
+<body>
+    <div class=page>
+        <h1>Liquidity Mining Playground</h1>
+        <p>
+            This is a playground to check if our liquidity mining rewards algorithm is delivering as expected. The way it currently works is that every time a BBS reward is sent to the contract, it is simply added to the undivided balance. The division is calculated only at the last possible moment - when participants join (by locking their position) or leave (by claiming it back). This leaves the participants to pay for the calculations, which is always linear - O(n).
+        </p>
+        <p>
+            Enter amount of BBS indivisibles (a positive integer) in reward form to simulate sending a reward into the contract. The reward will be added to the undivided rewards balance.
+        </p>
+        <p>
+            Enter amount of BBS indivisibles (a positive integer) and the number of days to lock them (an integer between 100 and 1100) to simulate locking a stake. The new participant will appear in the participants table.
+        </p>
+        <p>
+            The participants table shows the following details:
+            <ul>
+                <li>
+                    The address of the participant (randomly generated).
+                </li>
+                <li>
+                    The amount of BBS cents locked in the AMM.
+                </li>
+                <li>
+                    The period of time it was locked for.
+                </li>
+                <li>
+                    How many shares of the equity a participant has. Calculated as 1,000 shares for every token locked for 100 days, plus three shares for every extra day every token is locked for (so a token locked for 1,100 days is worth four times a token locked for 100 days).
+                </li>
+                <li>
+                    The amount of rewards already calculated to be divided to the participant (when he claims back his position + reward).
+                </li>
+                <li>
+                    The amount of rewards that will be added when rewards are next divided.
+                </li>
+            </ul>
+            Note that the distinction between the last two items is only for the purpose of our introspection of the mechanism. For the end user they will appear as a single sum.
+
+        </p>
+        <p>
+            Click a row in the participants table to claim back that participants stake. Currently we do not simulate the time limit, because it's uninteresting.
+        </p>
+        <p>
+            Note that in the current design, a participant that does not claim back his stake continues to collect rewards according to his share even if his commitment is over. Also note that after dividing the rewards, some undivided balance usually remains, and is used when the next division happens, according to the cap table at that time.
+        </p>
+
+        <form id=rewardForm onsubmit='return false;'>
+            Reward amount <input id=rewardAmount>
+            <button id=send>Send Reward</button>
+            <p>Unclaimed rewards: <span id=unclaimed>0</span> (<span id=undivided>0</span> undivided)</p>
+        </form>
+        <form id=lockForm onsubmit='return false;'>
+            Amount of BBS in locked position in BBS cents <input id=lockCents>
+            Time to lock the position in days <input id=lockDays>
+            <button id=lock>Lock Position</button>
+            <p>Number of participants: <span id=numParticipants>0</span></p>
+        </form>
+        <form id=updateForm onsubmit='return false;'>
+            <button id=lock>Manually Update Reward Balance</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr><th>address (click row to claim)</th><th>locked in AMM</th><th>locking period</th><th>shares</th><th>reward</th><th>undivided</th></tr>
+            </thead>
+            <tbody id=participants>
+            </tbody>
+        </table>
+    </div>
+    <script>
+const PARTICIPANTS_DISPLAY = document.getElementById('participants');
+const NUM_PARTICIPANTS_DISPLAY = document.getElementById('numParticipants');
+const UNDIVIDED_DISPLAY = document.getElementById('undivided');
+const UNCLAIMED_DISPLAY = document.getElementById('unclaimed');
+let shares = {};
+let totalShares = 0;
+let balances = {};
+let undividedBalance = 0;
+let locks = {};
+
+
+// Helper functions.
+function randomAddress(){
+    return [...Array(40)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
+function intPosVal(value){
+    try{
+        value = parseFloat(value, 10);
+    }catch(e){
+        throw('not a number - ' + value);
+    }
+    if(!Number.isInteger(value)){
+        throw('not an int - ' + value);
+    }
+    if(value < 1){
+        throw('not positive - ' + value);
+    }
+    return value;
+}
+
+function inputVal(inputId){
+    return intPosVal(document.getElementById(inputId).value);
+}
+
+// Draw current state.
+function draw(){
+    PARTICIPANTS_DISPLAY.innerHTML = '';
+    console.log(shares);
+    for(let [address, numOfShares] of Object.entries(shares)){
+        console.log(address, numOfShares);
+        let row = document.createElement('tr');
+        for(let cellValue of [
+            address, ...locks[address], shares[address], balances[address],
+            Math.floor(undividedBalance / totalShares * shares[address])
+        ]){
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(cellValue));
+            row.appendChild(td);
+        }
+        row.addEventListener('click', row => {
+            claim(address);
+        });
+        PARTICIPANTS_DISPLAY.appendChild(row);
+    }
+    NUM_PARTICIPANTS_DISPLAY.innerHTML = Object.keys(shares).length;
+
+    UNDIVIDED_DISPLAY.innerHTML = undividedBalance;
+    UNCLAIMED_DISPLAY.innerHTML = undividedBalance + Object.values(balances).reduce((a, b) => a + b, 0);
+}
+
+// Divide current undivided balance according to equity share.
+function update(){
+    const shareValue = undividedBalance / totalShares;
+    for(let [address, equity] of Object.entries(shares)){
+        const reward = Math.floor(shares[address] * shareValue);
+        balances[address] += reward;
+        undividedBalance -= reward;
+    }
+}
+
+// Lock a position in return to equity.
+function lock(address, cents, days){
+    console.log('lock', address, cents, days);
+    if(days < 100 || days > 1100) throw('will not lock for ' + days);
+    locks[address] = [cents, days];
+    update(address);
+    let numOfShares = cents * (1000 + ((days - 100) * 3));
+    totalShares += numOfShares;
+    shares[address] = numOfShares;
+    balances[address] = 0;
+    draw();
+}
+
+// Claim position and rewards.
+function claim(address){
+    console.log('claim', address);
+    update(address);
+    totalShares -= shares[address];
+    delete shares[address];
+    delete balances[address];
+    delete locks[address];
+    draw();
+}
+
+// Bind functionality to elements.
+document.getElementById('lockForm').addEventListener('submit', () => {
+    lock(randomAddress(), inputVal('lockCents'), inputVal('lockDays'));
+    return false;
+});
+document.getElementById('rewardForm').addEventListener('submit', () => {
+    let reward = inputVal('rewardAmount');
+    undividedBalance += reward;
+    draw();
+    return false;
+});
+document.getElementById('updateForm').addEventListener('submit', () => {
+    update();
+    draw();
+    return false;
+});
+    </script>
+</body>
+</html>

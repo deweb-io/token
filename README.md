@@ -86,4 +86,4 @@ https://github.com/bancorprotocol/contracts_eos/tree/master/contracts/eos/Bancor
 
 ## Deployment Procedure
 
-Currently we are only deploying the ethereum token, which is a pretty simple procedure. After deployment, ownership of the token will be fully transfered to a gnosis safe held by trusted custodians under an n-out-of-m signatures scheme.
+Currently we are only deploying the ethereum token, which is a pretty simple procedure. The deployment can be done from any account (with code verification sent to etherscan) with some gas, and after deployment, ownership of the token will be fully transfered to a gnosis safe held by trusted custodians under an n-out-of-m signatures scheme.
