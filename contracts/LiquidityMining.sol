@@ -1,137 +1,107 @@
 // SPDX-License-Identifier: GPL-3.0
+// This is a draft for our liquidity mining program, currently just used to define the behaviour.
+// The actual integration with Bancor is still being debated, and will probably be a transferAndCall,
+// but for now, just to keep the testing local, we treat the entire BBS balance of msg.sender as the stake.
 pragma solidity >=0.7.0 <0.8.0;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/token/ERC20/ERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/math/SafeMath.sol";
-
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract LiquidityMining is Ownable  {
     using SafeMath for uint256;
 
-    uint256 public constant MIN_LOCK_PERIOD = 100 days;
-    uint256 public constant MAX_LOCK_PERIOD = 1100 days;
-    uint256 public constant SHERES_MULTIPLIER = 3;
-    uint256 public constant SHERES_BASE = 1000;
-    uint256 public constant SHERES_MIN_DAYS = 100;
+    // To avoid non integral number of shares, for every BBS locked we allocate
+    // 1,000 shares plus 3 shares for every extra day (above minimum) it is locked.
+    uint256 private constant MIN_LOCK_PERIOD = 100;
+    uint256 private constant MAX_LOCK_PERIOD = 1100;
+    uint256 private constant BASE_SHARES = 1000;
+    uint256 private constant SHARES_PER_DAY = 3;
+
+    // This is an arbitrary multiplier to add precision to our integral calculations. We probably don't even need it.
+    uint256 private constant PRECISION = 10**3;
 
     IERC20 _BBSToken;
 
     struct LockedPosition {
+        // This is currently the same as the key. It will probably change once we use the actual Bancor mechanism.
         address positionAddress;
+
         uint256 lockTimeSharePrice;
         uint256 numberOfShares;
         uint256 lockTimestamp;
         uint256 withdrawTimestamp;
     }
 
-    mapping (address => LockedPosition) public LockedPositions;
+    mapping(address => LockedPosition) public lockedPositions;
 
-    uint256 public sharePrice;
+    uint256 public accumulatedSharePrice;
     uint256 public totalNumberOfShares;
     uint256 public lastKnownBalance;
 
+    /// EVENTS - we need to think about what we really want. The following are suggestions.
+    event LockPosition(address  _address ,uint256 _amount, uint16 _numberOfDays);
+    event UnlockPosition(address  _address ,uint256 _amount);
 
-    /// EVENTS
-    event LockPosition (address  _address ,uint256 _amount, uint16 _numberOfDays);
-    event UnlockPosition (address  _address ,uint256 _amount);
-
-
-    constructor (address _bbsTokenAddress) {
-        //REVIEW BANKOR contract
+    constructor(address _bbsTokenAddress) {
         _BBSToken = IERC20(_bbsTokenAddress);
     }
 
     function lockPosition(uint16 _numberOfDays) public {
-
         require(
             _numberOfDays >= MIN_LOCK_PERIOD &&
             _numberOfDays <= MAX_LOCK_PERIOD,
             "Illeagal lock periud (Lock account for 100 - 1100 days)");
 
-            /*CALL BANKOR API */
-
-            updateSharePrice();
-
-            uint256 _numberOfShares = _calculateShares (_numberOfDays);
-
-            //add new position to contract storge
-            _addlockedPosition (_numberOfShares, uint256(_numberOfDays));
-
-            //emit BBSFundsLock (msg.sender , _BBSToken.balanceOf(msg.sender) ,  _numberOfDays);
+        updateSharePrice();
+        uint256 _numberOfShares = calculateNumberOfShares(_numberOfDays);
+        _addlockedPosition(_numberOfShares, uint256(_numberOfDays));
     }
 
-
-
-    function unlockPosition  (address _address) public {
-
+    function unlockPosition(address _address) public {
         require(
-            LockedPositions[_address].withdrawTimestamp <= block.timestamp,
+            lockedPositions[_address].withdrawTimestamp <= block.timestamp,
             "Unlocking time has not arrived yet");
-
-            updateSharePrice();
-
-            // BANKOR contract
-
-            //transfer balance
-            uint256 _reward = calculateRewardByCurrentSharePrice(_address);
-            _BBSToken.transfer(_address, _reward);
-
-            //remove position data and sums from contract storge
-            _removeLockedPosition ( _address, _reward );
-
-            //emit BBSFundsLock (msg.sender , _BBSToken.balanceOf(msg.sender) ,  _numberOfDays);
-
+        updateSharePrice();
+        uint256 _reward = calculateRewardByCurrentSharePrice(_address);
+        _BBSToken.transfer(_address, _reward);
+        _removeLockedPosition(_address, _reward);
     }
 
-
-
-
-    // _addlockedPosition /_removelockedPosition handels data storage:
-    // LockedPositions , totalNumberOfShares & lastKnownBalance
-    function _addlockedPosition (uint256 _numberOfShares , uint256 _numberOfDays) internal {
-        //update storage
-        LockedPositions[msg.sender] = LockedPosition(
+    // Data storage handling. Perhaps we will just use a bunch of mappings.
+    function _addlockedPosition(uint256 _numberOfShares , uint256 _numberOfDays) internal {
+        lockedPositions[msg.sender] = LockedPosition(
             msg.sender,
-            sharePrice,
+            accumulatedSharePrice,
             _numberOfShares,
             block.timestamp,
-            block.timestamp + _numberOfDays); //* 1 days)
-
-            //update total
-            totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
+            block.timestamp + (_numberOfDays * 1 days));
+        totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
     }
 
-
-
-    function _removeLockedPosition (address _address, uint256 _rewardPayed) internal {
-        //update totals
-        totalNumberOfShares = totalNumberOfShares.sub (LockedPositions[_address].numberOfShares);
-        lastKnownBalance = lastKnownBalance.sub ( _rewardPayed );
-
-        //update storage
-        LockedPositions[_address] = LockedPosition(address(0),0,0,0,0);
+    function _removeLockedPosition(address _address, uint256 _rewardPayed) internal {
+        totalNumberOfShares = totalNumberOfShares.sub(lockedPositions[_address].numberOfShares);
+        lastKnownBalance = lastKnownBalance.sub(_rewardPayed.mul(PRECISION));
+        lockedPositions[_address] = LockedPosition(address(0),0,0,0,0);
     }
 
-
-    function updateSharePrice() public { //updateSharePrice
-        uint256 _uncalculatedBalance = _BBSToken.balanceOf(address(this)).sub(lastKnownBalance);
-        if ( _uncalculatedBalance > 0 ) {
-            sharePrice = sharePrice.add(_uncalculatedBalance.div(totalNumberOfShares));
+    function updateSharePrice() public {
+        uint256 _uncalculatedBalance = _BBSToken.balanceOf(address(this)).mul(PRECISION).sub(lastKnownBalance);
+        if(_uncalculatedBalance > 0 && totalNumberOfShares > 0) {
+            accumulatedSharePrice = accumulatedSharePrice.add(_uncalculatedBalance.div(totalNumberOfShares));
             lastKnownBalance = lastKnownBalance.add(_uncalculatedBalance);
         }
     }
 
-
-    // calculae numberOfShares for msg.sender balance. does not validat duration.
-    function _calculateShares(uint16 _numberOfDays) public view returns (uint256) {
-        uint256 _factor = SHERES_BASE + ((_numberOfDays - SHERES_MIN_DAYS) * SHERES_MULTIPLIER);
-        return (_BBSToken.balanceOf(msg.sender).mul(_factor));
+    // Calculate numberOfShares for msg.sender balance. Does not validate duration.
+    function calculateNumberOfShares(uint16 _numberOfDays) public view returns(uint256) {
+        uint256 _factor = BASE_SHARES + ((_numberOfDays - MIN_LOCK_PERIOD) * SHARES_PER_DAY);
+        return _BBSToken.balanceOf(msg.sender).mul(_factor);
     }
 
-    // calculae  value by current sharePrice. does not validat duration.
-    function calculateRewardByCurrentSharePrice(address  _address) public view returns (uint256){
-        LockedPosition memory _position = LockedPositions[_address];
-        return _position.numberOfShares.mul( sharePrice.sub( _position.lockTimeSharePrice));
+    // Calculate reward by current accumulatedSharePrice without updating storage or validating duration.
+    function calculateRewardByCurrentSharePrice(address  _address) public view returns(uint256) {
+        LockedPosition memory _position = lockedPositions[_address];
+        return _position.numberOfShares.mul(accumulatedSharePrice.sub(_position.lockTimeSharePrice)).div(PRECISION);
     }
 }
