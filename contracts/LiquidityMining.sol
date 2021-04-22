@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "hardhat/console.sol";
+
 contract LiquidityMining is Ownable  {
     using SafeMath for uint256;
 
@@ -19,7 +21,7 @@ contract LiquidityMining is Ownable  {
     uint256 private constant SHARES_PER_DAY = 3;
 
     // This is an arbitrary multiplier to add precision to our integral calculations. We probably don't even need it.
-    uint256 private constant PRECISION = 10**3;
+    uint256 private constant PRECISION = 10**6;
 
     IERC20 _BBSToken;
 
@@ -48,24 +50,29 @@ contract LiquidityMining is Ownable  {
     }
 
     function lockPosition(uint16 _numberOfDays) public {
+        //console.log("***start lockPosition***");
         require(
             _numberOfDays >= MIN_LOCK_PERIOD &&
             _numberOfDays <= MAX_LOCK_PERIOD,
-            "Illeagal lock periud (Lock account for 100 - 1100 days)");
+            "Illeagal lock period (Lock account for 100 - 1100 days)");
 
         updateSharePrice();
         uint256 _numberOfShares = calculateNumberOfShares(_numberOfDays);
         _addlockedPosition(_numberOfShares, uint256(_numberOfDays));
+        //console.log("***end lockPosition***");
     }
 
     function unlockPosition(address _address) public {
+        //console.log("***start unlockPosition***");
         require(
             lockedPositions[_address].withdrawTimestamp <= block.timestamp,
             "Unlocking time has not arrived yet");
         updateSharePrice();
         uint256 _reward = calculateRewardByCurrentSharePrice(_address);
+        //console.log(_reward, "_reward");
         _BBSToken.transfer(_address, _reward);
         _removeLockedPosition(_address, _reward);
+        //console.log("***end unlockPosition***");
     }
 
     // Data storage handling. Perhaps we will just use a bunch of mappings.
@@ -77,7 +84,7 @@ contract LiquidityMining is Ownable  {
             block.timestamp,
             block.timestamp + (_numberOfDays * 1 days));
         totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
-    }
+    } 
 
     function _removeLockedPosition(address _address, uint256 _rewardPayed) internal {
         totalNumberOfShares = totalNumberOfShares.sub(lockedPositions[_address].numberOfShares);
@@ -85,23 +92,39 @@ contract LiquidityMining is Ownable  {
         lockedPositions[_address] = LockedPosition(address(0),0,0,0,0);
     }
 
-    function updateSharePrice() public {
+    function updateSharePrice() public {  //rename name of function
+        //console.log("****start updateSharePrice****");
         uint256 _uncalculatedBalance = _BBSToken.balanceOf(address(this)).mul(PRECISION).sub(lastKnownBalance);
+        //console.log(_uncalculatedBalance, "_uncalculatedBalance");
+        //console.log(totalNumberOfShares, "totalNumberOfShares");
+
+        //NOTE: if totalNumberOfShares > _uncalculatedBalance -> div will get zero!
         if(_uncalculatedBalance > 0 && totalNumberOfShares > 0) {
+            //console.log("updating Share Price");
+            //NOTE: div rounds down
             accumulatedSharePrice = accumulatedSharePrice.add(_uncalculatedBalance.div(totalNumberOfShares));
             lastKnownBalance = lastKnownBalance.add(_uncalculatedBalance);
+            //console.log(accumulatedSharePrice, "accumulatedSharePrice");
+            //console.log(lastKnownBalance, "lastKnownBalance");
         }
+        //console.log("****end updateSharePrice****");
     }
 
     // Calculate numberOfShares for msg.sender balance. Does not validate duration.
     function calculateNumberOfShares(uint16 _numberOfDays) public view returns(uint256) {
         uint256 _factor = BASE_SHARES + ((_numberOfDays - MIN_LOCK_PERIOD) * SHARES_PER_DAY);
+        //console.log(_factor, "_factor");
+        //console.log(_BBSToken.balanceOf(msg.sender),"_BBSToken.balanceOf(msg.sender)");
         return _BBSToken.balanceOf(msg.sender).mul(_factor);
     }
 
     // Calculate reward by current accumulatedSharePrice without updating storage or validating duration.
     function calculateRewardByCurrentSharePrice(address  _address) public view returns(uint256) {
+        //console.log('****start calculateRewardByCurrentSharePrice****');
         LockedPosition memory _position = lockedPositions[_address];
+        //console.log("_position.numberOfShares",_position.numberOfShares);
+        //console.log("accumulatedSharePrice",accumulatedSharePrice);
+        //console.log("_position.lockTimeSharePrice",_position.lockTimeSharePrice);
         return _position.numberOfShares.mul(accumulatedSharePrice.sub(_position.lockTimeSharePrice)).div(PRECISION);
     }
 }
