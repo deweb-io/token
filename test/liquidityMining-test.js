@@ -117,7 +117,7 @@ describe('LiquidityMining', function() {
         expect(bbsBalancePlusRewards-BBS_INIT_BALANCE).to.equal(bbsRewards);
     });
 
-    it('should get execpted rewards after specific number of days', async function() {
+    it('should get execpted rewards after 998 days', async function() {
         const numOfDays = 998;
         const bbsRewards = 1000;
         await printBalance(0);
@@ -205,6 +205,6 @@ describe('LiquidityMining', function() {
         await liquidityMining.unlockPosition(accounts[0].address);
         const rewardsSecondUnlock = (await getBalance(accounts[0].address)) - balanceWithRewards;
         printRewards(0, rewardsSecondUnlock);
-        expect(rewardsSecondUnlock).to.equal(4998);
+        expect(rewardsSecondUnlock).to.equal(4999);
     });
 });
