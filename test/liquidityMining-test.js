@@ -2,7 +2,11 @@ const { expect } = require('chai');
 const chai = require('chai');
 chai.use(require('chai-string'));
 
-const BBS_INIT_BALANCE = 100;
+const Web3 = require('web3');
+const web3Abi = new Web3().eth.abi;
+const web3Utils = new Web3().utils;
+
+const BBS_INIT_STACKING = 100;
 const MAX_ACCOUNTS = 10;
 
 describe('LiquidityMining', function() {
@@ -17,14 +21,30 @@ describe('LiquidityMining', function() {
         startTime = Math.floor(new Date / 1000);
         currentTime = startTime;
         accounts = (await ethers.getSigners()).slice(0, MAX_ACCOUNTS);
+        
         BBSToken = await ethers.getContractFactory('BBSToken');
         bbsToken = await BBSToken.deploy();
-        LiquidityMining = await ethers.getContractFactory('LiquidityMining');
-        liquidityMining = await LiquidityMining.deploy(bbsToken.address);
-        await Promise.all(accounts.map(async (account, index) => {
-            await bbsToken.mint(BBS_INIT_BALANCE);
-            if(index > 0) await bbsToken.transfer(account.address, BBS_INIT_BALANCE);
+        
+        LiquidityProtectionStore = await ethers.getContractFactory('mockLiquidityProtectionStore');
+        liquidityProtectionStore = await LiquidityProtectionStore.deploy();
+        await Promise.all(accounts.map(async (account) => {
+            await liquidityProtectionStore.addProtectedLiquidity(account.address, BBS_INIT_STACKING);
         }));
+
+        LiquidityProtection = await ethers.getContractFactory('mockLiquidityProtection');
+        liquidityProtection = await LiquidityProtection.deploy(liquidityProtectionStore.address);
+        
+
+        ContractRegistry = await ethers.getContractFactory('mockContractRegistry');
+        contractRegistry = await ContractRegistry.deploy();
+        
+        await contractRegistry.addContract(liquidityProtection.address, 
+            web3Abi.encodeParameter('bytes32', web3Utils.utf8ToHex('LiquidityProtection')));
+        await contractRegistry.addContract(liquidityProtectionStore.address, 
+            web3Abi.encodeParameter('bytes32', web3Utils.utf8ToHex('LiquidityProtectionStore')));
+        
+        LiquidityMining = await ethers.getContractFactory('LiquidityMining');
+        liquidityMining = await LiquidityMining.deploy(bbsToken.address, contractRegistry.address);
     });
 
     function getDaysTillTimestamp(timestamp, since) {
@@ -33,8 +53,37 @@ describe('LiquidityMining', function() {
         return Math.floor((timestamp - since) / 60 / 60 / 24) + ' days';
     }
 
+    function AbiEncodeLockPositionCall(positionId, numberOfDays, address) {
+        return web3Abi.encodeFunctionCall(
+            {
+                "name": "lockPosition",
+                "type": "function",
+                "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_positionId",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint16",
+                    "name": "_numberOfDays",
+                    "type": "uint16"
+                },
+                {
+                    "internalType": "address",
+                    "name": "_returnAddress",
+                    "type": "address"
+                }
+                ],
+            },
+            [
+                positionId, numberOfDays, address
+            ]
+        );
+    }
+
     async function printBalance(accountIndex) {
-        console.log(`account ${accountIndex} has ${await getBalance(accounts[accountIndex].address)} bbs`);
+        //console.log(`account ${accountIndex} has ${await getBalance(accounts[accountIndex].address)} bbs`);
     }
 
     function printRewards(accountIndex, rewards) {
@@ -57,7 +106,7 @@ describe('LiquidityMining', function() {
     async function stats(){
         return (await Promise.all(accounts.map(async (account, index) => {
             let balance = (await bbsToken.balanceOf(account.address)).toNumber();
-            let lockedAccount = await liquidityMining.lockedPositions(account.address);
+            let lockedAccount = await liquidityMining.lockedPositions(index);
             return 'account ' + index + ' has ' + balance + ' bbs' + (
                 parseInt(lockedAccount.withdrawTimestamp, 10) === 0 ? '' : (
                     ' and ' + lockedAccount.numberOfShares.toNumber() +
@@ -70,78 +119,93 @@ describe('LiquidityMining', function() {
     it('should fail on illegal lock periods', async function() {
         for(let period of [99, 1101]) {
             try {
-                await liquidityMining.lockPosition(period);
+                await liquidityMining.lockPosition(0, period, accounts[0].address);
             } catch(exception) {
                 expect(exception.toString()).to.endsWith(' Illeagal lock period (Lock account for 100 - 1100 days)');
             }
         }
     });
 
-    it('should create new locks', async function() {
-        await Promise.all(accounts.map(async (account, index) => {
-            await liquidityMining.connect(account).lockPosition(100 + Math.floor(1000 / accounts.length * (index + 1)));
-        }));
-        console.log(await stats());
+    it('test call by liquidityProtection contract', async function() {
+        for(let period of [99, 1101]) {
+            try {
+                const data = AbiEncodeLockPositionCall(0, period, accounts[0].address);
+                await liquidityProtection.transferPositionAndCall(0, liquidityMining.address, liquidityMining.address, data);
+            } catch(exception) {
+                expect(exception.toString()).to.endsWith(' Illeagal lock period (Lock account for 100 - 1100 days)');
+            }
+        }
     });
+
+    // it('should create new locks', async function() {
+    //     await Promise.all(accounts.map(async (account, index) => {
+    //         await liquidityMining.lockPosition(index, 
+    //             100 + Math.floor(1000 / accounts.length * (index + 1), 
+    //             liquidityMining.address));
+    //     }));
+    //    // console.log(await stats());
+    // });
 
     it('should fail on unlocking time has not arrived yet', async function() {
         try {
             const numOfDays = 100;
             const bbsRewards = 1000;
-            await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
+            await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
             await sendBBSToLM(bbsRewards);
-            await liquidityMining.unlockPosition(accounts[0].address)            
+            await liquidityMining.unlockPosition(0)            
         } catch (exception){
             expect(exception.toString()).to.endsWith(' Unlocking time has not arrived yet');
         }
     });
 
-    it('should fail on unlocking before locking', async function() {
-        try {
-            const numOfDays = 100;
-            await liquidityMining.unlockPosition(accounts[0].address);        
-        } catch (exception){
-            expect(exception.toString()).to.endsWith(' Unlocking time has not arrived yet');
-        }
-    });
+    // it('should fail on unlocking before locking', async function() {
+    //     try {
+    //         const numOfDays = 100;
+    //         await liquidityMining.unlockPosition(0);        
+    //     } catch (exception){
+    //         expect(exception.toString()).to.endsWith(' Unlocking time has not arrived yet');
+    //     }
+    // });
 
     it('should get entire rewards amount on minimum lock period', async function() {
         const numOfDays = 100;
-        const bbsRewards = 1;
+        const totalBBSRewards = 1;
+        const positionId = 0;
         await printBalance(0);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await sendBBSToLM(bbsRewards);
+        await liquidityMining.lockPosition(positionId, numOfDays, accounts[0].address);
+        await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        const bbsBalancePlusRewards = await getBalance(accounts[0].address);
-        expect(bbsBalancePlusRewards-BBS_INIT_BALANCE).to.equal(bbsRewards);
+        await liquidityMining.unlockPosition(positionId);
+        const bbsRewards = await getBalance(accounts[0].address);
+        expect(bbsRewards).to.equal(totalBBSRewards);
     });
 
     it('should get execpted rewards after 998 days', async function() {
         const numOfDays = 998;
-        const bbsRewards = 1000;
+        const totalBBSRewards = 1000;
+        const positionId = 0;
         await printBalance(0);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await sendBBSToLM(bbsRewards);
+        await liquidityMining.lockPosition(positionId, numOfDays, accounts[0].address);
+        await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        const bbsBalancePlusRewards = await getBalance(accounts[0].address);
-        expect(bbsBalancePlusRewards-BBS_INIT_BALANCE).to.equal(999);
+        await liquidityMining.unlockPosition(positionId);
+        const bbsRewards = await getBalance(accounts[0].address);
+        expect(bbsRewards).to.equal(999);
     });
 
     it('accounts with the same BBS stacking and lock time should get the same rewards', async function() {
         const numOfDays = 100;
-        const bbsRewards = 14321;
+        const totalBBSRewards = 14321;
         await printBalance(0);
         await printBalance(1);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await liquidityMining.connect(accounts[1]).lockPosition(numOfDays);
-        await sendBBSToLM(bbsRewards);
+        await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
+        await liquidityMining.lockPosition(1, numOfDays, accounts[1].address);
+        await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        await liquidityMining.unlockPosition(accounts[1].address);
-        account0Rewards = (await getBalance(accounts[0].address)) - BBS_INIT_BALANCE;
-        account1Rewards = (await getBalance(accounts[1].address)) - BBS_INIT_BALANCE;
+        await liquidityMining.unlockPosition(0);
+        await liquidityMining.unlockPosition(1);
+        account0Rewards = (await getBalance(accounts[0].address));
+        account1Rewards = (await getBalance(accounts[1].address));
         printRewards(0, account0Rewards);
         printRewards(1, account1Rewards);
         expect(account0Rewards).to.equal(account1Rewards);
@@ -152,14 +216,14 @@ describe('LiquidityMining', function() {
         const bbsRewards = 5000;
         await printBalance(0);
         await printBalance(1);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await liquidityMining.connect(accounts[1]).lockPosition(numOfDays-5);
+        await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
+        await liquidityMining.lockPosition(1, numOfDays-5, accounts[1].address);
         await sendBBSToLM(bbsRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        await liquidityMining.unlockPosition(accounts[1].address);
-        account0Rewards = (await getBalance(accounts[0].address)) - BBS_INIT_BALANCE;
-        account1Rewards = (await getBalance(accounts[1].address)) - BBS_INIT_BALANCE;
+        await liquidityMining.unlockPosition(0);
+        await liquidityMining.unlockPosition(1);
+        account0Rewards = (await getBalance(accounts[0].address));
+        account1Rewards = (await getBalance(accounts[1].address));
         printRewards(0, account0Rewards);
         printRewards(1, account1Rewards);
         expect(account0Rewards).to.greaterThan(account1Rewards);
@@ -167,44 +231,44 @@ describe('LiquidityMining', function() {
 
     it('no rewards if no balance in lm contract', async function() {
         const numOfDays = 200;
-        const bbsRewards = 5000;
+        const totalBbsRewards = 5000;
         await printBalance(0);
         await printBalance(1);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await liquidityMining.connect(accounts[1]).lockPosition(numOfDays-5);
-        await sendBBSToLM(bbsRewards);
+        await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
+        await liquidityMining.lockPosition(1, numOfDays-5, accounts[1].address);
+        await sendBBSToLM(totalBbsRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        await liquidityMining.unlockPosition(accounts[1].address);
-        printRewards(0, (await getBalance(accounts[0].address)) - BBS_INIT_BALANCE);
-        printRewards(1, (await getBalance(accounts[1].address)) - BBS_INIT_BALANCE);
+        await liquidityMining.unlockPosition(0);
+        await liquidityMining.unlockPosition(1);
+        printRewards(0, (await getBalance(accounts[0].address)));
+        printRewards(1, (await getBalance(accounts[1].address)));
 
-        await liquidityMining.connect(accounts[2]).lockPosition(numOfDays);
+        await liquidityMining.lockPosition(2, numOfDays, accounts[0].address);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[2].address);
-        printRewards(2, (await getBalance(accounts[2].address)) - BBS_INIT_BALANCE);
-        expect((await getBalance(accounts[2].address)) - BBS_INIT_BALANCE).to.equal(0);
+        await liquidityMining.unlockPosition(2);
+        printRewards(2, (await getBalance(accounts[2].address)));
+        expect((await getBalance(accounts[2].address))).to.equal(0);
     });
 
     it('account lock&unlock several times', async function() {
         const numOfDays = 100;
-        let bbsRewards = 5000;
+        let totalBbsRewards = 5000;
         await printBalance(0);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
-        await sendBBSToLM(bbsRewards);
+        await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
+        await sendBBSToLM(totalBbsRewards);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
-        const rewardsFirstUnlock = (await getBalance(accounts[0].address)) - BBS_INIT_BALANCE;
+        await liquidityMining.unlockPosition(0);
+        const rewardsFirstUnlock = (await getBalance(accounts[0].address));
         printRewards(0, rewardsFirstUnlock);
-        expect(rewardsFirstUnlock).to.equal(bbsRewards);
+        expect(rewardsFirstUnlock).to.equal(totalBbsRewards);
 
         let balanceWithRewards = await getBalance(accounts[0].address);
-        await sendBBSToLM(bbsRewards);
-        await liquidityMining.connect(accounts[0]).lockPosition(numOfDays);
+        await sendBBSToLM(totalBbsRewards);
+        await liquidityMining.lockPosition(0, numOfDays, accounts[0].address);
         await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(accounts[0].address);
+        await liquidityMining.unlockPosition(0);
         const rewardsSecondUnlock = (await getBalance(accounts[0].address)) - balanceWithRewards;
         printRewards(0, rewardsSecondUnlock);
-        expect(rewardsSecondUnlock).to.equal(4999);
+        expect(rewardsSecondUnlock).to.equal(totalBbsRewards);
     });
 });

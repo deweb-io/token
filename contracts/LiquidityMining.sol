@@ -2,11 +2,19 @@
 // This is a draft for our liquidity mining program, currently just used to define the behaviour.
 // The actual integration with Bancor is still being debated, and will probably be a transferAndCall,
 // but for now, just to keep the testing local, we treat the entire BBS balance of msg.sender as the stake.
-pragma solidity >=0.7.0 <0.8.0;
+pragma solidity >=0.6.12 <0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+
+
+import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/LiquidityProtection.sol";
+import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
+import "@bancor/contracts-solidity/solidity/contracts/utility/interfaces/IContractRegistry.sol";
+
+import "hardhat/console.sol";
+
 
 contract LiquidityMining is Ownable  {
     using SafeMath for uint256;
@@ -21,19 +29,19 @@ contract LiquidityMining is Ownable  {
     // This is an arbitrary multiplier to add precision to our integral calculations. We probably don't even need it.
     uint256 private constant PRECISION = 10**18;
 
+    address bancorRegistry;
+
     IERC20 _BBSToken;
 
     struct LockedPosition {
-        // This is currently the same as the key. It will probably change once we use the actual Bancor mechanism.
         address positionAddress;
-
         uint256 lockTimeSharePrice;
         uint256 numberOfShares;
         uint256 lockTimestamp;
         uint256 withdrawTimestamp;
     }
 
-    mapping(address => LockedPosition) public lockedPositions;
+    mapping(uint256 => LockedPosition) public lockedPositions;
 
     uint256 public accumulatedSharePrice;
     uint256 public totalNumberOfShares;
@@ -43,36 +51,39 @@ contract LiquidityMining is Ownable  {
     event LockPosition(address  _address ,uint256 _amount, uint16 _numberOfDays);
     event UnlockPosition(address  _address ,uint256 _amount);
 
-    constructor(address _bbsTokenAddress) {
+    constructor(address _bbsTokenAddress, address _bancorRegistryAddress) public {
         _BBSToken = IERC20(_bbsTokenAddress);
+        bancorRegistry = _bancorRegistryAddress;
     }
 
-    function lockPosition(uint16 _numberOfDays) public {
+    function lockPosition(uint256 _positionId, uint16 _numberOfDays, address _returnAddress) public {
         require(
             _numberOfDays >= MIN_LOCK_PERIOD &&
             _numberOfDays <= MAX_LOCK_PERIOD,
             "Illeagal lock period (Lock account for 100 - 1100 days)");
-
         updateSharePrice();
-        uint256 _numberOfShares = calculateNumberOfShares(_numberOfDays);
-        _addlockedPosition(_numberOfShares, uint256(_numberOfDays));
+        uint256 _numberOfShares = calculateNumberOfShares(_positionId, _numberOfDays);
+        _addlockedPosition(_numberOfShares, uint256(_numberOfDays), _positionId, _returnAddress);
     }
 
-    function unlockPosition(address _address) public {
-        //console.log("***start unlockPosition***");
+    function unlockPosition(uint256 _positionId) public {
         require(
-            lockedPositions[_address].withdrawTimestamp <= block.timestamp,
+            lockedPositions[_positionId].withdrawTimestamp <= block.timestamp,
             "Unlocking time has not arrived yet");
+
+        address payable _LiquidityProtectionContract = payable(getContractAddressByName('LiquidityProtection'));
+        LiquidityProtection(_LiquidityProtectionContract).transferPosition(_positionId, lockedPositions[_positionId].positionAddress);
+
         updateSharePrice();
-        uint256 _reward = calculateRewardByCurrentSharePrice(_address);
-        _BBSToken.transfer(_address, _reward);
-        _removeLockedPosition(_address, _reward);
+        uint256 _reward = calculateRewardByCurrentSharePrice(_positionId);
+        _BBSToken.transfer(lockedPositions[_positionId].positionAddress, _reward);
+        _removeLockedPosition(_positionId, _reward);
     }
 
     // Data storage handling. Perhaps we will just use a bunch of mappings.
-    function _addlockedPosition(uint256 _numberOfShares , uint256 _numberOfDays) internal {
-        lockedPositions[msg.sender] = LockedPosition(
-            msg.sender,
+    function _addlockedPosition(uint256 _numberOfShares, uint256 _numberOfDays, uint256 _positionId, address _returnAddress) internal {
+        lockedPositions[_positionId] = LockedPosition(
+            _returnAddress,
             accumulatedSharePrice,
             _numberOfShares,
             block.timestamp,
@@ -80,10 +91,10 @@ contract LiquidityMining is Ownable  {
         totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
     } 
 
-    function _removeLockedPosition(address _address, uint256 _rewardPayed) internal {
-        totalNumberOfShares = totalNumberOfShares.sub(lockedPositions[_address].numberOfShares);
+    function _removeLockedPosition(uint256 _positionId, uint256 _rewardPayed) internal {
+        totalNumberOfShares = totalNumberOfShares.sub(lockedPositions[_positionId].numberOfShares);
         lastKnownBalance = lastKnownBalance.sub(_rewardPayed.mul(PRECISION));
-        lockedPositions[_address] = LockedPosition(address(0),0,0,0,0);
+        lockedPositions[_positionId] = LockedPosition(address(0),0,0,0,0);
     }
 
     function updateSharePrice() public {  //rename name of function
@@ -96,14 +107,56 @@ contract LiquidityMining is Ownable  {
     }
 
     // Calculate numberOfShares for msg.sender balance. Does not validate duration.
-    function calculateNumberOfShares(uint16 _numberOfDays) public view returns(uint256) {
+    function calculateNumberOfShares(uint256 _positionId, uint16 _numberOfDays) public returns(uint256) {
+        bytes32 _contractName = 'LiquidityProtectionStore';
+        address _storeContract = getContractAddressByName(_contractName);
+        ( , , ,uint256 _poolAmount, , , , ) = ILiquidityProtectionStore(_storeContract).protectedLiquidity(_positionId);
         uint256 _factor = BASE_SHARES + ((_numberOfDays - MIN_LOCK_PERIOD) * SHARES_PER_DAY);
-        return _BBSToken.balanceOf(msg.sender).mul(_factor);
+        return _poolAmount.mul(_factor);
     }
 
     // Calculate reward by current accumulatedSharePrice without updating storage or validating duration.
-    function calculateRewardByCurrentSharePrice(address  _address) public view returns(uint256) {
-        LockedPosition memory _position = lockedPositions[_address];
+    function calculateRewardByCurrentSharePrice(uint256 _positionId) public view returns(uint256) {
+        LockedPosition memory _position = lockedPositions[_positionId];
         return _position.numberOfShares.mul(accumulatedSharePrice.sub(_position.lockTimeSharePrice)).div(PRECISION);
     }
+
+    function getContractAddressByName(bytes32 _name) internal returns (address addr){
+        IContractRegistry registry = IContractRegistry(bancorRegistry);
+        address liquidityProtectionStore = registry.addressOf(_name);
+        return liquidityProtectionStore;
+    }
+
+    function stringToBytes32(string memory _string) private pure returns (bytes32) {
+        bytes32 result;
+        assembly {
+            result := mload(add(_string, 32))
+        }
+        return result;
+    }
+}
+
+/**
+   based on https://github.com/bancorprotocol/contracts-solidity/blob/master/solidity/contracts/utility/interfaces/IContractRegistry.sol 
+ */
+// interface IContractRegistry {
+//     function addressOf(bytes32 _contractName) external view returns (address);
+// }
+
+/**
+    based on https://github.com/bancorprotocol/contracts-solidity/blob/master/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol
+ */
+interface ILiquidityProtectionStore {
+   function protectedLiquidity(uint256 _id)
+        external
+        view
+        returns (
+            address,
+            uint256
+        );
+
+     function addProtectedLiquidity(
+        address _provider,
+        uint256 _poolAmount
+    ) external returns (uint256); 
 }
