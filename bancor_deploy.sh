@@ -79,10 +79,7 @@ cat << EOF > config.json
         "minProtectionDelay": 600,
         "maxProtectionDelay": 3600,
         "lockDuration": 60,
-        "converters": [
-            "ETHBNT",
-            "XXXBNT"
-        ]
+        "converters": ["ETHBNT", "XXXBNT"]
     }
 }
 EOF
