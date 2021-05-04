@@ -24,8 +24,10 @@
     },
     "bugs": "http://github.com/Creator-Eco/token/issues",
     "dependencies": {
+        "@bancor/contracts-solidity": "github:bancorprotocol/contracts-solidity",
         "@openzeppelin/contracts": "^3.4.1",
-        "ethers": "^5.0.32"
+        "ethers": "^5.0.32",
+        "web3": "^1.3.5"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",

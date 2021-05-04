@@ -7,7 +7,7 @@ describe('BBSToken', function() {
         const accounts = await ethers.getSigners();
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const bbsToken = await BBSToken.deploy();
-        
+
         const deployer = accounts[0].address
         expect(await bbsToken.owner()).to.equal(deployer);
         await bbsToken.transferOwnership(accounts[1].address)
@@ -21,7 +21,7 @@ describe('BBSToken', function() {
 
         const ownerAccount = accounts[0].address;
         const notOwnerAccount = accounts[1].address;
-        
+
         expect((await bbsToken.balanceOf(ownerAccount)).toNumber(10)).to.equal(0);
         expect((await bbsToken.balanceOf(notOwnerAccount)).toNumber(10)).to.equal(0);
         await bbsToken.mint(100);

@@ -2,6 +2,7 @@
 *.wasm
 .openzeppelin/
 artifacts/
+bancor_test_env/
 build/
 cache/
 eosio/state.env
