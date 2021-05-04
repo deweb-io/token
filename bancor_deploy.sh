@@ -71,37 +71,6 @@ cat << EOF > config.json
                     "balance": "2817"
                 }
             ]
-        },
-        {
-            "type": 1,
-            "symbol": "YYYBNT",
-            "decimals": 18,
-            "fee": "0.2%",
-            "reserves": [
-                {
-                    "symbol": "YYY",
-                    "weight": "40%",
-                    "balance": "312"
-                },
-                {
-                    "symbol": "BNT",
-                    "weight": "60%",
-                    "balance": "270"
-                }
-            ]
-        },
-        {
-            "type": 0,
-            "symbol": "ZZZ",
-            "decimals": 18,
-            "fee": "0.3%",
-            "reserves": [
-                {
-                    "symbol": "BNT",
-                    "weight": "10%",
-                    "balance": "920"
-                }
-            ]
         }
     ],
     "liquidityProtectionParams": {
@@ -118,9 +87,9 @@ cat << EOF > config.json
 }
 EOF
 
-echo RUNNING GANACHE, WILL AUTO KILL AFTER DEPLOY
+echo 'RUNNING GANACHE, WILL AUTO KILL AFTER DEPLOY (if you are on linux)'
 yarn ganache-cli \
-     --port=7545 \
+     --port=8545 \
      --gasLimit=6721975 \
      --account=0x0000000000000000000000000000000000000000000000000000000000000001,10000000000000000000000000000000000000000 &
 ganache_pid=$!
@@ -128,6 +97,7 @@ cleanup() {
     # Killing the original ganache-cli process will not suffice, you need to kill it's grandson.
     # This should probably be done with session id or something, but for now this will do.
     # Will probably fail on mac as well.
+    grep linux <<<"$OSTYPE" > /dev/null || return
     kill $(ps --ppid $(ps --ppid $ganache_pid -o pid=) -o pid=)
 }
 trap cleanup EXIT
@@ -136,7 +106,7 @@ sleep 5
 echo DEPLOYING
 echo | node ./test_deployment.js \
      config.json \
-     http://localhost:7545 \
+     http://localhost:8545 \
      0x0000000000000000000000000000000000000000000000000000000000000001
 echo
 
