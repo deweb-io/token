@@ -89,7 +89,7 @@ contract LiquidityMining is Ownable  {
             block.timestamp,
             block.timestamp + (_numberOfDays * 1 days));
         totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
-    } 
+    }
 
     function _removeLockedPosition(uint256 _positionId, uint256 _rewardPayed) internal {
         totalNumberOfShares = totalNumberOfShares.sub(lockedPositions[_positionId].numberOfShares);
@@ -134,29 +134,4 @@ contract LiquidityMining is Ownable  {
         }
         return result;
     }
-}
-
-/**
-   based on https://github.com/bancorprotocol/contracts-solidity/blob/master/solidity/contracts/utility/interfaces/IContractRegistry.sol 
- */
-// interface IContractRegistry {
-//     function addressOf(bytes32 _contractName) external view returns (address);
-// }
-
-/**
-    based on https://github.com/bancorprotocol/contracts-solidity/blob/master/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol
- */
-interface ILiquidityProtectionStore {
-   function protectedLiquidity(uint256 _id)
-        external
-        view
-        returns (
-            address,
-            uint256
-        );
-
-     function addProtectedLiquidity(
-        address _provider,
-        uint256 _poolAmount
-    ) external returns (uint256); 
 }
