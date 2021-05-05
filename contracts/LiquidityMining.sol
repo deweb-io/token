@@ -13,7 +13,7 @@ import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/Liqui
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
 import "@bancor/contracts-solidity/solidity/contracts/utility/interfaces/IContractRegistry.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 
 contract LiquidityMining is Ownable  {
@@ -68,6 +68,10 @@ contract LiquidityMining is Ownable  {
 
     function unlockPosition(uint256 _positionId) public {
         require(
+            lockedPositions[_positionId].positionAddress != address(0),
+            "position id is not mapped to a valid address");
+
+        require(
             lockedPositions[_positionId].withdrawTimestamp <= block.timestamp,
             "Unlocking time has not arrived yet");
 
@@ -110,9 +114,9 @@ contract LiquidityMining is Ownable  {
     function calculateNumberOfShares(uint256 _positionId, uint16 _numberOfDays) public returns(uint256) {
         bytes32 _contractName = 'LiquidityProtectionStore';
         address _storeContract = getContractAddressByName(_contractName);
-        ( , , ,uint256 _poolAmount, , , , ) = ILiquidityProtectionStore(_storeContract).protectedLiquidity(_positionId);
+        ( , , , ,uint256 _reserveAmount, , ,) = ILiquidityProtectionStore(_storeContract).protectedLiquidity(_positionId);
         uint256 _factor = BASE_SHARES + ((_numberOfDays - MIN_LOCK_PERIOD) * SHARES_PER_DAY);
-        return _poolAmount.mul(_factor);
+        return _reserveAmount.mul(_factor);
     }
 
     // Calculate reward by current accumulatedSharePrice without updating storage or validating duration.

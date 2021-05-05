@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.8.0;
 
-import "hardhat/console.sol";
-
 
 contract mockContractRegistry {
     mapping(bytes32 => address) private contracts;

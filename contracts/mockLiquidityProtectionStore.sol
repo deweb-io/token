@@ -15,7 +15,7 @@ contract mockLiquidityProtectionStore {
 
     struct ProtectedLiquidity {
         address provider; // liquidity provider
-        uint256 poolAmount; // reserve token amount
+        uint256 reserveAmount; // reserve token amount
     }
 
     mapping(uint256 => ProtectedLiquidity) private protectedLiquidities;
@@ -39,29 +39,48 @@ contract mockLiquidityProtectionStore {
             liquidity.provider,
             IDSToken(address(0)),
             IReserveToken(address(0)),
-            liquidity.poolAmount,
             0,
+            liquidity.reserveAmount,
             0,
             0,
             0
         );
     }
 
-    function addProtectedLiquidity(address _provider, uint256 _amount) public returns (uint256 id) {
+    function addProtectedLiquidity(
+        address _provider,
+        IDSToken _poolToken,
+        IReserveToken _reserveToken,
+        uint256 _poolAmount,
+        uint256 _reserveAmount,
+        uint256 _reserveRateN,
+        uint256 _reserveRateD,
+        uint256 _timestamp
+    ) external /*override ownerOnly*/ returns (uint256) {
+        // validate input
+        require(
+            _provider != address(0) &&
+                _provider != address(this) &&
+                address(_poolToken) != address(0) &&
+                address(_poolToken) != address(this) &&
+                address(_reserveToken) != address(0) &&
+                address(_reserveToken) != address(this),
+            "ERR_INVALID_ADDRESS"
+        );
+        require(
+            _poolAmount > 0 && _reserveAmount > 0 && _reserveRateN > 0 && _reserveRateD > 0 && _timestamp > 0,
+            "ERR_ZERO_VALUE"
+        );
+
         uint256 id = nextProtectedLiquidityId;
         nextProtectedLiquidityId += 1;
 
         protectedLiquidities[id] = ProtectedLiquidity({
             provider: _provider,
-            poolAmount: _amount
+            reserveAmount: _reserveAmount
         });
 
         //console.log('added protected liquidity to id %s <%s:%s>', id, _provider , _amount);
         return id;
-    }
-
-    function transferPosition(address _provider, uint256 _id, address _newProvider) public {
-        require(protectedLiquidities[_id].provider == _provider, 'position not belongs to provider');
-        protectedLiquidities[_id].provider = _newProvider;
     }
 }

@@ -4,6 +4,7 @@ pragma solidity >=0.6.12 <0.8.0;
 import "./mockLiquidityProtectionStore.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+import "hardhat/console.sol";
    
 contract mockLiquidityProtection {
 
@@ -38,7 +39,7 @@ contract mockLiquidityProtection {
         uint256 id,
         address newProvider
     ) internal returns (uint256) {
-        //mockLiquidityProtectionStore(_store).transferPosition(provider, id, newProvider);
+        console.log('transfer position %s from %s to %s', id, provider, newProvider);
         return id;
     }
 
