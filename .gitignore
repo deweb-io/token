@@ -1,4 +1,3 @@
-*.abi
 *.wasm
 .openzeppelin/
 artifacts/
