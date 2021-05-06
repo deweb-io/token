@@ -13,7 +13,7 @@ import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/Liqui
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
 import "@bancor/contracts-solidity/solidity/contracts/utility/interfaces/IContractRegistry.sol";
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 
 contract LiquidityMining is Ownable  {
@@ -29,7 +29,7 @@ contract LiquidityMining is Ownable  {
     // This is an arbitrary multiplier to add precision to our integral calculations. We probably don't even need it.
     uint256 private constant PRECISION = 10**18;
 
-    address bancorRegistry;
+    IContractRegistry bancorRegistry;
 
     IERC20 _BBSToken;
 
@@ -53,7 +53,7 @@ contract LiquidityMining is Ownable  {
 
     constructor(address _bbsTokenAddress, address _bancorRegistryAddress) public {
         _BBSToken = IERC20(_bbsTokenAddress);
-        bancorRegistry = _bancorRegistryAddress;
+        bancorRegistry = IContractRegistry(_bancorRegistryAddress);
     }
 
     function lockPosition(uint256 _positionId, uint16 _numberOfDays, address _returnAddress) public {
@@ -112,9 +112,9 @@ contract LiquidityMining is Ownable  {
 
     // Calculate numberOfShares for msg.sender balance. Does not validate duration.
     function calculateNumberOfShares(uint256 _positionId, uint16 _numberOfDays) public returns(uint256) {
-        bytes32 _contractName = 'LiquidityProtectionStore';
-        address _storeContract = getContractAddressByName(_contractName);
-        ( , , , ,uint256 _reserveAmount, , ,) = ILiquidityProtectionStore(_storeContract).protectedLiquidity(_positionId);
+        address payable _LiquidityProtectionContract = payable(getContractAddressByName('LiquidityProtection'));
+        ILiquidityProtectionStore _storeContract = LiquidityProtection(_LiquidityProtectionContract).store();
+        ( , , , ,uint256 _reserveAmount, , ,) = _storeContract.protectedLiquidity(_positionId);
         uint256 _factor = BASE_SHARES + ((_numberOfDays - MIN_LOCK_PERIOD) * SHARES_PER_DAY);
         return _reserveAmount.mul(_factor);
     }
@@ -126,9 +126,7 @@ contract LiquidityMining is Ownable  {
     }
 
     function getContractAddressByName(bytes32 _name) internal returns (address addr){
-        IContractRegistry registry = IContractRegistry(bancorRegistry);
-        address liquidityProtectionStore = registry.addressOf(_name);
-        return liquidityProtectionStore;
+        return bancorRegistry.addressOf(_name);
     }
 
     function stringToBytes32(string memory _string) private pure returns (bytes32) {

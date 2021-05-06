@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.6.12 <0.8.0;
 
-import "./mockLiquidityProtectionStore.sol";
+import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "hardhat/console.sol";
@@ -9,10 +9,11 @@ import "hardhat/console.sol";
 contract mockLiquidityProtection {
 
     uint8 private constant FUNC_SELECTOR_LENGTH = 4;
-    address _store;
+    ILiquidityProtectionStore private immutable _store;
 
-    constructor(address _store) public {
-        _store = _store;
+    // NOTE: the input for store is an address
+    constructor(ILiquidityProtectionStore store) public {
+        _store = store;
     }
 
     function transferPositionAndCall(
@@ -53,5 +54,9 @@ contract mockLiquidityProtection {
         returns (uint256)
     {
         return transferPosition(msg.sender, id, newProvider);
+    }
+
+    function store() external view returns (ILiquidityProtectionStore) {
+        return _store;
     }
 }

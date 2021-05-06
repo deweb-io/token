@@ -50,7 +50,7 @@ describe('LiquidityMining', function() {
             contractRegistry = await ethers.getContractAt(abis.registry, BANCOR_ENV_REGISTRY);
             liquidityProtectionAddress = await contractRegistry.addressOf(ethers.utils.formatBytes32String('LiquidityProtection'));
             liquidityProtection = await ethers.getContractAt(abis.liquidityProtection, liquidityProtectionAddress);
-            liquidityProtectionStoreAddress = await contractRegistry.addressOf(ethers.utils.formatBytes32String('LiquidityProtectionStore'));
+            liquidityProtectionStoreAddress = await liquidityProtection.store();
             liquidityProtectionStore = await ethers.getContractAt(abis.liquidityProtectionStore, liquidityProtectionStoreAddress);
  
             //deploy liquidityMining contract
@@ -82,8 +82,6 @@ describe('LiquidityMining', function() {
             
             await contractRegistry.addContract(liquidityProtection.address, 
                 web3Abi.encodeParameter('bytes32', web3Utils.utf8ToHex('LiquidityProtection')));
-            await contractRegistry.addContract(liquidityProtectionStore.address, 
-                web3Abi.encodeParameter('bytes32', web3Utils.utf8ToHex('LiquidityProtectionStore')));
             
             LiquidityMining = await ethers.getContractFactory('LiquidityMining');
             liquidityMining = await LiquidityMining.deploy(bbsToken.address, contractRegistry.address);
@@ -162,6 +160,8 @@ describe('LiquidityMining', function() {
         await liquidityProtection.transferPositionAndCall(postionId, liquidityMining.address, liquidityMining.address, data);
     }
 
+    // Tests with direct calls to liquidity mining contract
+
     it('should fail on illegal lock periods', async function() {
         for(let numberOfDays of [99, 1101]) {
             try {
@@ -171,6 +171,29 @@ describe('LiquidityMining', function() {
             }
         }
     });
+
+    it('should fail on unlocking before locking', async function() {
+        try {
+            const numOfDays = 100;
+            await liquidityMining.unlockPosition(0);        
+        } catch (exception){
+            expect(exception.toString()).to.endsWith('position id is not mapped to a valid address');
+        }
+    });
+
+    it('should get entire rewards amount on minimum lock numberOfDays - direct to call to lm contract', async function() {
+        const numOfDays = 100;
+        const totalBBSRewards = 1;
+        const positionId = 1;
+        await liquidityMining.lockPosition(positionId, numOfDays, accounts[1].address);
+        await sendBBSToLM(totalBBSRewards);
+        await increaseTime(numOfDays);
+        await liquidityMining.unlockPosition(positionId);
+        const bbsRewards = await getBalance(accounts[1].address);
+        expect(bbsRewards).to.equal(totalBBSRewards);
+    });
+
+    // Tests with call to transferPositionAndCall
 
     it('should fail on unlocking time has not arrived yet', async function() {
         try {
@@ -182,15 +205,6 @@ describe('LiquidityMining', function() {
             await liquidityMining.unlockPosition(positionId)            
         } catch (exception){
             expect(exception.toString()).to.endsWith('Unlocking time has not arrived yet');
-        }
-    });
-
-    it('should fail on unlocking before locking', async function() {
-        try {
-            const numOfDays = 100;
-            await liquidityMining.unlockPosition(0);        
-        } catch (exception){
-            expect(exception.toString()).to.endsWith('position id is not mapped to a valid address');
         }
     });
 
