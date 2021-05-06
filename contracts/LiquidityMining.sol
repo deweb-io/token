@@ -128,12 +128,4 @@ contract LiquidityMining is Ownable  {
     function getContractAddressByName(bytes32 _name) internal returns (address addr){
         return bancorRegistry.addressOf(_name);
     }
-
-    function stringToBytes32(string memory _string) private pure returns (bytes32) {
-        bytes32 result;
-        assembly {
-            result := mload(add(_string, 32))
-        }
-        return result;
-    }
 }
