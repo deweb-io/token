@@ -10,9 +10,9 @@ const web3Abi = web3.eth.abi;
 const web3Utils = web3.utils;
 
 const abis = {
-    registry: JSON.parse(fs.readFileSync('./abis/ContractRegistry.abi', 'utf8')),
-    liquidityProtection: JSON.parse(fs.readFileSync('./abis/LiquidityProtection.abi', 'utf8')),
-    liquidityProtectionStore: JSON.parse(fs.readFileSync('./abis/LiquidityProtectionStore.abi', 'utf8'))
+    registry: JSON.parse(fs.readFileSync('./test/abis/ContractRegistry.abi', 'utf8')),
+    liquidityProtection: JSON.parse(fs.readFileSync('./test/abis/LiquidityProtection.abi', 'utf8')),
+    liquidityProtectionStore: JSON.parse(fs.readFileSync('./test/abis/LiquidityProtectionStore.abi', 'utf8'))
 };
 
 const BBS_INIT_STACKING = 100;
@@ -52,7 +52,7 @@ describe('LiquidityMining', function() {
             liquidityProtection = await ethers.getContractAt(abis.liquidityProtection, liquidityProtectionAddress);
             liquidityProtectionStoreAddress = await liquidityProtection.store();
             liquidityProtectionStore = await ethers.getContractAt(abis.liquidityProtectionStore, liquidityProtectionStoreAddress);
- 
+
             //deploy liquidityMining contract
             LiquidityMining = await ethers.getContractFactory('LiquidityMining');
             liquidityMining = await LiquidityMining.deploy(bbsToken.address, BANCOR_ENV_REGISTRY);
@@ -79,10 +79,11 @@ describe('LiquidityMining', function() {
 
             ContractRegistry = await ethers.getContractFactory('mockContractRegistry');
             contractRegistry = await ContractRegistry.deploy();
-            
-            await contractRegistry.addContract(liquidityProtection.address, 
-                web3Abi.encodeParameter('bytes32', web3Utils.utf8ToHex('LiquidityProtection')));
-            
+
+            await contractRegistry.registerAddress(web3Abi.encodeParameter(
+                'bytes32', web3Utils.asciiToHex('LiquidityProtection')
+            ), liquidityProtection.address);
+
             LiquidityMining = await ethers.getContractFactory('LiquidityMining');
             liquidityMining = await LiquidityMining.deploy(bbsToken.address, contractRegistry.address);
         }
