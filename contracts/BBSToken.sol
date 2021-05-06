@@ -11,10 +11,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract BBSToken is ERC20, Ownable {
     constructor() public ERC20("BBS", "BBS") Ownable() {
-        _setupDecimals(4);
     }
 
     function mint(uint256 amount) public onlyOwner {
         _mint(msg.sender, amount);
-    } 
+    }
 }
