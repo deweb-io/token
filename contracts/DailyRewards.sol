@@ -31,6 +31,8 @@ contract DailyRewards is Ownable {
 
     /**
      * @dev Set bbsToken instance.
+     * @param bbsTokenAddress The address of the BBS token.
+     * Note that it is possible to specify IERC20 in the signature, but I prefer explicit to implicit.
      */
     constructor(address bbsTokenAddress) Ownable() {
         bbsToken = IERC20(bbsTokenAddress);
@@ -38,13 +40,13 @@ contract DailyRewards is Ownable {
 
     /**
      * @dev Declare the daily rewards before they are set.
-     * @param addressesToSet A list of addresses to reward.
-     * @param rewardsToSet A mapping of the reward to give addresses.
+     * @param beneficiariesToSet A list of addresses of reward beneficiaries.
+     * @param amountsToSet A list of BBS amounts to reward the corresponding beneficiaries every day.
      */
-    function declareRewards(address[] memory addressesToSet, uint256[] memory rewardsToSet) external onlyOwner {
+    function declareRewards(address[] memory beneficiariesToSet, uint256[] memory amountsToSet) external onlyOwner {
         delete declaredRewards;
-        for (uint256 rewardIndex = 0; rewardIndex < addressesToSet.length; rewardIndex++) {
-            declaredRewards.push(Reward(addressesToSet[rewardIndex], rewardsToSet[rewardIndex]));
+        for (uint256 rewardIndex = 0; rewardIndex < beneficiariesToSet.length; rewardIndex++) {
+            declaredRewards.push(Reward(beneficiariesToSet[rewardIndex], amountsToSet[rewardIndex]));
         }
         declarationTimestamp = block.timestamp;
         emit RewardsDeclared();
