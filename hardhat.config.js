@@ -5,7 +5,7 @@ require('@openzeppelin/hardhat-upgrades');
 require('@openzeppelin/test-helpers');
 require('@nomiclabs/hardhat-ganache');
 module.exports = {
-    defaultNetwork: "hardhat",
+    defaultNetwork: 'hardhat',
     networks: {
         hardhat: {
             loggingEnabled: false
@@ -14,10 +14,10 @@ module.exports = {
     solidity: {
         compilers: [
              {
-                 version: "0.7.3"
+                 version: '0.7.3'
              },
              {
-                 version: "0.6.12"
+                 version: '0.6.12'
              }
         ]
     }

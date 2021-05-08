@@ -3,6 +3,7 @@ pragma solidity >=0.6.12 <0.8.0;
 
 import "@bancor/contracts-solidity/solidity/contracts/token/interfaces/IDSToken.sol";
 import "@bancor/contracts-solidity/solidity/contracts/token/interfaces/IReserveToken.sol";
+
 import "hardhat/console.sol";
 
 
@@ -80,7 +81,7 @@ contract mockLiquidityProtectionStore {
             reserveAmount: _reserveAmount
         });
 
-        //console.log('added protected liquidity to id %s <%s:%s>', id, _provider , _amount);
+        console.log('added protected liquidity to id %s <%s:%s>', id, _provider , _reserveAmount);
         return id;
     }
 }

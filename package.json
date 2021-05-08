@@ -1,6 +1,7 @@
 {
     "name": "BBSToken",
     "description": "BBS token and related components.",
+    "license": "public domain",
     "keywords": [
         "message",
         "board",
@@ -9,39 +10,24 @@
     ],
     "homepage": "https://deweb.io/",
     "version": "0.0.1",
-    "author": {
-        "name": "Israel Levin",
-        "email": "israel@deweb.io",
-        "url": "http://deweb.io"
-    },
-    "contributors": [],
-    "config": {
-        "foo": "bar"
-    },
+    "author": "Israel Levin <israel@deweb.io>",
+    "contributors": ["Yaniv Yehuda"],
+    "bugs": "http://github.com/Creator-Eco/token/issues",
     "repository": {
         "type": "git",
         "url": "http://github.com/Creator-Eco/token.git"
     },
-    "bugs": "http://github.com/Creator-Eco/token/issues",
     "dependencies": {
         "@bancor/contracts-solidity": "github:bancorprotocol/contracts-solidity",
-        "@openzeppelin/contracts": "^3.4.1",
-        "ethers": "^5.0.32",
-        "web3": "^1.3.5"
-    },
-    "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-ganache": "^2.0.0",
+        "@openzeppelin/contracts": "^3.4.1",
         "@openzeppelin/hardhat-upgrades": "^1.6.0",
         "@openzeppelin/test-helpers": "^0.5.10",
         "chai": "^4.3.4",
         "chai-string": "^1.5.0",
-        "hardhat": "^2.1.1"
-    },
-    "license": [
-        {
-            "type": "MIT",
-            "url": "http://www.opensource.org/licenses/mit-license.php"
-        }
-    ]
+        "ethers": "^5.0.32",
+        "hardhat": "^2.1.1",
+        "web3": "^1.3.5"
+    }
 }

@@ -33,6 +33,11 @@ cat << EOF > config.json
             "symbol": "vBNT",
             "decimals": 18,
             "supply": "0"
+        },
+        {
+            "symbol": "BBS",
+            "decimals": 18,
+            "supply": "1000000"
         }
     ],
     "converters": [
@@ -71,6 +76,24 @@ cat << EOF > config.json
                     "balance": "2817"
                 }
             ]
+        },
+        {
+            "type": 3,
+            "symbol": "BBSBNT",
+            "decimals": 18,
+            "fee": "0.1%",
+            "reserves": [
+                {
+                    "symbol": "BBS",
+                    "weight": "50%",
+                    "balance": "582"
+                },
+                {
+                    "symbol": "BNT",
+                    "weight": "50%",
+                    "balance": "2817"
+                }
+            ]
         }
     ],
     "liquidityProtectionParams": {
@@ -79,16 +102,17 @@ cat << EOF > config.json
         "minProtectionDelay": 600,
         "maxProtectionDelay": 3600,
         "lockDuration": 60,
-        "converters": ["ETHBNT", "XXXBNT"]
+        "converters": ["ETHBNT", "BBSBNT"]
     }
 }
 EOF
 
-echo 'RUNNING GANACHE, WILL AUTO KILL AFTER DEPLOY (if you are on linux)'
+echo RUNNING GANACHE
+account=0x0000000000000000000000000000000000000000000000000000000000000001
 yarn ganache-cli \
      --port=8545 \
      --gasLimit=6721975 \
-     --account=0x0000000000000000000000000000000000000000000000000000000000000001,10000000000000000000000000000000000000000 &
+     --account=$account,10000000000000000000000000000000000000000 &
 ganache_pid=$!
 cleanup() {
     # Killing the original ganache-cli process will not suffice, you need to kill it's grandson.
@@ -96,15 +120,20 @@ cleanup() {
     # Will probably fail on mac as well.
     grep linux <<<"$OSTYPE" > /dev/null || return
     kill $(ps --ppid $(ps --ppid $ganache_pid -o pid=) -o pid=)
+    echo
 }
 trap cleanup EXIT
 sleep 5
 
 echo DEPLOYING
-echo | node ./test_deployment.js \
+deployment_log="$(echo 1 | node ./test_deployment.js \
      config.json \
      http://localhost:8545 \
-     0x0000000000000000000000000000000000000000000000000000000000000001
-echo
+     $account)"
+echo "$deployment_log"
 
 popd
+
+echo RUNNING TESTS
+set -x
+BANCOR_ENV_REGISTRY="$(grep -Po '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")" npx hardhat --network localhost test

@@ -5,13 +5,13 @@ import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/inter
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import "hardhat/console.sol";
-   
+
 contract mockLiquidityProtection {
 
     uint8 private constant FUNC_SELECTOR_LENGTH = 4;
     ILiquidityProtectionStore private immutable _store;
 
-    // NOTE: the input for store is an address
+    // NOTE: The input for store is an address, but there is some dark magic converting it behind the scenes.
     constructor(ILiquidityProtectionStore store) public {
         _store = store;
     }

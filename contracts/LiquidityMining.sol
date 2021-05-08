@@ -13,8 +13,6 @@ import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/Liqui
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
 import "@bancor/contracts-solidity/solidity/contracts/utility/interfaces/IContractRegistry.sol";
 
-import "hardhat/console.sol";
-
 
 contract LiquidityMining is Ownable  {
     using SafeMath for uint256;
