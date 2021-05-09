@@ -7,9 +7,9 @@ const web3 = new Web3();
 // These are ABIs were generated from the Bancor contracts, so we have full computability.
 // We will probably have a script that generates them automatically from a given version.
 const abis = {
-    registry: JSON.parse(fs.readFileSync('./test/abis/ContractRegistry.abi', 'utf8')),
-    liquidityProtection: JSON.parse(fs.readFileSync('./test/abis/LiquidityProtection.abi', 'utf8')),
-    liquidityProtectionStore: JSON.parse(fs.readFileSync('./test/abis/LiquidityProtectionStore.abi', 'utf8'))
+    registry: JSON.parse(fs.readFileSync('./abis/ContractRegistry.abi', 'utf8')),
+    liquidityProtection: JSON.parse(fs.readFileSync('./abis/LiquidityProtection.abi', 'utf8')),
+    liquidityProtectionStore: JSON.parse(fs.readFileSync('./abis/LiquidityProtectionStore.abi', 'utf8'))
 };
 
 const STAKE_AMOUNT = 100;

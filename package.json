@@ -11,7 +11,9 @@
     "homepage": "https://deweb.io/",
     "version": "0.0.1",
     "author": "Israel Levin <israel@deweb.io>",
-    "contributors": ["Yaniv Yehuda"],
+    "contributors": [
+        "Yaniv Yehuda"
+    ],
     "bugs": "http://github.com/Creator-Eco/token/issues",
     "repository": {
         "type": "git",
