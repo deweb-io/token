@@ -9,16 +9,19 @@ const web3 = new Web3();
 const abis = {
     registry: JSON.parse(fs.readFileSync('./abis/ContractRegistry.abi', 'utf8')),
     liquidityProtection: JSON.parse(fs.readFileSync('./abis/LiquidityProtection.abi', 'utf8')),
-    liquidityProtectionStore: JSON.parse(fs.readFileSync('./abis/LiquidityProtectionStore.abi', 'utf8'))
+    liquidityProtectionStore: JSON.parse(fs.readFileSync('./abis/LiquidityProtectionStore.abi', 'utf8')),
+    dsToken: JSON.parse(fs.readFileSync('./abis/DSToken.abi', 'utf8')),
 };
 
 const STAKE_AMOUNT = 100;
 const NUM_ACCOUNTS = 10; // Can't be bigger than the number of signers ethers supplies us.
 
-// Set this environment variable to use a previously deployed contract.
+// Set this environment variables to use previously deployed contracts.
 // Posix shell usage example:
-// BANCOR_ENV_REGISTRY="0x5c8152554B3c8F39c3F8d1dEe141cCeA4914517A" npx hardhat --network localhost test
+// BANCOR_ENV_REGISTRY="0x5c8152554B3c8F39c3F8d1dEe141cCeA4914517A" BANCOR_ENV_BBS_TOKEN="0xFEe587E68c470DAE8147B46bB39fF230A29D4769" BANCOR_ENV_CONVERTER="0xDCb55CBB56DF9EFA14f16211D38E9246AdA1A266" npx hardhat --network localhost test liquidityMining-test.js
 const BANCOR_ENV_REGISTRY = process.env.BANCOR_ENV_REGISTRY;
+const BANCOR_ENV_BBS_TOKEN = process.env.BANCOR_ENV_BBS_TOKEN;
+const BANCOR_ENV_CONVERTER = process.env.BANCOR_ENV_CONVERTER;
 
 describe('LiquidityMining', function() {
     let startTime;
@@ -48,12 +51,10 @@ describe('LiquidityMining', function() {
         currentTime = startTime;
         accounts = (await ethers.getSigners()).slice(0, NUM_ACCOUNTS);
 
-        // I think Bancor's script deploys the token, so this should only be done when there is no running env.
-        bbsToken = await (await ethers.getContractFactory('BBSToken')).deploy();
-
         // If the environment variable is set, get the existing contracts.
         if (BANCOR_ENV_REGISTRY) {
             console.log('running tests on existing environment');
+            bbsToken = await ethers.getContractAt(abis.dsToken, BANCOR_ENV_BBS_TOKEN);
             contractRegistry = await ethers.getContractAt(abis.registry, BANCOR_ENV_REGISTRY);
             liquidityProtection = await ethers.getContractAt(
                 abis.liquidityProtection,
@@ -61,9 +62,18 @@ describe('LiquidityMining', function() {
             liquidityProtectionStore = await ethers.getContractAt(
                 abis.liquidityProtectionStore, (await liquidityProtection.store()));
 
+            // Deploy liquidityMining contract
+            LiquidityMining = await ethers.getContractFactory('LiquidityMining');
+            liquidityMining = await LiquidityMining.deploy(BANCOR_ENV_BBS_TOKEN, BANCOR_ENV_REGISTRY);
+
+            // Add protected liquidity for account 0 -> will result in position id 0
+            // await liquidityProtection.addLiquidityFor(accounts[0].address, BANCOR_ENV_CONVERTER, BANCOR_ENV_BBS_TOKEN, 100);
+            // console.log(await liquidityProtectionStore.protectedLiquidity(0));
+
         // Otherwise, deploy our mocks and register them.
         } else {
             console.log('running tests on ephemeral hardhat network');
+            bbsToken = await (await ethers.getContractFactory('BBSToken')).deploy();
 
             async function deploy(contractName, ...args) {
                 return await (await ethers.getContractFactory(contractName)).deploy(...args);
@@ -120,7 +130,6 @@ describe('LiquidityMining', function() {
 
     it('should fail on unlocking before locking', async function() {
         try {
-            const numOfDays = 100;
             await liquidityMining.unlockPosition(0);
         } catch (exception){
             expect(exception.toString()).to.endsWith('position id is not mapped to a valid address');
@@ -129,27 +138,27 @@ describe('LiquidityMining', function() {
 
     async function sendBBSToLM(amount) {
         console.log(`Send ${amount} BBS to lm contract`);
-        await bbsToken.mint(amount);
-        await bbsToken.transfer(liquidityMining.address, amount)
-    }
-
-    async function increaseTime(numOfDays) {
-        await network.provider.send('evm_increaseTime', [(numOfDays * 60 * 60 * 24 )]);
+        await bbsToken.issue(accounts[0].address, amount);
+        await bbsToken.transfer(liquidityMining.address, amount);
     }
 
     async function getBalance(address) {
         return (await bbsToken.balanceOf(address)).toNumber(10);
     }
 
+    async function increaseTime(numOfDays) {
+        await network.provider.send('evm_increaseTime', [(numOfDays * 60 * 60 * 24 )]);
+    }
+
     it('should get entire rewards amount on minimum lock numberOfDays - direct to call to lm contract', async function() {
         const numOfDays = 100;
         const totalBBSRewards = 1;
         const positionId = 1;
-        await liquidityMining.lockPosition(positionId, numOfDays, accounts[1].address);
+        await liquidityMining.lockPosition(positionId, numOfDays, accounts[positionId].address);
         await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
         await liquidityMining.unlockPosition(positionId);
-        const bbsRewards = await getBalance(accounts[1].address);
+        const bbsRewards = await getBalance(accounts[positionId].address);
         expect(bbsRewards).to.equal(totalBBSRewards);
     });
 
@@ -192,13 +201,11 @@ describe('LiquidityMining', function() {
     it('should fail on unlocking time has not arrived yet', async function() {
         try {
             const numOfDays = 100;
-            const bbsRewards = 1000;
             const positionId = 0;
             await transferPositionAndCallWrapper(positionId, numOfDays);
-            await sendBBSToLM(bbsRewards);
             await liquidityMining.unlockPosition(positionId)
         } catch (exception){
-            expect(exception.toString()).to.endsWith('Unlocking time has not arrived yet');
+           expect(exception.toString()).to.endsWith('Unlocking time has not arrived yet');
         }
     });
 
@@ -210,7 +217,7 @@ describe('LiquidityMining', function() {
         await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
         await liquidityMining.unlockPosition(positionId);
-        const bbsRewards = await getBalance(accounts[0].address);
+        const bbsRewards = await getBalance(accounts[positionId].address);
         expect(bbsRewards).to.equal(totalBBSRewards);
     });
 
@@ -222,7 +229,7 @@ describe('LiquidityMining', function() {
         await sendBBSToLM(totalBBSRewards);
         await increaseTime(numOfDays);
         await liquidityMining.unlockPosition(positionId);
-        const bbsRewards = await getBalance(accounts[0].address);
+        const bbsRewards = await getBalance(accounts[positionId].address);
         expect(bbsRewards).to.equal(999);
     });
 

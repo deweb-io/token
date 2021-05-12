@@ -20,7 +20,7 @@ describe('DailyRewards', function() {
         }
 
         console.info('minting tokens and transfer to dailyRewards');
-        await bbsToken.mint(1000000);
+        await bbsToken.issue(accounts[0].address, 1000000);
         await bbsToken.transfer(dailyRewards.address, 500000);
 
         plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];

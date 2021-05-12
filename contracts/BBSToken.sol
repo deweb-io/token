@@ -13,7 +13,8 @@ contract BBSToken is ERC20, Ownable {
     constructor() public ERC20("BBS", "BBS") Ownable() {
     }
 
-    function mint(uint256 amount) public onlyOwner {
-        _mint(msg.sender, amount);
+    function issue(address to, uint256 amount) public onlyOwner {
+        require(to == msg.sender, "issue tokens is allowed only to the owner");
+        _mint(to, amount);
     }
 }
