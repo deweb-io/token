@@ -116,6 +116,10 @@ describe('LiquidityMining', function() {
 
     // Tests with direct calls to liquidity mining contract
 
+    async function increaseTime(numOfDays) {
+        await network.provider.send('evm_increaseTime', [(numOfDays * 60 * 60 * 24 )]);
+    }
+
     it('should fail on illegal lock periods', async function() {
         for(let numberOfDays of [99, 1101]) {
             let error = '';
@@ -128,13 +132,35 @@ describe('LiquidityMining', function() {
         }
     });
 
-    it('should fail on unlocking before locking', async function() {
+    it('should fail on position id is not mapped to a valid address', async function() {
         try {
             await liquidityMining.unlockPosition(0);
         } catch (exception){
             expect(exception.toString()).to.endsWith('position id is not mapped to a valid address');
         }
     });
+
+    it('ensure position was created on lm contract', async function() {
+        const numOfDays = 100;
+        const positionId = 0;
+        await liquidityMining.lockPosition(positionId, numOfDays, accounts[positionId].address);
+        await increaseTime(numOfDays);
+        await liquidityMining.unlockPosition(positionId);
+    });
+
+    it('should fail on unlocking time has not arrived yet', async function() {
+        try {
+            const numOfDays = 100;
+            const positionId = 0;
+            await liquidityMining.lockPosition(positionId, numOfDays, accounts[positionId].address);
+            await increaseTime(numOfDays-1);
+            await liquidityMining.unlockPosition(positionId);
+        } catch (exception){
+           expect(exception.toString()).to.endsWith('Unlocking time has not arrived yet');
+        }
+    });
+
+    // Tests with call to transferPositionAndCall
 
     async function sendBBSToLM(amount) {
         console.log(`Send ${amount} BBS to lm contract`);
@@ -145,24 +171,6 @@ describe('LiquidityMining', function() {
     async function getBalance(address) {
         return (await bbsToken.balanceOf(address)).toNumber(10);
     }
-
-    async function increaseTime(numOfDays) {
-        await network.provider.send('evm_increaseTime', [(numOfDays * 60 * 60 * 24 )]);
-    }
-
-    it('should get entire rewards amount on minimum lock numberOfDays - direct to call to lm contract', async function() {
-        const numOfDays = 100;
-        const totalBBSRewards = 1;
-        const positionId = 1;
-        await liquidityMining.lockPosition(positionId, numOfDays, accounts[positionId].address);
-        await sendBBSToLM(totalBBSRewards);
-        await increaseTime(numOfDays);
-        await liquidityMining.unlockPosition(positionId);
-        const bbsRewards = await getBalance(accounts[positionId].address);
-        expect(bbsRewards).to.equal(totalBBSRewards);
-    });
-
-    // Tests with call to transferPositionAndCall
 
     function AbiEncodeLockPositionCall(positionId, numberOfDays, returnAddress) {
         return web3.eth.abi.encodeFunctionCall(
@@ -197,17 +205,6 @@ describe('LiquidityMining', function() {
         const data = AbiEncodeLockPositionCall(postionId, numberOfDays, accounts[postionId].address);
         await liquidityProtection.transferPositionAndCall(postionId, liquidityMining.address, liquidityMining.address, data);
     }
-
-    it('should fail on unlocking time has not arrived yet', async function() {
-        try {
-            const numOfDays = 100;
-            const positionId = 0;
-            await transferPositionAndCallWrapper(positionId, numOfDays);
-            await liquidityMining.unlockPosition(positionId)
-        } catch (exception){
-           expect(exception.toString()).to.endsWith('Unlocking time has not arrived yet');
-        }
-    });
 
     it('should get entire rewards amount on minimum lock numberOfDays', async function() {
         const numOfDays = 100;
