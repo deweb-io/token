@@ -73,7 +73,6 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
 
     uint256 internal constant MAX_UINT128 = 2**128 - 1;
     uint256 internal constant MAX_UINT256 = uint256(-1);
-    uint8 private constant FUNC_SELECTOR_LENGTH = 4;
 
     ILiquidityProtectionSettings private immutable _settings;
     ILiquidityProtectionStore private immutable _store;
@@ -412,7 +411,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
 
         uint256 newNetworkTokensMinted = _systemStore.networkTokensMinted(poolAnchor).add(newNetworkLiquidityAmount);
         require(newNetworkTokensMinted <= mintingLimit, "ERR_MAX_AMOUNT_REACHED");
-    
+
         // issue new network tokens to the system
         // mintNetworkTokens(address(this), poolAnchor, newNetworkLiquidityAmount);
 
@@ -424,7 +423,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
         //     baseToken.ensureApprove(address(converter), amount);
         // }
 
-        // add the liquidity to the converter
+        // // add the liquidity to the converter
         // addLiquidity(converter, baseToken, networkToken, amount, newNetworkLiquidityAmount, msg.value);
 
         // transfer the new pool tokens to the wallet
@@ -433,7 +432,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
 
         // the system splits the pool tokens with the caller
         // increase the system's pool token balance and add the position for the caller
-        //  _systemStore.incSystemBalance(poolToken, poolTokenAmount - poolTokenAmount / 2); // account for rounding errors
+        // _systemStore.incSystemBalance(poolToken, poolTokenAmount - poolTokenAmount / 2); // account for rounding errors
 
         return addPosition(owner, poolToken, baseToken, poolTokenAmount / 2, amount, time());
     }
@@ -761,6 +760,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
      */
     function transferPosition(uint256 id, address newProvider)
         external
+        override
         protected
         validAddress(newProvider)
         returns (uint256)
@@ -773,23 +773,20 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
      *
      * @param id position id
      * @param newProvider the new provider
-     * @param target the contract to notify
-     * @param data the data to call the contract with
+     * @param callback the callback contract to notify
+     * @param data custom data provided to the callback
      *
      * @return new position id
      */
-    function transferPositionAndCall(
+    function transferPositionAndNotify(
         uint256 id,
         address newProvider,
-        address target,
-        bytes memory data
-    ) external protected validAddress(newProvider) validAddress(target) returns (uint256) {
-        // make sure that we're not trying to call into the zero address or a fallback function
-        require(data.length >= FUNC_SELECTOR_LENGTH, "ERR_INVALID_CALL_DATA");
-
+        ITransferPositionCallback callback,
+        bytes calldata data
+    ) external override protected validAddress(newProvider) validAddress(address(callback)) returns (uint256) {
         uint256 newId = transferPosition(msg.sender, id, newProvider);
 
-        Address.functionCall(target, data, "ERR_CALL_FAILED");
+        callback.onTransferPosition(newId, msg.sender, data);
 
         return newId;
     }
@@ -1353,7 +1350,6 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
         uint256 amount
     ) private {
         _systemStore.incNetworkTokensMinted(poolAnchor, amount);
-        //(1 <= 0, "before _networkTokenGovernance.mint(owner, 10000)");
         _networkTokenGovernance.mint(owner, amount);
     }
 
@@ -1382,7 +1378,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
         address[] memory subscribers = _settings.subscribers();
         uint256 length = subscribers.length;
         for (uint256 i = 0; i < length; i++) {
-            ILiquidityProtectionEventsSubscriber(subscribers[i]).onAddingLiquidity(
+            ILiquidityProvisionEventsSubscriber(subscribers[i]).onAddingLiquidity(
                 provider,
                 poolToken,
                 reserveToken,
@@ -1413,7 +1409,7 @@ contract LiquidityProtection is ILiquidityProtection, Utils, Owned, ReentrancyGu
         address[] memory subscribers = _settings.subscribers();
         uint256 length = subscribers.length;
         for (uint256 i = 0; i < length; i++) {
-            ILiquidityProtectionEventsSubscriber(subscribers[i]).onRemovingLiquidity(
+            ILiquidityProvisionEventsSubscriber(subscribers[i]).onRemovingLiquidity(
                 id,
                 provider,
                 poolToken,
