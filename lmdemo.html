@@ -16,15 +16,16 @@ body{
     font-size: 4em;
     text-align: center;
     margin: auto;
+    position: fixed;
+    top: 0px;
 }
 div.page{
-    width: 55em;
+    width: 75em;
     margin: auto;
 }
 form,table{
     margin: auto;
     width: 100%;
-    min-width: 100%;
     padding: 1em;
     margin-top: 1em;
 }
@@ -45,95 +46,83 @@ tr,th,td{
     border: 1px solid #333333;
     padding: 1em;
 }
-#dialogue{
-    display: none;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    background-color: #000000dd;
-    bottom: 0px;
-    left: 0px;
-    width: 100%;
-    height: 100%;
-}
-#dialogue div{
-    background-color: #000000ff;
-    padding: 2em;
+td.action{
+    cursor: pointer;
+    text-decoration: underline;
 }
     </style>
 </head>
 <body>
     <div class=page>
-        <h1>Liquidity Mining Playground</h1>
-        <p>
-            This is a playground to check if our liquidity mining rewards algorithm is delivering as expected. The way it currently works is as follows:
-        </p>
+        <h1>BBS Staking Playground</h1>
+        <p>This is a playground to check if our staking rewards algorithm is delivering as expected.</p>
+        <h2>Description</h2>
+        <p>The way it currently works is as follows:</p>
         <ul>
-            <li>Once per quarter (defined as exactly 91 days), a reward is sent to contract, marking the end of that quarter.</li>
-            <li>At any point, anyone can lock a Bancor position in the contract, stating for how many quarters they wish to lock it (one to twelve)</li>
-            <li>At any point, anyone with a locked position can extend the locking period, up to twelve quarters into the future</li>
-            <li>At any point, anyone with a locked position can withdraw the rewards he earned during all past quarters, calculated as follows:<ol>
-                <li>Let P be the position rewards are being calculated for</li>
-                <li>Let Q be the quarter rewards are being calculated for</li>
-                <li>Let R be the total amount of BBS tokens rewarded for Q</li>
-                <li>Let S be the amount of shares P holds in Q, calculated as follows:<ol>
-                    <li>Let A be the amount of BBS tokens deposited into P</li>
-                    <li>Let T be the number of quarters from Q till the end of the locking period (inclusive)</li>
-                    <li>Let F be the fraction of the quarter during which the position was locked (calculated in a resolution of days and only relevant if Q is the first quarter in which P was locked), calculated as follows:<ol>
-                        <li>If Q is not the first quarter in which P is locked, let F = 1</li>
-                        <li>If Q is the first quarter in which P is locked:<ol>
-                            <li>Let QD be the number of days in Q</li>
-                            <li>Let D be day in Q in which P was locked</li>
-                            <li>Let F = QD / (QD - D + 1)</li>
-                        </ol></li>
-                    </ol></li>
-                    <li>Let S = A * (91 + ((T - 1) * 26)) * F</li>
+            <li>At any point, anyone can stake BBS tokens (possibly contained in a Bancor position), locking them for a number of quarters between one and thirteen (locking a stake for one quarter means that the stake will be freed at the end of the current quarter)</li>
+            <li>At any point, anyone with a stake can extend the locking period for up to thirteen quarters into the future</li>
+            <li>At any point, anyone with a stake can restake the rewards he earned during all past quarters</li>
+            <li>At any point, anyone with a stake can collect the rewards he earned during all past quarters</li>
+            <li>At any point, anyone with a stake that is no longer locked can reclaim it</li>
+            <li>Once per quarter (defined as exactly 91 days), a reward is sent to the contract, marking the end of the current quarter</li>
+            <li>The reward is divided between all the stakes that were locked during the quarter that ended as follows:<ol>
+                <li>Each stake is given shares according to the amound of BBS tokens locked</li>
+                <li>For every quarter beyond the current quarter for which the stake is locked, the shares receive a boost of 25% (so locking for 1 quarter earns no boost, locking for an extra year beyond that earns a boost of 2X, and locking for the maximum of three extra years earns a boost of 4X)</li>
+                <li>The shares given for the quarter that the stake was initially made in, are furter factored to reflect the number of days in the quarter that the stake was locked for (a stake that was locked in the middle of the quarter will receive half the shares)</li>
+            </ol></li>
+        </ul>
+
+        <h2>Pseudo Formal Definition</h2>
+        <p>To Calculate the reward for a specific stake in a specific quarter:</p>
+        <ol>
+            <li>Let P be the stake rewards are being calculated for</li>
+            <li>Let Q be the quarter rewards are being calculated for</li>
+            <li>Let R be the reward given for Q</li>
+            <li>Let S be the amount of shares stake P held in quarter Q, calculated as follows:<ol>
+                <li>Let A be the amount of BBS tokens staked in P</li>
+                <li>Let T be the number of quarters from quarter Q till the end of the locking period (inclusive)</li>
+                <li>Let F be the fraction of the quarter during which the stake was locked (calculated in a resolution of days and only relevant if quarter Q is the first quarter in which stake P was initially staked), calculated as follows:<ol>
+                    <li>Let QD be the number of days in quarter Q (always 91)</li>
+                    <li>Let D be day in quarter Q in which stake P was locked</li>
+                    <li>Let F = QD / (QD - D + 1)</li>
                 </ol></li>
-                <li>Let TS be the total amount of shares for all positions in Q</li>
-                <li>Let the reward of P for Q equal: R / TS * S</li>
-            </ol>
-        </ul>
+                <li>Let S = A * (1 + ((T - 1) * 0.25)) * F</li>
+            </ol></li>
+            <li>Let TS be the total amount of shares for all locked stakes in quarter Q</li>
+            <li>Let the reward of stake P for quarter Q equal: R / TS * S</li>
+        </ol>
 
-        <h2>Instructions</h2>
+        <h2>Demo</h2>
+
         <p>
-            Enter amount of BBS indivisibles (a positive integer) in reward form to simulate sending a quarterly reward into the contract and ending the current quarter.
-        </p>
-        <p>
-            Enter amount of BBS indivisibles (a positive integer), the number of quarters to lock them (an integer between 1 and 12), and the day of the quarter the locking starts in (an integer between 1 and 91) to simulate locking a stake. The new position will appear in the positions table with the following details:
+            Enter amount of BBS tokens (a positive integer) to stake, the number of quarters to lock the stake for (an integer between 1 and 13), and the day of the quarter the stake was made at (an integer between 1 and 91). The new stake will appear in the stakes table with the following details:
         </p>
         <ul>
             <li>
-                The ID of position (randomly generated).
+                The ID of stake (randomly generated)
             </li>
             <li>
-                The amount of BBS indivisibles locked in the AMM.
+                The amount of BBS locked
             </li>
             <li>
-                The number of quarters it is locked for.
+                The number of quarters the stake is locked for
             </li>
             <li>
-                The amount of shares the position currently has.
+                The number of shares the stake holds for the current quarter
             </li>
             <li>
-                The amount of unclaimed rewards this position earned.
+                The percentage of total shares in the current quarter the stake holds (this determines how the coming reward will be divided)
+            </li>
+            <li>
+                The claimable rewards the stake earned
+            </li>
+            <li>
+                The claimed rewards the stake earned
+            </li>
+            <li>
+                Actions available for this stake
             </li>
         </ul>
-        <p>
-            Click any row in the table to extend the locking period, collect rewards, or reclaim the position.
-        </p>
-        <p>
-            Note that a position stops collecting rewards as soon as the commitment is over. Also note that after dividing the rewards, some undivided balance will probably remains as dust.
-        </p>
-
-        <form id=rewardForm onsubmit='return false;'>
-            Reward amount <input id=rewardAmount>
-            <button>Send Reward</button>
-            <p>Current quarter: <span id=quartre>0</span></p>
-            <p>Rewards:</p>
-            <table><thead><tr>
-                <th>quarter</th><th>rewards</th>
-            </tr></thead><tbody id=rewards></tbody></table>
-        </form>
 
         <form id=lockForm onsubmit='return false;'>
             Amount of BBS in position <input id=lockAmount>
@@ -144,24 +133,37 @@ tr,th,td{
         </form>
 
         <table><thead><tr>
-            <th>position ID</th><th>amount locked</th><th>quarters remaining</th>
-            <th>shares</th><th>reward</th><th>unclaimed</th>
+            <th>position ID</th><th>amount</th><th>quarters</th>
+            <th>shares</th><th>percent</th><th>claimable</th><th>claimed</th>
+            <th colspan=4>actions</th>
         </tr></thead><tbody id=positions></tbody></table>
+
+        <p>
+            Enter amount of BBS tokens in reward form to simulate sending a quarterly reward into the contract and ending the current quarter. The stakes table will be updated to reflect the reward distribution.
+        </p>
+
+        <form id=rewardForm onsubmit='return false;'>
+            Reward amount <input id=rewardAmount>
+            <button>Send Reward</button>
+            <p>Current quarter: <span id=currentQuarter>0</span></p>
+            <p>Rewards:</p>
+        </form>
+        <table><thead><tr>
+            <th>quarter</th><th>rewards</th>
+        </tr></thead><tbody id=rewards></tbody></table>
+
+        <p>
+            Note that a stke stops collecting rewards as soon as the commitment is over. Also note that after dividing the rewards, some undivided balance will probably remains as dust.
+        </p>
     </div>
     <div id=errors></div>
-    <div id=dialogue><div>
-        <button class=extend>extend lock beyond quarter <span class=positionUnlockQuarter></span></button>
-        <button class=collect>collect <span class=positionRewards></span> rewards</button>
-        <button class=reclaim>reclaim position <span class=positionId></span></button>
-        <button class=cancel>cancel</button>
-    </div></div>
     <script>
 /* jshint esversion: 7*/
 const ERRORS_DISPLAY = document.getElementById('errors');
 const REWARDS_DISPLAY = document.getElementById('rewards');
+const CURRENT_QUARTER_DISPLAY = document.getElementById('currentQuarter');
 const POSITIONS_DISPLAY = document.getElementById('positions');
 const NUM_POSITIONS_DISPLAY = document.getElementById('numPositions');
-const ACTIONS_DIALOGUE_TEMPLATE = document.getElementById('dialogue');
 
 let currentQuarter = 0;
 let rewards = {
@@ -180,6 +182,7 @@ let rewards = {
     },
 
     draw: () => {
+        CURRENT_QUARTER_DISPLAY.innerHTML = currentQuarter;
         REWARDS_DISPLAY.innerHTML = '';
         rewards.iterate(currentQuarter, 0, (quarterIdx, reward) => {
             let row = document.createElement('tr');
@@ -205,15 +208,17 @@ let locks = {
     lock: (positionId, lockAmount, lockQuarters, lockDay) => {
         let position = locks.positions[positionId] = locks.positions[positionId] || {
             shares: {},
-            lockAmount: lockAmount,
+            lockAmount: -1,
             lockTill: -1,
+            unclaimeQuarter: 0,
             claimedReward: 0,
             quartersToGo: () => currentQuarter < position.lockTill ? position.lockTill - currentQuarter : 0,
             currentShares: () => position.shares[currentQuarter] || 0,
+            currentSharePercent: () => `${Math.floor(position.currentShares() / rewards.get().shares * 10000) / 100}%`,
             calculateReward: () => {
                 let total = 0;
-                rewards.iterate(currentQuarter - 1, 0, (quarterIdx, reward) => {
-                    total += position.shares[quarterIdx] ? position.shares[quarterIdx] * reward.amount / reward.shares : 0;
+                rewards.iterate(currentQuarter - 1, position.unclaimeQuarter, (quarterIdx, reward) => {
+                    total += (position.shares[quarterIdx] || 0) * reward.amount / reward.shares;
                 });
                 return total;
             },
@@ -227,17 +232,21 @@ let locks = {
         };
 
         let lockTill = currentQuarter + lockQuarters;
-        if(lockTill <= position.lockTill){
+        if(lockTill < position.lockTill){
             throw(`position ${positionId} is already locked until quarter ${position.lockTill}`);
         }
         position.lockTill = lockTill;
+        position.lockAmount = lockAmount;
 
         for(let quarterDelta = 1; quarterDelta <= lockQuarters; quarterDelta++){
             const quarterIdx = position.lockTill - quarterDelta;
-            const shares = lockAmount * (91 + ((quarterDelta - 1) * 26)) * (
+            const shares = lockAmount * (100 + ((quarterDelta - 1) * 25)) * (
                 quarterDelta === lockQuarters ? (92 - lockDay) / 91 : 1);
+            if(typeof(position.shares[quarterIdx]) === 'undefined'){
+                position.shares[quarterIdx] = 0;
+            }
+            rewards.get(quarterIdx).shares += shares - position.shares[quarterIdx];
             position.shares[quarterIdx] = shares;
-            rewards.get(quarterIdx).shares += shares;
         }
 
         locks.draw();
@@ -247,38 +256,44 @@ let locks = {
         POSITIONS_DISPLAY.innerHTML = '';
         for(let [positionId, position] of Object.entries(locks.positions)){
             let row = document.createElement('tr');
+
+            // Data cells.
             for(const cellValue of [
-                positionId, position.lockAmount, position.quartersToGo(),
-                position.currentShares(), position.calculateReward(), position.claimedReward
+                positionId, position.lockAmount, position.quartersToGo(), position.currentShares(),
+                position.currentSharePercent(), position.calculateReward(), position.claimedReward
             ]){
-                let td = document.createElement('td');
-                td.appendChild(document.createTextNode(cellValue));
-                row.appendChild(td);
+                const cell = document.createElement('td');
+                cell.appendChild(document.createTextNode(cellValue));
+                row.appendChild(cell);
             }
-            row.addEventListener('click', () => {
-                const dialogue = ACTIONS_DIALOGUE_TEMPLATE.cloneNode(true);
-                dialogue.style.display = 'flex';
-                for(const [name, value] of [
-                    ['positionId', positionId],
-                    ['positionRewards', position.calculateReward() - position.claimedReward],
-                    ['positionUnlockQuarter', position.lockTill]
-                ]) dialogue.getElementsByClassName(name)[0].innerHTML = value;
-                dialogue.querySelectorAll('button').forEach((button) => {
-                    button.addEventListener('click', () => {
-                        if([...button.classList].indexOf('extend') !== -1){
-                            locks.lock(positionId, position.lockAmount, posIntVal(
-                                prompt('specify how many quarters to lock'), 12), 1);
-                        }else if([...button.classList].indexOf('collect') !== -1){
-                            position.claimedReward = position.calculateReward();
-                            locks.draw();
-                        }else if([...button.classList].indexOf('reclaim') !== -1){
-                            position.reclaim();
-                        }
-                        dialogue.parentNode.removeChild(dialogue);
-                    });
-                });
-                document.body.appendChild(dialogue);
-            });
+
+            // Action cell.
+            for(const [title, function_] of [
+                ['extend', () => {
+                    locks.lock(positionId, position.lockAmount, posIntVal(prompt('how many quarters to lock'), 13), 1);
+                }],
+                ['restake', () => {
+                    position.calculateReward()
+                    locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill - currentQuarter, 1);
+                    position.unclaimeQuarter = currentQuarter;
+                    locks.draw();
+
+                }],
+                ['collect', () => {
+                    position.claimedReward += position.calculateReward();
+                    position.unclaimeQuarter = currentQuarter;
+                    locks.draw();
+                }],
+                ['reclaim', () => {
+                    position.reclaim();
+                }],
+            ]){
+                const cell = document.createElement('td');
+                cell.classList.add('action');
+                cell.appendChild(document.createTextNode(title));
+                cell.addEventListener('click', (...args) => function_(...args));
+                row.appendChild(cell);
+            }
             POSITIONS_DISPLAY.appendChild(row);
         }
         NUM_POSITIONS_DISPLAY.innerHTML = Object.keys(locks.positions).length;
@@ -313,6 +328,7 @@ function inputVal(inputId, limit){
 window.addEventListener('error', (error) => {
     ERRORS_DISPLAY.style.display = 'block';
     ERRORS_DISPLAY.innerHTML = error.message.slice(20);
+    setTimeout(() => ERRORS_DISPLAY.style.display = 'none', 5000);
 });
 window.addEventListener('load', () => {
     rewards.draw();
@@ -320,7 +336,7 @@ window.addEventListener('load', () => {
 document.getElementById('lockForm').addEventListener('submit', () => {
     locks.lock(
         Math.floor(Math.random() * 2**32),
-        inputVal('lockAmount'), inputVal('lockQuarters', 12), inputVal('lockDay', 91));
+        inputVal('lockAmount'), inputVal('lockQuarters', 13), inputVal('lockDay', 91));
     return false;
 });
 document.getElementById('rewardForm').addEventListener('submit', () => {
