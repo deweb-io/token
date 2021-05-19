@@ -11,10 +11,11 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/LiquidityProtection.sol";
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
+import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ITransferPositionCallback.sol";
 import "@bancor/contracts-solidity/solidity/contracts/utility/interfaces/IContractRegistry.sol";
 
 
-contract LiquidityMining is Ownable  {
+contract LiquidityMining is Ownable, ITransferPositionCallback {
     using SafeMath for uint256;
 
     // To avoid non integral number of shares, for every BBS locked we allocate
@@ -40,6 +41,7 @@ contract LiquidityMining is Ownable  {
     }
 
     mapping(uint256 => LockedPosition) public lockedPositions;
+    mapping(address => uint256[]) private addressToPositions;
 
     uint256 public accumulatedSharePrice;
     uint256 public totalNumberOfShares;
@@ -52,6 +54,16 @@ contract LiquidityMining is Ownable  {
     constructor(address _bbsTokenAddress, address _bancorRegistryAddress) public {
         _BBSToken = IERC20(_bbsTokenAddress);
         bancorRegistry = IContractRegistry(_bancorRegistryAddress);
+    }
+
+    function getPositions(address provider) public view returns(uint256[] memory) {
+        require(provider != address(0), "Invalid address");
+        return addressToPositions[provider];
+    }
+
+    function onTransferPosition(uint256 newId, address provider, bytes calldata data) external override {
+        (uint16 numberOfDays, address returnAddress)=abi.decode(data, (uint16,address));
+        lockPosition(newId, numberOfDays, returnAddress);
     }
 
     function lockPosition(uint256 _positionId, uint16 _numberOfDays, address _returnAddress) public {
@@ -74,6 +86,8 @@ contract LiquidityMining is Ownable  {
             "Unlocking time has not arrived yet");
 
         address payable _LiquidityProtectionContract = payable(getContractAddressByName('LiquidityProtection'));
+
+        //position is transfered in bancor and a new position id is being created. the customer can check for the id in bancor's contract.
         LiquidityProtection(_LiquidityProtectionContract).transferPosition(_positionId, lockedPositions[_positionId].positionAddress);
 
         updateSharePrice();
@@ -91,6 +105,8 @@ contract LiquidityMining is Ownable  {
             block.timestamp,
             block.timestamp + (_numberOfDays * 1 days));
         totalNumberOfShares = totalNumberOfShares.add(_numberOfShares);
+
+        addressToPositions[_returnAddress].push(_positionId);
     }
 
     function _removeLockedPosition(uint256 _positionId, uint256 _rewardPayed) internal {

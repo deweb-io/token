@@ -2,7 +2,10 @@
 pragma solidity >=0.6.12 <0.8.0;
 
 import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ILiquidityProtectionStore.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@bancor/contracts-solidity/solidity/contracts/liquidity-protection/interfaces/ITransferPositionCallback.sol";
+
+import "@bancor/contracts-solidity/solidity/contracts/token/interfaces/IDSToken.sol";
+import "@bancor/contracts-solidity/solidity/contracts/token/interfaces/IReserveToken.sol";
 
 import "hardhat/console.sol";
 
@@ -16,24 +19,21 @@ contract mockLiquidityProtection {
         _store = store;
     }
 
-    function transferPositionAndCall(
+    function transferPositionAndNotify(
         uint256 id,
         address newProvider,
-        address target,
-        bytes memory data
-    ) external /*protected validAddress(newProvider) validAddress(target)*/ returns (uint256) {
-        // make sure that we're not trying to call into the zero address or a fallback function
-        require(data.length >= FUNC_SELECTOR_LENGTH, "ERR_INVALID_CALL_DATA");
-
+        ITransferPositionCallback callback, //lm contract
+        bytes calldata data
+    ) external /*override protected validAddress(newProvider) validAddress(address(callback))*/ returns (uint256) {
         uint256 newId = transferPosition(msg.sender, id, newProvider);
 
-        Address.functionCall(target, data, "ERR_CALL_FAILED");
+        callback.onTransferPosition(newId, msg.sender, data);
 
         return newId;
     }
 
     /**
-        mock implementation
+        mock implementation: just create a new position to mock new position id.
      */
     function transferPosition(
         address provider,
@@ -41,7 +41,19 @@ contract mockLiquidityProtection {
         address newProvider
     ) internal returns (uint256) {
         console.log('transfer position %s from %s to %s', id, provider, newProvider);
-        return id;
+
+        (address _provider, 
+            IDSToken _poolToken, 
+            IReserveToken _reserveToken,
+            uint256 _poolAmount, 
+            uint256 _reserveAmount,
+            uint256 _reserveRateN, 
+            uint256 _reserveRateD, 
+            uint256 _timestamp) = _store.protectedLiquidity(id);
+
+        return _store.addProtectedLiquidity(
+            newProvider, _poolToken, _reserveToken, _poolAmount, 
+            _reserveAmount, _reserveRateN, _reserveRateD, _timestamp);
     }
 
     /**

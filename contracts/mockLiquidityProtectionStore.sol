@@ -16,7 +16,13 @@ contract mockLiquidityProtectionStore {
 
     struct ProtectedLiquidity {
         address provider; // liquidity provider
+        IDSToken poolToken;
+        IReserveToken reserveToken;
+        uint256 poolAmount;
         uint256 reserveAmount; // reserve token amount
+        uint256 reserveRateN;
+        uint256 reserveRateD;
+        uint256 timestamp;
     }
 
     mapping(uint256 => ProtectedLiquidity) private protectedLiquidities;
@@ -38,13 +44,13 @@ contract mockLiquidityProtectionStore {
         ProtectedLiquidity storage liquidity = protectedLiquidities[_id];
         return (
             liquidity.provider,
-            IDSToken(address(0)),
-            IReserveToken(address(0)),
-            0,
+            liquidity.poolToken,
+            liquidity.reserveToken,
+            liquidity.poolAmount,
             liquidity.reserveAmount,
-            0,
-            0,
-            0
+            liquidity.reserveRateN,
+            liquidity.reserveRateD,
+            liquidity.timestamp
         );
     }
 
@@ -78,10 +84,16 @@ contract mockLiquidityProtectionStore {
 
         protectedLiquidities[id] = ProtectedLiquidity({
             provider: _provider,
-            reserveAmount: _reserveAmount
+            poolToken: _poolToken,
+            reserveToken: _reserveToken,
+            poolAmount: _poolAmount,
+            reserveAmount: _reserveAmount,
+            reserveRateN:_reserveRateN,
+            reserveRateD: _reserveRateD,
+            timestamp: _timestamp
         });
 
-        console.log('added protected liquidity to id %s <%s:%s>', id, _provider , _reserveAmount);
+        console.log('position %s created <%s:%s>', id, _provider , _reserveAmount);
         return id;
     }
 }
