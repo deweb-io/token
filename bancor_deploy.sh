@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 testdir=bancor_test_env
+
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+
 if ! [ -d $testdir ]; then
     git clone --depth=1 https://github.com/bancorprotocol/contracts-solidity.git $testdir
+    cp ./bancorContractsModifications/* $testdir/.
     pushd $testdir
     export NODE_OPTIONS="--max-old-space-size=4096"
     npm install --force
@@ -135,5 +139,13 @@ echo "$deployment_log"
 popd
 
 echo RUNNING TESTS
+pushd test
 set -x
-BANCOR_ENV_REGISTRY="$(grep -Po '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")" npx hardhat --network localhost test
+BANCOR_ENV_REGISTRY="$(grep -Po '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")"
+BANCOR_ENV_BBS_TOKEN="$(grep -Po '(?<=dsToken-BBS deployed at )0x.*' <<<"$deployment_log")"
+
+#npx hardhat --network localhost test
+set +x
+popd
+
+popd
