@@ -95,34 +95,8 @@ td.action{
         <h2>Demo</h2>
 
         <p>
-            Enter amount of BBS tokens (a positive integer) to stake, the number of quarters to lock the stake for (an integer between 1 and 13), and the day of the quarter the stake was made at (an integer between 1 and 91). The new stake will appear in the stakes table with the following details:
+            Enter amount of BBS tokens (a positive integer) to stake, the number of quarters to lock the stake for (an integer between 1 and 13), and the day of the quarter the stake was made at (an integer between 1 and 91).
         </p>
-        <ul>
-            <li>
-                The ID of stake (randomly generated)
-            </li>
-            <li>
-                The amount of BBS locked
-            </li>
-            <li>
-                The number of quarters the stake is locked for
-            </li>
-            <li>
-                The number of shares the stake holds for the current quarter
-            </li>
-            <li>
-                The percentage of total shares in the current quarter the stake holds (this determines how the coming reward will be divided)
-            </li>
-            <li>
-                The claimable rewards the stake earned
-            </li>
-            <li>
-                The claimed rewards the stake earned
-            </li>
-            <li>
-                Actions available for this stake
-            </li>
-        </ul>
 
         <form id=lockForm onsubmit='return false;'>
             Amount of BBS in position <input id=lockAmount>
@@ -131,6 +105,36 @@ td.action{
             <button>Lock Position</button>
             <p>Number of positions: <span id=numPositions>0</span></p>
         </form>
+
+        <p>
+            The new stake will appear in the stakes table with the following details:
+        </p>
+        <ul>
+            <li>
+                ID of stake
+            </li>
+            <li>
+                Amount of BBS locked
+            </li>
+            <li>
+                Number of quarters left in the locking period
+            </li>
+            <li>
+                Calculated number of shares for the current quarter
+            </li>
+            <li>
+                Percentage from total shares for the current quarter (this determines how the coming reward will be divided)
+            </li>
+            <li>
+                Claimable rewards
+            </li>
+            <li>
+                Claimed rewards
+            </li>
+            <li>
+                Actions available for this stake
+            </li>
+        </ul>
 
         <table><thead><tr>
             <th>position ID</th><th>amount</th><th>quarters</th>
@@ -214,13 +218,17 @@ let locks = {
             claimedReward: 0,
             quartersToGo: () => currentQuarter < position.lockTill ? position.lockTill - currentQuarter : 0,
             currentShares: () => position.shares[currentQuarter] || 0,
-            currentSharePercent: () => `${Math.floor(position.currentShares() / rewards.get().shares * 10000) / 100}%`,
+            currentSharePercent: () => (
+                `${Math.floor(rewards.get().shares && position.currentShares() / rewards.get().shares * 10000) / 100}%`
+            ),
             calculateReward: () => {
                 let total = 0;
                 rewards.iterate(currentQuarter - 1, position.unclaimeQuarter, (quarterIdx, reward) => {
-                    total += (position.shares[quarterIdx] || 0) * reward.amount / reward.shares;
+                    if(position.shares[quarterIdx] && position.shares[quarterIdx] > 0) {
+                        total += position.shares[quarterIdx] * reward.amount / reward.shares;
+                    }
                 });
-                return total;
+                return Math.floor(total);
             },
             reclaim: () => {
                 if(currentQuarter < position.lockTill){
@@ -240,7 +248,7 @@ let locks = {
 
         for(let quarterDelta = 1; quarterDelta <= lockQuarters; quarterDelta++){
             const quarterIdx = position.lockTill - quarterDelta;
-            const shares = lockAmount * (100 + ((quarterDelta - 1) * 25)) * (
+            const shares = lockAmount * (1 + ((quarterDelta - 1) * 0.25)) * (
                 quarterDelta === lockQuarters ? (92 - lockDay) / 91 : 1);
             if(typeof(position.shares[quarterIdx]) === 'undefined'){
                 position.shares[quarterIdx] = 0;

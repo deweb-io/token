@@ -91,9 +91,8 @@ We should add more documentation here, explain how we test with mocks and how to
 
 `./contracts/LiquidityMining.sol`
 
-We are now working on a different implementation, which allows the locking of BBS tokens directly, works in a quarterly resolution, and calculates the share of each stake on a dynamic basis. A web-based "paper" demo can be experienced here:
+We are now working on a different implementation, which allows the locking of BBS tokens directly, works in a quarterly resolution, and calculates the share of each stake on a dynamic basis. A web-based "paper" demo can be found at `./staking.html` and accessed [here](https://creator-eco.github.io/token/staking.html).
 
-`./staking.html`
 
 ## Deployment Procedure
 
