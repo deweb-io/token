@@ -24,13 +24,13 @@ describe('BBSToken', function() {
 
         expect((await bbsToken.balanceOf(ownerAccount)).toNumber(10)).to.equal(0);
         expect((await bbsToken.balanceOf(notOwnerAccount)).toNumber(10)).to.equal(0);
-        await bbsToken.issue(ownerAccount, 100);
+        await bbsToken.mint(ownerAccount, 100);
         expect((await bbsToken.balanceOf(ownerAccount)).toNumber(10)).to.equal(100);
         expect((await bbsToken.balanceOf(notOwnerAccount)).toNumber(10)).to.equal(0);
 
         try {
             await bbsToken.transferOwnership(notOwnerAccount);
-            await bbsToken.issue(ownerAccount, 100);
+            await bbsToken.mint(ownerAccount, 100);
         } catch(exception) {
             expect(exception.toString()).to.endsWith('Ownable: caller is not the owner');
         }
