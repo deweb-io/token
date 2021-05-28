@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,11 +30,10 @@ contract DailyRewards is Ownable {
 
     /**
      * @dev Set bbsToken instance.
-     * @param bbsTokenAddress The address of the BBS token.
-     * Note that it is possible to specify IERC20 in the signature, but I prefer explicit to implicit.
+     * @param _bbsToken The address of the BBS token contract.
      */
-    constructor(address bbsTokenAddress) Ownable() {
-        bbsToken = IERC20(bbsTokenAddress);
+    constructor(IERC20 _bbsToken) {
+        bbsToken = _bbsToken;
     }
 
     /**
@@ -42,9 +41,9 @@ contract DailyRewards is Ownable {
      * @param beneficiariesToSet A list of addresses of reward beneficiaries.
      * @param amountsToSet A list of BBS amounts to reward the corresponding beneficiaries every day.
      */
-    function declareRewards(address[] memory beneficiariesToSet, uint256[] memory amountsToSet) external onlyOwner {
+    function declareRewards(address[] calldata beneficiariesToSet, uint256[] calldata amountsToSet) external onlyOwner {
         delete declaredRewards;
-        for (uint256 rewardIndex = 0; rewardIndex < beneficiariesToSet.length; rewardIndex++) {
+        for (uint16 rewardIndex = 0; rewardIndex < beneficiariesToSet.length; rewardIndex++) {
             declaredRewards.push(Reward(beneficiariesToSet[rewardIndex], amountsToSet[rewardIndex]));
         }
         declarationTimestamp = block.timestamp;
@@ -67,7 +66,7 @@ contract DailyRewards is Ownable {
      */
     function distributeRewards() external {
         require(block.timestamp - distributionTimestamp >= DISTRIBUTION_INTERVAL, "rewards distributed too recently");
-        for (uint256 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
+        for (uint16 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
             bbsToken.transfer(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
             emit RewardDistributed(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
         }

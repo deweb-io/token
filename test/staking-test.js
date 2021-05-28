@@ -1,14 +1,14 @@
 const {expect} = require('chai');
 const {expectRevert} = require('@openzeppelin/test-helpers');
 
-describe('test staking', () => {
+describe('Staking', () => {
     let accounts, bbsToken, staking;
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const Staking = await ethers.getContractFactory('Staking');
-        accounts = await ethers.getSigners();
         bbsToken = await BBSToken.deploy();
         staking = await Staking.deploy(bbsToken.address);
+        accounts = await ethers.getSigners();
     });
 
     it('quarter promotion', async() => {
