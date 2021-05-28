@@ -59,12 +59,15 @@ The essesntial idea is described and can be played with in this [web-based "pape
 
 The eos components are either completely standard or maintained and tested by Bancor, so we only need tests for the ethereum components. These tests are all run on hardhat, which makes it easy to test on the internal hardhat network, on a local ganache-cli environment, or on a mainnet fork.
 
-- To test on hardhat network:
+To test on hardhat network:
 ```shell
 npx hardhat test
 ```
 
-TODO: Add coverage checks ([nyc](https://github.com/istanbuljs/nyc) looks promising).
+To get coverage report:
+```shell
+npx hardhat coverage
+```
 
 ## Deployment
 
