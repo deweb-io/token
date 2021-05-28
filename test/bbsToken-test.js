@@ -1,8 +1,6 @@
-const { expect } = require('chai');
-const chai = require('chai');
-chai.use(require('chai-string'));
+const { expect } = require('chai').use(require('chai-string'));
 
-describe('BBSToken', function() {
+describe('test BBS token', function() {
     it('test change of ownership', async function() {
         const accounts = await ethers.getSigners();
         const BBSToken = await ethers.getContractFactory('BBSToken');
