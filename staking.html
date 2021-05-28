@@ -209,47 +209,51 @@ let rewards = {
 let locks = {
     positions: {},
 
-    lock: (positionId, lockAmount, lockQuarters, lockDay) => {
-        let position = locks.positions[positionId] = locks.positions[positionId] || {
-            shares: {},
-            lockAmount: -1,
-            lockTill: -1,
-            unclaimeQuarter: 0,
-            claimedReward: 0,
-            quartersToGo: () => currentQuarter < position.lockTill ? position.lockTill - currentQuarter : 0,
-            currentShares: () => position.shares[currentQuarter] || 0,
-            currentSharePercent: () => (
-                `${Math.floor(rewards.get().shares && position.currentShares() / rewards.get().shares * 10000) / 100}%`
-            ),
-            calculateReward: () => {
-                let total = 0;
-                rewards.iterate(currentQuarter - 1, position.unclaimeQuarter, (quarterIdx, reward) => {
-                    if(position.shares[quarterIdx] && position.shares[quarterIdx] > 0) {
-                        total += position.shares[quarterIdx] * reward.amount / reward.shares;
+    lock: (positionId, lockAmount, lockTill, lockDay) => {
+        let position = locks.positions[positionId];
+        if(!position){
+            position = locks.positions[positionId] = {
+                lockQuarter: currentQuarter,
+                lockDay: lockDay,
+                shares: {},
+                unclaimeQuarter: 0,
+                claimedReward: 0,
+                quartersToGo: () => currentQuarter < position.lockTill ? position.lockTill - currentQuarter : 0,
+                currentShares: () => position.shares[currentQuarter] || 0,
+                currentSharePercent: () => (
+                    `${Math.floor(rewards.get().shares && position.currentShares() / rewards.get().shares * 10000) / 100}%`
+                ),
+                calculateReward: () => {
+                    let total = 0;
+                    rewards.iterate(currentQuarter - 1, position.unclaimeQuarter, (quarterIdx, reward) => {
+                        if(position.shares[quarterIdx] && position.shares[quarterIdx] > 0){
+                            total += position.shares[quarterIdx] * reward.amount / reward.shares;
+                        }
+                    });
+                    return Math.floor(total);
+                },
+                reclaim: () => {
+                    if(currentQuarter < position.lockTill){
+                        throw(`position ${positionId} is locked until quarter ${position.lockTill}`);
                     }
-                });
-                return Math.floor(total);
-            },
-            reclaim: () => {
-                if(currentQuarter < position.lockTill){
-                    throw(`position ${positionId} is locked until quarter ${position.lockTill}`);
+                    delete locks.positions[positionId];
+                    locks.draw();
                 }
-                delete locks.positions[positionId];
-                locks.draw();
-            }
-        };
-
-        let lockTill = currentQuarter + lockQuarters;
-        if(lockTill < position.lockTill){
-            throw(`position ${positionId} is already locked until quarter ${position.lockTill}`);
+            };
+        }else{
+            if(position.lockAmount && (lockAmount < position.lockAmount)) throw(
+                `position ${positionId} has already locked ${position.lockAmount}`);
+            if(position.lockTill && lockTill < position.lockTill) throw(
+                `position ${positionId} is already locked until quarter ${position.lockTill}`);
+            if(position.lockDay && lockDay !== position.lockDay) throw(
+                `position ${positionId} was previously locked on day ${position.lockDay}`);
         }
-        position.lockTill = lockTill;
         position.lockAmount = lockAmount;
+        position.lockTill = lockTill;
 
-        for(let quarterDelta = 1; quarterDelta <= lockQuarters; quarterDelta++){
-            const quarterIdx = position.lockTill - quarterDelta;
-            const shares = lockAmount * (1 + ((quarterDelta - 1) * 0.25)) * (
-                quarterDelta === lockQuarters ? (92 - lockDay) / 91 : 1);
+        for(let quarterIdx = currentQuarter; quarterIdx < position.lockTill; quarterIdx++){
+            const shares = lockAmount * (1 + ((position.lockTill - quarterIdx - 1) * 0.25)) * (
+                quarterIdx === position.lockQuarter ? (92 - lockDay) / 91 : 1);
             if(typeof(position.shares[quarterIdx]) === 'undefined'){
                 position.shares[quarterIdx] = 0;
             }
@@ -278,11 +282,15 @@ let locks = {
             // Action cell.
             for(const [title, function_] of [
                 ['extend', () => {
-                    locks.lock(positionId, position.lockAmount, posIntVal(prompt('how many quarters to lock'), 13), 1);
+                    let lockDay = position.lockDay
+                    locks.lock(
+                        positionId, position.lockAmount,
+                        currentQuarter + posIntVal(prompt('how many quarters to lock'), 13),
+                        position.lockDay || 1);
                 }],
                 ['restake', () => {
                     position.calculateReward()
-                    locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill - currentQuarter, 1);
+                    locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill, position.lockDay);
                     position.unclaimeQuarter = currentQuarter;
                     locks.draw();
 
@@ -311,7 +319,7 @@ let locks = {
 // Get a positive integer value (possibly limited).
 function posIntVal(value, limit){
     try{
-        value = parseFloat(value, 10);
+        value = parseFloat(value);
     }catch(e){
         throw(`not a number - ${value}`);
     }
@@ -344,7 +352,7 @@ window.addEventListener('load', () => {
 document.getElementById('lockForm').addEventListener('submit', () => {
     locks.lock(
         Math.floor(Math.random() * 2**32),
-        inputVal('lockAmount'), inputVal('lockQuarters', 13), inputVal('lockDay', 91));
+        inputVal('lockAmount'), currentQuarter + inputVal('lockQuarters', 13), inputVal('lockDay', 91));
     return false;
 });
 document.getElementById('rewardForm').addEventListener('submit', () => {
