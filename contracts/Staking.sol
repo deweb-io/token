@@ -44,23 +44,57 @@ contract Staking is Ownable {
     }
 
     /**
-     * @dev Get the shares of a stake in a quarter (automatic getters do not return mappings).
+     * @dev Promote the current quarter if a quarter ended.
+     */
+    function promoteQuarter() public {
+        if (block.timestamp < currentQuarterEnd) return;
+        currentQuarter++;
+        currentQuarterEnd += QUARTER_LENGTH;
+        emit QuarterPromoted(currentQuarter);
+    }
+
+    /**
+     * @dev Get the share of a stake in a quarter (automatic getters do not return mappings).
      * @param staker The address of the owner.
      * @param stakeIdx The index of the stake.
      * @param quarterIdx The index of the quarter.
      */
-    function getShares(address staker, uint16 stakeIdx, uint16 quarterIdx) external view returns(uint256) {
+    function getShare(address staker, uint16 stakeIdx, uint16 quarterIdx) external view returns(uint256 share) {
         return stakes[staker][stakeIdx].shares[quarterIdx];
     }
 
     /**
-     * @dev Promote the current quarter if a quarter ended.
+     * @dev Get the unclaimed reward a stake currently deserves.
+     * @param stake The stake for which reward is calculated.
      */
-    function promoteQuarter() public {
-        if(block.timestamp < currentQuarterEnd) return;
-        currentQuarter++;
-        currentQuarterEnd += QUARTER_LENGTH;
-        emit QuarterPromoted(currentQuarter);
+    function calculateReward(Stake storage stake) internal view returns(uint256 reward) {
+        for (uint16 quarterIdx = stake.firstUnclaimedQuarter; quarterIdx < currentQuarter; quarterIdx++) {
+            reward += rewards[quarterIdx].amount / rewards[quarterIdx].shares * stake.shares[quarterIdx];
+        }
+        return reward;
+    }
+
+    /**
+     * @dev Get the unclaimed reward a stake currently deserves.
+     * @param stake The stake for which reward is calculated.
+     */
+    function updateShare(Stake storage stake) internal returns(Stake storage updatedStake) {
+        promoteQuarter();
+        require(stake.endQuarter > currentQuarter, "can not lock for less than one quarter");
+
+        for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.endQuarter; quarterIdx++) {
+            uint256 oldShare = stake.shares[quarterIdx];
+            stake.shares[quarterIdx] = stake.amount * (100 + ((stake.endQuarter - quarterIdx - 1) * 25));
+
+            // This only happens when quarterIdx == currentQuarter.
+            if (quarterIdx == stake.startQuarter) {
+                stake.shares[quarterIdx] *= currentQuarterEnd - block.timestamp;
+                stake.shares[quarterIdx] /= QUARTER_LENGTH;
+            }
+
+            rewards[quarterIdx].shares += stake.shares[quarterIdx] - oldShare;
+        }
+        return stake;
     }
 
     /**
@@ -81,20 +115,50 @@ contract Staking is Ownable {
      * @param endQuarter The index of the quarter the lock ends on.
      */
     function lock(uint256 amount, uint16 endQuarter) external {
-        promoteQuarter();
         bbsToken.transferFrom(msg.sender, address(this), amount);
-        require(endQuarter > currentQuarter, "can not lock for less than one quarter");
-
         Stake storage stake = stakes[msg.sender].push();
         stake.amount = amount;
         stake.startTime = block.timestamp;
         stake.startQuarter = currentQuarter;
         stake.endQuarter = endQuarter;
         stake.firstUnclaimedQuarter = currentQuarter;
-        for (uint16 quarterIdx = currentQuarter; quarterIdx < endQuarter; quarterIdx++) {
-            stake.shares[quarterIdx] = amount * (100 + ((endQuarter - quarterIdx - 1) * 25));
-        }
-        stake.shares[currentQuarter] *= currentQuarterEnd - block.timestamp;
-        stake.shares[currentQuarter] /= QUARTER_LENGTH;
+        stake = updateShare(stake);
+    }
+
+    /**
+     * @dev Extend the lock of an existing stake.
+     * @param stakeIdx The index of the stake to be extended.
+     * @param endQuarter The index of the new quarter the lock ends on.
+     */
+    function extend(uint16 stakeIdx, uint16 endQuarter) external {
+        Stake storage stake = stakes[msg.sender][stakeIdx];
+        require(endQuarter > stake.endQuarter, "can only extend beyond current end quarter");
+        stake.endQuarter = endQuarter;
+        stake = updateShare(stake);
+    }
+
+    /**
+     * @dev Restake current rewards.
+     * @param stakeIdx The index of the stake to be restaked.
+     */
+    function restake(uint16 stakeIdx) external {
+        Stake storage stake = stakes[msg.sender][stakeIdx];
+        uint256 reward = calculateReward(stake);
+        require(reward > 0, "no rewards to restake");
+        stake.firstUnclaimedQuarter = currentQuarter;
+        stake.amount += reward;
+        stake = updateShare(stake);
+    }
+
+    /**
+     * @dev Claim rewards.
+     * @param stakeIdx The index of the stake to be claimed.
+     */
+    function claim(uint16 stakeIdx) external {
+        Stake storage stake = stakes[msg.sender][stakeIdx];
+        uint256 reward = calculateReward(stake);
+        require(reward > 0, "no rewards to claim");
+        stake.firstUnclaimedQuarter = currentQuarter;
+        bbsToken.transfer(msg.sender, reward);
     }
 }

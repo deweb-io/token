@@ -30,9 +30,9 @@ describe('Staking', () => {
         await expectRevert.unspecified(staking.lock(stakeSize, 1));
         await bbsToken.approve(staking.address, stakeSize);
         staking.lock(stakeSize, 13);
-        expect((await staking.getShares(accounts[0].address, 0, 13)).toNumber()).to.equal(0);
-        expect((await staking.getShares(accounts[0].address, 0, 12)).toNumber()).to.equal(stakeSize * 100);
-        expect((await staking.getShares(accounts[0].address, 0, 11)).toNumber()).to.equal(stakeSize * 125);
-        expect((stakeSize * 400) - (await staking.getShares(accounts[0].address, 0, 0)).toNumber()).to.be.below(500);
+        expect((await staking.getShare(accounts[0].address, 0, 13)).toNumber()).to.equal(0);
+        expect((await staking.getShare(accounts[0].address, 0, 12)).toNumber()).to.equal(stakeSize * 100);
+        expect((await staking.getShare(accounts[0].address, 0, 11)).toNumber()).to.equal(stakeSize * 125);
+        expect((stakeSize * 400) - (await staking.getShare(accounts[0].address, 0, 0)).toNumber()).to.be.below(500);
     });
 });
