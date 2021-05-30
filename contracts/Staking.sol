@@ -84,15 +84,15 @@ contract Staking is Ownable {
 
         for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.endQuarter; quarterIdx++) {
             uint256 oldShare = stake.shares[quarterIdx];
-            stake.shares[quarterIdx] = stake.amount * (100 + ((stake.endQuarter - quarterIdx - 1) * 25));
+            uint256 newShare = stake.amount * (100 + ((stake.endQuarter - quarterIdx - 1) * 25));
 
             // This only happens when quarterIdx == currentQuarter.
             if (quarterIdx == stake.startQuarter) {
-                stake.shares[quarterIdx] *= currentQuarterEnd - block.timestamp;
-                stake.shares[quarterIdx] /= QUARTER_LENGTH;
+                newShare = newShare * (currentQuarterEnd - block.timestamp) / QUARTER_LENGTH;
             }
 
-            rewards[quarterIdx].shares += stake.shares[quarterIdx] - oldShare;
+            stake.shares[quarterIdx] = newShare;
+            rewards[quarterIdx].shares += newShare - oldShare;
         }
         return stake;
     }
