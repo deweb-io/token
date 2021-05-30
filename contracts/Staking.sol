@@ -7,14 +7,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Staking is Ownable {
     uint256 public constant QUARTER_LENGTH = 91 days;
+    uint256 public constant PRECISION = 10**18;
 
     uint256 public currentQuarterEnd;
     uint16 public currentQuarter;
     IERC20 bbsToken;
 
-    struct Reward {
+    struct Quarter {
         uint256 shares;
-        uint256 amount;
+        uint256 reward;
     }
 
     struct Stake {
@@ -26,7 +27,7 @@ contract Staking is Ownable {
         mapping(uint16 => uint256) shares;
     }
 
-    mapping(uint16 => Reward) public rewards;
+    mapping(uint16 => Quarter) public quarters;
     mapping(address => Stake[]) public stakes;
 
     event QuarterPromoted(uint16 quarterIdx);
@@ -69,9 +70,9 @@ contract Staking is Ownable {
      */
     function calculateReward(Stake storage stake) internal view returns(uint256 reward) {
         for (uint16 quarterIdx = stake.firstUnclaimedQuarter; quarterIdx < currentQuarter; quarterIdx++) {
-            reward += rewards[quarterIdx].amount / rewards[quarterIdx].shares * stake.shares[quarterIdx];
+            reward += PRECISION * quarters[quarterIdx].reward / quarters[quarterIdx].shares * stake.shares[quarterIdx];
         }
-        return reward;
+        return reward / PRECISION;
     }
 
     /**
@@ -81,6 +82,7 @@ contract Staking is Ownable {
     function updateShare(Stake storage stake) internal returns(Stake storage updatedStake) {
         promoteQuarter();
         require(stake.endQuarter > currentQuarter, "can not lock for less than one quarter");
+        require(stake.endQuarter - currentQuarter <= 13, "can not lock for more than 13 quarters");
 
         for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.endQuarter; quarterIdx++) {
             uint256 oldShare = stake.shares[quarterIdx];
@@ -92,7 +94,7 @@ contract Staking is Ownable {
             }
 
             stake.shares[quarterIdx] = newShare;
-            rewards[quarterIdx].shares += newShare - oldShare;
+            quarters[quarterIdx].shares += newShare - oldShare;
         }
         return stake;
     }
@@ -102,11 +104,11 @@ contract Staking is Ownable {
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
      */
-    function declareReward(uint16 quarterIdx, uint256 amount) public {
+    function declareReward(uint16 quarterIdx, uint256 amount) external {
         promoteQuarter();
         bbsToken.transferFrom(msg.sender, address(this), amount);
-        rewards[quarterIdx].amount += amount;
-        emit RewardDeclared(quarterIdx, amount, rewards[quarterIdx].amount);
+        quarters[quarterIdx].reward += amount;
+        emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
 
     /**
