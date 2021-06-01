@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Staking_upgrade is Initializable, OwnableUpgradeable {
+contract StakingUpgrade is Initializable, OwnableUpgradeable {
     uint256 public constant QUARTER_LENGTH = 91 days;
     uint256 public constant PRECISION = 10**18;
 
