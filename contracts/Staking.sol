@@ -72,7 +72,11 @@ contract Staking is Ownable {
         for (uint16 quarterIdx = stake.firstUnclaimedQuarter; quarterIdx < currentQuarter; quarterIdx++) {
             reward += PRECISION * quarters[quarterIdx].reward / quarters[quarterIdx].shares * stake.shares[quarterIdx];
         }
-        return reward / PRECISION;
+        reward /= PRECISION;
+        if (stake.endQuarter <= currentQuarter) {
+            reward += stake.amount;
+        }
+        return reward;
     }
 
     /**
