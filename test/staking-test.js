@@ -93,8 +93,8 @@ describe('Staking', () => {
         expect(await staking.currentQuarter()).to.equal(1);
         
         // Upgrade
-        const Staking_upgrade = await ethers.getContractFactory('Staking_upgrade');
-        staking = await upgrades.upgradeProxy(staking.address, Staking_upgrade);
+        const stakingUpgrade = await ethers.getContractFactory('StakingUpgrade');
+        staking = await upgrades.upgradeProxy(staking.address, stakingUpgrade);
         await expectRevert.unspecified(staking.connect(stakers[0]).extend(0, 2));
 
         // Verify status was saved from previous contract
