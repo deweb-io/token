@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 contract Staking is Ownable {
     uint256 public constant QUARTER_LENGTH = 91 days;
     uint256 public constant PRECISION = 10**18;
@@ -71,12 +73,11 @@ contract Staking is Ownable {
     function calculateReward(Stake storage stake) internal view returns(uint256 reward) {
         for (uint16 quarterIdx = stake.firstUnclaimedQuarter; quarterIdx < currentQuarter; quarterIdx++) {
             reward += PRECISION * quarters[quarterIdx].reward / quarters[quarterIdx].shares * stake.shares[quarterIdx];
+            if (quarterIdx == stake.startQuarter) {
+                reward += stake.amount * PRECISION;
+            }
         }
-        reward /= PRECISION;
-        if (stake.endQuarter <= currentQuarter) {
-            reward += stake.amount;
-        }
-        return reward;
+        return reward / PRECISION;
     }
 
     /**
@@ -84,7 +85,6 @@ contract Staking is Ownable {
      * @param stake The stake for which reward is calculated.
      */
     function updateShare(Stake storage stake) internal returns(Stake storage updatedStake) {
-        promoteQuarter();
         require(stake.endQuarter > currentQuarter, "can not lock for less than one quarter");
         require(stake.endQuarter - currentQuarter <= 13, "can not lock for more than 13 quarters");
 
@@ -94,7 +94,7 @@ contract Staking is Ownable {
 
             // This only happens when quarterIdx == currentQuarter.
             if (quarterIdx == stake.startQuarter) {
-                newShare = newShare * (currentQuarterEnd - block.timestamp) / QUARTER_LENGTH;
+                newShare = newShare * (currentQuarterEnd - stake.startTime) / QUARTER_LENGTH;
             }
 
             stake.shares[quarterIdx] = newShare;
@@ -109,7 +109,7 @@ contract Staking is Ownable {
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
      */
     function declareReward(uint16 quarterIdx, uint256 amount) external {
-        promoteQuarter();
+        require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
         bbsToken.transferFrom(msg.sender, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
