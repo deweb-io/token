@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Staking is Initializable, OwnableUpgradeable {
+contract Staking_upgrade is Initializable, OwnableUpgradeable {
     uint256 public constant QUARTER_LENGTH = 91 days;
     uint256 public constant PRECISION = 10**18;
 
@@ -36,7 +36,7 @@ contract Staking is Initializable, OwnableUpgradeable {
     event StakeLocked(uint256 amount, uint16 endQuarter, address locker, bool isNew);
 
     /**
-     * @dev Initializer function. initializes the current quarter and current quarter end.
+     * @dev Constructor (should become initializer) - initializes the current quarter.
      * @param _bbsToken The address of the BBS token contract.
      */
     function initialize(IERC20 _bbsToken) public initializer {
@@ -92,7 +92,7 @@ contract Staking is Initializable, OwnableUpgradeable {
 
         for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.endQuarter; quarterIdx++) {
             uint256 oldShare = stake.shares[quarterIdx];
-            uint256 newShare = stake.amount * (100 + ((stake.endQuarter - quarterIdx - 1) * 25));
+            uint256 newShare = stake.amount * (200 + ((stake.endQuarter - quarterIdx - 1) * 25));
 
             // This only happens when quarterIdx == currentQuarter.
             if (quarterIdx == stake.startQuarter) {

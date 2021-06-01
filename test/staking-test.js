@@ -14,7 +14,7 @@ describe('Staking', () => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const Staking = await ethers.getContractFactory('Staking');
         bbsToken = await BBSToken.deploy();
-        staking = await Staking.deploy(bbsToken.address);
+        staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
         [owner, ...stakers] = await ethers.getSigners();
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
     });
@@ -79,5 +79,31 @@ describe('Staking', () => {
         await staking.connect(stakers[0]).extend(0, 3);
         expect((await staking.getShare(stakers[0].address, 0, 2)).toNumber()).to.equal(stakeSize * 100);
         expect((await staking.getShare(stakers[0].address, 0, 1)).toNumber()).to.equal(stakeSize * 125);
+    });
+
+    it('upgrade', async() => {
+        const stakeSize = 10**6;
+        await (await approveAndDoAs(stakers[0], stakeSize)).lock(stakeSize, 2);
+        expect((await staking.getShare(stakers[0].address, 0, 2)).toNumber()).to.equal(0);
+        expect((await staking.getShare(stakers[0].address, 0, 1)).toNumber()).to.equal(stakeSize * 100);
+
+        expect(await staking.currentQuarter()).to.equal(0);
+        await increaseTime();
+        staking.promoteQuarter();
+        expect(await staking.currentQuarter()).to.equal(1);
+        
+        // Upgrade
+        const Staking_upgrade = await ethers.getContractFactory('Staking_upgrade');
+        staking = await upgrades.upgradeProxy(staking.address, Staking_upgrade);
+        await expectRevert.unspecified(staking.connect(stakers[0]).extend(0, 2));
+
+        // Verify status was saved from previous contract
+        expect(await staking.currentQuarter()).to.equal(1);
+        expect((await staking.getShare(stakers[0].address, 0, 2)).toNumber()).to.equal(0);
+        expect((await staking.getShare(stakers[0].address, 0, 1)).toNumber()).to.equal(stakeSize * 100);
+
+        // Verify new logic is working
+        await (await approveAndDoAs(stakers[1], stakeSize)).lock(stakeSize, 3);
+        expect((await staking.getShare(stakers[1].address, 0, 2)).toNumber()).to.equal(stakeSize * 200);
     });
 });
