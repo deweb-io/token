@@ -2,6 +2,8 @@
 artifacts/
 build/
 cache/
+coverage.json
+coverage/
 eosio/*.abi
 eosio/*.wasm
 eosio/state.env

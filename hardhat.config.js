@@ -1,24 +1,18 @@
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
+require('@nomiclabs/hardhat-waffle');
 require('@openzeppelin/hardhat-upgrades');
-require('@openzeppelin/test-helpers');
-require('@nomiclabs/hardhat-ganache');
+require('solidity-coverage');
+require('hardhat-gas-reporter');
 module.exports = {
-    defaultNetwork: 'hardhat',
-    networks: {
-        hardhat: {
-            loggingEnabled: false
-        }
-    },
-    solidity: {
-        compilers: [
-             {
-                 version: '0.7.3'
-             },
-             {
-                 version: '0.6.12'
-             }
-        ]
+  solidity: {
+    version: '0.8.4',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
     }
-};
+  }
+}
