@@ -51,7 +51,7 @@ It is likely that we will also have quarterly rewards, probably over the same co
 
 `./contracts/Staking.sol`
 
-The staking contract (currently a WIP) distributes rewards on a quarterly basis to addresses that are willing to lock up their BBS tokens. The rewards for each quarter will be divided between the stakers according to the amount of tokens locked and the length of the locking period.
+The staking contract distributes rewards on a quarterly basis to addresses that are willing to lock up their BBS tokens. The rewards for each quarter will be divided between the stakers according to the amount of tokens locked and the length of the locking period.
 
 The essesntial idea is described and can be played with in this [web-based "paper" demo](https://creator-eco.github.io/token/staking.html).
 

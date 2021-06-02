@@ -11,7 +11,7 @@ async function main() {
     console.log('rewards deployed to:', rewards.address);
 
     const Staking = await hardhat.ethers.getContractFactory('Staking');
-    const staking = await Staking.deploy(bbsToken.address);
+    const staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
     await staking.deployed();
     console.log('staking deployed to:', staking.address);
 }
