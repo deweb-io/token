@@ -47,17 +47,6 @@ contract Staking is Initializable, OwnableUpgradeable {
     }
 
     /**
-     * @dev Promote the current quarter if a quarter ended and has a reward.
-     */
-    function promoteQuarter() public {
-        require(block.timestamp >= currentQuarterEnd, "currnet quarter is not yet over");
-        require(quarters[currentQuarter].reward > 0, "currnet quarter has no reward");
-        currentQuarter++;
-        currentQuarterEnd += QUARTER_LENGTH;
-        emit QuarterPromoted(currentQuarter);
-    }
-
-    /**
      * @dev Get the number of stakes for an address (automatic getters require the index of the stake).
      * @param staker The address of the owner.
      */
@@ -73,6 +62,29 @@ contract Staking is Initializable, OwnableUpgradeable {
      */
     function getShare(address staker, uint16 stakeIdx, uint16 quarterIdx) external view returns(uint256 share) {
         return shares[staker][stakeIdx][quarterIdx];
+    }
+
+    /**
+     * @dev Declare a reward for a quarter and transfers the tokens to the contract.
+     * @param quarterIdx The index of the quarter a reward is declared for.
+     * @param amount The amount of tokens in the reward - must have sufficient allowance.
+     */
+    function declareReward(uint16 quarterIdx, uint256 amount) external {
+        require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
+        bbsToken.transferFrom(msg.sender, address(this), amount);
+        quarters[quarterIdx].reward += amount;
+        emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
+    }
+
+    /**
+     * @dev Promote the current quarter if a quarter ended and has a reward.
+     */
+    function promoteQuarter() public {
+        require(block.timestamp >= currentQuarterEnd, "currnet quarter is not yet over");
+        require(quarters[currentQuarter].reward > 0, "currnet quarter has no reward");
+        currentQuarter++;
+        currentQuarterEnd += QUARTER_LENGTH;
+        emit QuarterPromoted(currentQuarter);
     }
 
     /**
@@ -101,8 +113,7 @@ contract Staking is Initializable, OwnableUpgradeable {
     }
 
     /**
-     * @dev Calculate the unclaimed rewards a stake deserves, including the
-     * staked tokens if the stake is unlocked, and mark them as claimed.
+     * @dev Calculate the unclaimed rewards a stake deserves and mark them as claimed.
      * @param staker The address of the staker.
      * @param stakeIdx The index of the stake for that staker.
      */
@@ -125,18 +136,6 @@ contract Staking is Initializable, OwnableUpgradeable {
         stakes[staker][stakeIdx].firstUnclaimedQuarter = currentQuarter;
 
         return amount / PRECISION;
-    }
-
-    /**
-     * @dev Declare a reward for a quarter and transfers the tokens to the contract.
-     * @param quarterIdx The index of the quarter a reward is declared for.
-     * @param amount The amount of tokens in the reward - must have sufficient allowance.
-     */
-    function declareReward(uint16 quarterIdx, uint256 amount) external {
-        require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
-        bbsToken.transferFrom(msg.sender, address(this), amount);
-        quarters[quarterIdx].reward += amount;
-        emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
 
     /**

@@ -1,5 +1,9 @@
+const {execSync} = require('child_process');
 const {expect} = require('chai');
 const {expectRevert} = require('@openzeppelin/test-helpers');
+const fs = require('fs');
+const hardhat = require('hardhat');
+const path = require('path');
 
 describe('Staking', () => {
     const stakeAmount = 10**6;
@@ -140,15 +144,24 @@ describe('Staking', () => {
     it('contract upgrade', async() => {
         await stake(2);
         await increaseTime(1);
-        const stakingUpgrade = await ethers.getContractFactory('StakingUpgrade');
-        staking = await upgrades.upgradeProxy(staking.address, stakingUpgrade);
+
+        // Create and deploy upgrade contract.
+        const originalContract = path.join(hardhat.config.paths.sources, 'Staking.sol')
+        const upgradeContract = path.join(hardhat.config.paths.sources, 'StakingUpgrade.sol');
+        try{fs.unlinkSync(upgradeContract);}catch(error){}
+        fs.writeFileSync(upgradeContract, fs.readFileSync(originalContract, 'utf-8')
+            .replace('contract Staking is', 'contract StakingUpgrade is')
+            .replace('quarterIdx - 1) * 25)', 'quarterIdx - 1) * 50)'));
+        execSync('npx hardhat compile 2> /dev/null');
+        staking = await upgrades.upgradeProxy(staking.address, await ethers.getContractFactory('StakingUpgrade'));
 
         expect(await staking.currentQuarter()).to.equal(1);
         expect((await staking.getShare(stakers[0].address, 0, 2))).to.equal(0);
         expect((await staking.getShare(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
 
         await expectRevert.unspecified(staking.connect(stakers[0]).extend(0, 2));
-        await stake(3);
-        expect((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 200);
+        await stake(4);
+        expect((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
+        expect((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
     });
 });
