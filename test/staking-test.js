@@ -173,5 +173,6 @@ describe('Staking', () => {
         await stake(4);
         expectBigNum((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
+
     });
 });
