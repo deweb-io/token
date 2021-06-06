@@ -57,9 +57,9 @@ The essesntial idea is described and can be played with in this [web-based "pape
 
 ## Tests
 
-The eos components are either completely standard or maintained and tested by Bancor, so we only need tests for the ethereum components. These tests are all run on hardhat, which makes it easy to test on the internal hardhat network, on a local ganache-cli environment, or on a mainnet fork.
+The eos components are either completely standard or maintained and tested by Bancor, so we only need tests for the ethereum components. These tests are all run on Hardhat, which makes it easy to test on the internal Hardhat network, on a local ganache-cli environment, or on a mainnet fork.
 
-To test on hardhat network:
+To test on Hardhat network:
 ```shell
 npx hardhat test
 ```
@@ -80,7 +80,7 @@ Currently we have two deployment procedures, one for eos and one for ethereum.
 
 ### ethereum Deployment
 
-All our ethereum contracts are compiled and deployed by a hardhat script.
+All our ethereum contracts are compiled and deployed by a Hardhat script.
 
 `./scripts/deploy.js`
 
@@ -96,7 +96,11 @@ npx hardhat run scripts/deploy.js --network <network name>
 
 Note that the deployment can be done from any account with sufficient funds to pay for gas, and after deployment, ownership of the contracts will be fully transfered to a gnosis safe held by trusted custodians under an n-out-of-m signatures scheme.
 
-TODO: Add etherscan support with the [hardhat plugin](https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html).
+#### Etherscan support
+
+We use Hardhat's Etherscan plugin to automoatically publish our contracts to Etherscan.
+
+TODO: Yanis, please provide a short explanation of how to configure this.
 
 ### eos Deployment
 
