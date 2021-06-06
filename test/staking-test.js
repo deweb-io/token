@@ -37,6 +37,10 @@ describe('Staking', () => {
         await (await approveAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter);
     }
 
+    async function getBalance(stakerId) {
+        return (await bbsToken.balanceOf(stakers[stakerId].address)).toNumber();
+    }
+
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const Staking = await ethers.getContractFactory('Staking');
@@ -102,24 +106,24 @@ describe('Staking', () => {
     it('stake claiming', async() => {
         await stake(13);
         await increaseTime(1);
-        expectBigNum((await bbsToken.balanceOf(stakers[0].address))).to.equal(0);
-        expectBigNum((await bbsToken.balanceOf(stakers[1].address))).to.equal(0);
+        expect(await getBalance(0)).to.equal(0);
+        expect(await getBalance(1)).to.equal(0);
 
         let balance0, balance1;
         await staking.connect(stakers[0]).claim(0);
         await staking.connect(stakers[1]).claim(0);
         await expectRevert(staking.connect(stakers[0]).claim(0), 'nothing to claim');
         await expectRevert(staking.connect(stakers[1]).claim(0), 'nothing to claim');
-        balance0 = (await bbsToken.balanceOf(stakers[0].address)).toNumber();
-        balance1 = (await bbsToken.balanceOf(stakers[1].address)).toNumber();
+        balance0 = (await getBalance(0));
+        balance1 = (await getBalance(1));
         expect(balance0 / balance1).to.be.within(1.99, 2.01);
 
         await increaseTime(12);
         expect(await staking.currentQuarter()).to.equal(13);
         await staking.connect(stakers[0]).claim(0);
         await staking.connect(stakers[1]).claim(0);
-        balance0 = (await bbsToken.balanceOf(stakers[0].address)).toNumber();
-        balance1 = (await bbsToken.balanceOf(stakers[1].address)).toNumber();
+        balance0 = (await getBalance(0));
+        balance1 = (await getBalance(1));
         expect((2 * stakeAmount) + (13 * rewardAmount) - balance0 - balance1).to.be.below(2);
     });
 
