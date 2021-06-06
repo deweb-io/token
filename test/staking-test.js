@@ -121,8 +121,7 @@ describe('Staking', () => {
         const firstQuarterShare = await staking.getShare(stakers[1].address, 0, 0);
         expect((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
         expect((await staking.getShare(stakers[1].address, 0, 2))).to.equal(0);
-
-        await expectRevert.unspecified(staking.connect(stakers[1]).extend(1, 3));
+        await expectRevert.unspecified(staking.connect(stakers[1]).extend(0, 2));
         await staking.connect(stakers[1]).extend(0, 3);
         expect(await staking.getShare(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
         expect((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
