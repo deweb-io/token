@@ -2,7 +2,7 @@
 // BBS staking rewards program.
 // Token holders lock transfer approved tokens until the end of the current quarter plus 0 to 12 additional quarters.
 // Rewards are divided pro-rata, with a 25% boost given for every locked quarter beyond the current one.
-pragma solidity 0.8.6;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
