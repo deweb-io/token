@@ -17,6 +17,9 @@ describe('Staking', () => {
     }
 
     async function increaseTime(quarters){
+        if (isNaN(quarters) == true)
+            throw new Error('increaseTime failed: quarters parameter is not a valid number');
+
         await network.provider.send('evm_increaseTime', [quarters * quarterLength]);
         await network.provider.send('evm_mine');
         let currentTime, currentQuarter, currentQuarterEnd;
@@ -173,6 +176,17 @@ describe('Staking', () => {
         await stake(4);
         expectBigNum((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
+    });
 
+    it('multiple stakes for account', async() => {
+        await stake(4);
+        await stake(4);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 2))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 125);
+        const maxShareQ0 = stakeAmount * 175;
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 0))).to.be.within(
+            maxShareQ0 - 1000, maxShareQ0);
+        expectBigNum((await staking.getShare(stakers[0].address, 1, 0))).to.be.within(
+            (maxShareQ0 / 2 - 1000), maxShareQ0 / 2);
     });
 });
