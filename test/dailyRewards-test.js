@@ -1,5 +1,5 @@
 const {expect} = require('chai');
-const {expectRevert} = require('@openzeppelin/test-helpers');
+const {expectRevert} = require('./utils');
 
 describe('DailyRewards', () => {
     let accounts, bbsToken, dailyRewards, plannedRewards, events;
@@ -13,8 +13,9 @@ describe('DailyRewards', () => {
     });
 
     it('setting rewards', async() => {
-        await expectRevert.unspecified(dailyRewards.setRewards());
-        await expectRevert.unspecified(dailyRewards.connect(accounts[1]).declareRewards(...plannedRewards));
+        await expectRevert(dailyRewards.setRewards(), 'no rewards declared');
+        await expectRevert(
+            dailyRewards.connect(accounts[1]).declareRewards(...plannedRewards), 'caller is not the owner');
         events = await dailyRewards.queryFilter('RewardsDeclared', (
             await dailyRewards.declareRewards(...plannedRewards)).blockHash);
         expect(events.length).to.equal(1);
@@ -25,7 +26,7 @@ describe('DailyRewards', () => {
             expect(declaredReward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
         }
 
-        await expectRevert.unspecified(dailyRewards.setRewards());
+        await expectRevert(dailyRewards.setRewards(), 'rewards declared too recently');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DECLARATION_INTERVAL()).toNumber()]);
         events = await dailyRewards.queryFilter('RewardsSet', (
             await dailyRewards.setRewards()).blockHash);
@@ -62,7 +63,7 @@ describe('DailyRewards', () => {
                 plannedRewards[1][rewardIndex]);
         }
 
-        await expectRevert.unspecified(dailyRewards.distributeRewards());
+        await expectRevert(dailyRewards.distributeRewards(), 'rewards distributed too recently');
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
         await dailyRewards.distributeRewards();
     });

@@ -1,6 +1,6 @@
 const {execSync} = require('child_process');
 const {expect} = require('chai');
-const {expectRevert} = require('@openzeppelin/test-helpers');
+const {expectRevert, expectBigNum} = require('./utils');
 const fs = require('fs');
 const hardhat = require('hardhat');
 const path = require('path');
@@ -51,15 +51,17 @@ describe('Staking', () => {
         await increaseTime(1);
         expect(await staking.currentQuarter()).to.equal(1);
 
-        await expectRevert.unspecified((await approveAndDoAs(owner, rewardAmount)).declareReward(0, rewardAmount));
+        await expectRevert(
+            (await approveAndDoAs(owner, rewardAmount)).declareReward(0, rewardAmount),
+            'can not declare rewards for past quarters');
         await (await approveAndDoAs(owner, rewardAmount)).declareReward(1, rewardAmount);
-        await expectRevert.unspecified(staking.promoteQuarter());
+        await expectRevert(staking.promoteQuarter(), 'currnet quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await staking.promoteQuarter();
         expect(await staking.currentQuarter()).to.equal(2);
 
         await network.provider.send('evm_increaseTime', [quarterLength]);
-        await expectRevert.unspecified(staking.promoteQuarter());
+        await expectRevert(staking.promoteQuarter(), 'currnet quarter has no reward');
         await (await approveAndDoAs(owner, rewardAmount)).declareReward(2, rewardAmount);
         await staking.promoteQuarter();
         expect(await staking.currentQuarter()).to.equal(3);
@@ -70,23 +72,28 @@ describe('Staking', () => {
 
         // These should fail because quarter was not promoted. We really must stop using unspecified.
         await network.provider.send('evm_increaseTime', [quarterLength]);
-        await expectRevert.unspecified((await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 13));
-        await expectRevert.unspecified(staking.connect(stakers[0]).claim(0));
-        await expectRevert.unspecified(staking.connect(stakers[0]).restake(0));
-        await expectRevert.unspecified(staking.connect(stakers[0]).extend(0, 10));
+        await expectRevert(
+            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 13), 'quarter must be promoted');
+        await expectRevert(staking.connect(stakers[0]).claim(0), 'quarter must be promoted');
+        await expectRevert(staking.connect(stakers[0]).restake(0), 'quarter must be promoted');
+        await expectRevert(staking.connect(stakers[0]).extend(0, 10), 'quarter must be promoted');
 
     });
 
     it('stake creation', async() => {
-        await expectRevert.unspecified(staking.lock(stakeAmount, 1));
-        await expectRevert.unspecified((await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 0));
-        await expectRevert.unspecified((await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 14));
+        await expectRevert(staking.lock(stakeAmount, 1), 'transfer amount exceeds balance');
+        await expectRevert(
+            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 0),
+            'can not lock for less than one quarter');
+        await expectRevert(
+            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 14),
+            'can not lock for more than 13 quarters');
 
         await stake(13);
-        expect(await staking.getNumOfStakes(stakers[0].address)).to.equal(1);
-        expect((await staking.getShare(stakers[0].address, 0, 13))).to.equal(0);
-        expect((await staking.getShare(stakers[0].address, 0, 12))).to.equal(stakeAmount * 100);
-        expect((await staking.getShare(stakers[0].address, 0, 11))).to.equal(stakeAmount * 125);
+        expectBigNum(await staking.getNumOfStakes(stakers[0].address)).to.equal(1);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 13))).to.equal(0);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 12))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 11))).to.equal(stakeAmount * 125);
         expect(
             (await staking.getShare(stakers[0].address, 0, 0)) / (await staking.getShare(stakers[1].address, 0, 0))
         ).to.be.within(1.99, 2.01);
@@ -95,14 +102,14 @@ describe('Staking', () => {
     it('stake claiming', async() => {
         await stake(13);
         await increaseTime(1);
-        expect((await bbsToken.balanceOf(stakers[0].address))).to.equal(0);
-        expect((await bbsToken.balanceOf(stakers[1].address))).to.equal(0);
+        expectBigNum((await bbsToken.balanceOf(stakers[0].address))).to.equal(0);
+        expectBigNum((await bbsToken.balanceOf(stakers[1].address))).to.equal(0);
 
         let balance0, balance1;
         await staking.connect(stakers[0]).claim(0);
         await staking.connect(stakers[1]).claim(0);
-        await expectRevert.unspecified(staking.connect(stakers[0]).claim(0));
-        await expectRevert.unspecified(staking.connect(stakers[1]).claim(0));
+        await expectRevert(staking.connect(stakers[0]).claim(0), 'nothing to claim');
+        await expectRevert(staking.connect(stakers[1]).claim(0), 'nothing to claim');
         balance0 = (await bbsToken.balanceOf(stakers[0].address)).toNumber();
         balance1 = (await bbsToken.balanceOf(stakers[1].address)).toNumber();
         expect(balance0 / balance1).to.be.within(1.99, 2.01);
@@ -119,14 +126,14 @@ describe('Staking', () => {
     it('stake extension', async() => {
         await stake(2);
         const firstQuarterShare = await staking.getShare(stakers[1].address, 0, 0);
-        expect((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
-        expect((await staking.getShare(stakers[1].address, 0, 2))).to.equal(0);
-        await expectRevert.unspecified(staking.connect(stakers[1]).extend(0, 2));
+        expectBigNum((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.getShare(stakers[1].address, 0, 2))).to.equal(0);
+        await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current end quarter');
         await staking.connect(stakers[1]).extend(0, 3);
         expect(await staking.getShare(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
-        expect((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
-        expect((await staking.getShare(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
-        expect((await staking.getShare(stakers[1].address, 0, 3))).to.equal(0);
+        expectBigNum((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.getShare(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.getShare(stakers[1].address, 0, 3))).to.equal(0);
     });
 
     it('stake restaking', async() => {
@@ -134,10 +141,10 @@ describe('Staking', () => {
         await increaseTime(1);
         await staking.connect(stakers[0]).claim(0);
         await increaseTime(1);
-        expect((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
+        expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
         await staking.connect(stakers[0]).restake(0);
-        expect((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount + (0.5 * rewardAmount));
-        await expectRevert.unspecified(staking.connect(stakers[0]).restake(0));
+        expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount + (0.5 * rewardAmount));
+        await expectRevert(staking.connect(stakers[0]).restake(0), 'no rewards to restake');
     });
 
     it('contract upgrade', async() => {
@@ -155,12 +162,12 @@ describe('Staking', () => {
         staking = await upgrades.upgradeProxy(staking.address, await ethers.getContractFactory('StakingUpgrade'));
 
         expect(await staking.currentQuarter()).to.equal(1);
-        expect((await staking.getShare(stakers[0].address, 0, 2))).to.equal(0);
-        expect((await staking.getShare(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 2))).to.equal(0);
+        expectBigNum((await staking.getShare(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
 
-        await expectRevert.unspecified(staking.connect(stakers[0]).extend(0, 2));
+        await expectRevert(staking.connect(stakers[0]).extend(0, 2), 'must extend beyond current end quarter');
         await stake(4);
-        expect((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
-        expect((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
+        expectBigNum((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
     });
 });

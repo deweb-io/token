@@ -1,5 +1,5 @@
 const {expect} = require('chai');
-const {expectRevert} = require('@openzeppelin/test-helpers');
+const {expectRevert, expectBigNum} = require('./utils');
 
 describe('BBSToken', () => {
     let accounts, bbsToken, ownerAddress, notOwnerAddress;
@@ -18,14 +18,14 @@ describe('BBSToken', () => {
     });
 
     it('test tokens minting', async() => {
-        expect((await bbsToken.balanceOf(ownerAddress)).toNumber()).to.equal(0);
-        expect((await bbsToken.balanceOf(notOwnerAddress)).toNumber()).to.equal(0);
+        expectBigNum(await bbsToken.balanceOf(ownerAddress)).to.equal(0);
+        expectBigNum(await bbsToken.balanceOf(notOwnerAddress)).to.equal(0);
 
         await bbsToken.mint(ownerAddress, 100);
-        expect((await bbsToken.balanceOf(ownerAddress)).toNumber()).to.equal(100);
-        expect((await bbsToken.balanceOf(notOwnerAddress)).toNumber()).to.equal(0);
+        expectBigNum(await bbsToken.balanceOf(ownerAddress)).to.equal(100);
+        expectBigNum(await bbsToken.balanceOf(notOwnerAddress)).to.equal(0);
 
-        await expectRevert.unspecified(bbsToken.connect(accounts[1]).transferOwnership(notOwnerAddress));
-        await expectRevert.unspecified(bbsToken.connect(accounts[1]).mint(notOwnerAddress, 100));
+        await expectRevert(bbsToken.connect(accounts[1]).transferOwnership(notOwnerAddress), 'caller is not the owner');
+        await expectRevert(bbsToken.connect(accounts[1]).mint(notOwnerAddress, 100), 'caller is not the owner');
     });
 });

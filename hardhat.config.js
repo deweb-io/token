@@ -1,10 +1,9 @@
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-require('@nomiclabs/hardhat-waffle');
 require('@openzeppelin/hardhat-upgrades');
-require('solidity-coverage');
 require('hardhat-gas-reporter');
+require('solidity-coverage');
 module.exports = {
   solidity: {
     version: '0.8.4',

@@ -20,11 +20,10 @@
         "url": "http://github.com/Creator-Eco/token.git"
     },
     "dependencies": {
-        "@nomiclabs/hardhat-waffle": "^2.0.1",
         "@openzeppelin/contracts": "^4.1.0",
         "@openzeppelin/contracts-upgradeable": "^4.1.0",
         "@openzeppelin/hardhat-upgrades": "^1.8.2",
-        "@openzeppelin/test-helpers": "^0.5.11",
+        "chai": "^4.3.4",
         "hardhat": "^2.3.0",
         "hardhat-gas-reporter": "^1.0.4",
         "solidity-coverage": "^0.7.16"
