@@ -96,15 +96,15 @@ npx hardhat run scripts/deploy.js --network <network name>
 
 Note that the deployment can be done from any account with sufficient funds to pay for gas, and after deployment, ownership of the contracts will be fully transfered to a gnosis safe held by trusted custodians under an n-out-of-m signatures scheme.
 
-#### Etherscan support
+#### Etherscan Support
 
 We use Hardhat's Etherscan plugin to automoatically publish our contracts to Etherscan.
 
-Etherscan API-Key token is required to be added to hardhat.config.js:
+Etherscan API-Key token is required to be added to `hardhat.config.js`:
 ```javascript
 etherscan: {
-    "apiKey": 'API_KEY'
-},
+    apiKey: 'API_KEY'
+}
 ```
 
 After Contract deployment:
