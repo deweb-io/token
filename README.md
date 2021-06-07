@@ -101,9 +101,11 @@ Note that the deployment can be done from any account with sufficient funds to p
 We use Hardhat's Etherscan plugin to automoatically publish our contracts to Etherscan.
 
 Etherscan API-Key token is required to be added to hardhat.config.js:
-etherscan: {
-    apiKey: 'API_KEY'
+```javascript
+"etherscan": {
+    "apiKey": 'API_KEY'
 },
+```
 
 After Contract deployment:
 ```shell
