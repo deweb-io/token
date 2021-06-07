@@ -102,7 +102,7 @@ We use Hardhat's Etherscan plugin to automoatically publish our contracts to Eth
 
 Etherscan API-Key token is required to be added to hardhat.config.js:
 ```javascript
-"etherscan": {
+etherscan: {
     "apiKey": 'API_KEY'
 },
 ```
