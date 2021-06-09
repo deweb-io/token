@@ -98,11 +98,11 @@ describe('Staking', () => {
 
         await stake(13);
         expectBigNum(await staking.getNumOfStakes(stakers[0].address)).to.equal(1);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 13))).to.equal(0);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 12))).to.equal(stakeAmount * 100);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 11))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 13))).to.equal(0);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 12))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 11))).to.equal(stakeAmount * 125);
         expect(
-            (await staking.getShare(stakers[0].address, 0, 0)) / (await staking.getShare(stakers[1].address, 0, 0))
+            (await staking.shares(stakers[0].address, 0, 0)) / (await staking.shares(stakers[1].address, 0, 0))
         ).to.be.within(1.99, 2.01);
     });
 
@@ -132,15 +132,15 @@ describe('Staking', () => {
 
     it('stake extension', async() => {
         await stake(2);
-        const firstQuarterShare = await staking.getShare(stakers[1].address, 0, 0);
-        expectBigNum((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
-        expectBigNum((await staking.getShare(stakers[1].address, 0, 2))).to.equal(0);
+        const firstQuarterShare = await staking.shares(stakers[1].address, 0, 0);
+        expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(0);
         await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current end quarter');
         await staking.connect(stakers[1]).extend(0, 3);
-        expect(await staking.getShare(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
-        expectBigNum((await staking.getShare(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
-        expectBigNum((await staking.getShare(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
-        expectBigNum((await staking.getShare(stakers[1].address, 0, 3))).to.equal(0);
+        expect(await staking.shares(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
+        expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.shares(stakers[1].address, 0, 3))).to.equal(0);
     });
 
     it('stake restaking', async() => {
@@ -169,24 +169,24 @@ describe('Staking', () => {
         staking = await upgrades.upgradeProxy(staking.address, await ethers.getContractFactory('StakingUpgrade'));
 
         expect(await staking.currentQuarter()).to.equal(1);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 2))).to.equal(0);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 2))).to.equal(0);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
 
         await expectRevert(staking.connect(stakers[0]).extend(0, 2), 'must extend beyond current end quarter');
         await stake(4);
-        expectBigNum((await staking.getShare(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
-        expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
+        expectBigNum((await staking.shares(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
+        expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
     });
 
     it('multiple stakes for account', async() => {
         await stake(4);
         await stake(4);
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 2))).to.equal(stakeAmount * 125);
-        expectBigNum((await staking.getShare(stakers[0].address, 1, 2))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.shares(stakers[0].address, 0, 2))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 125);
         const maxShareQ0 = stakeAmount * 175;
-        expectBigNum((await staking.getShare(stakers[0].address, 0, 0))).to.be.within(
+        expectBigNum((await staking.shares(stakers[0].address, 0, 0))).to.be.within(
             maxShareQ0 - 1000, maxShareQ0);
-        expectBigNum((await staking.getShare(stakers[0].address, 1, 0))).to.be.within(
+        expectBigNum((await staking.shares(stakers[0].address, 1, 0))).to.be.within(
             (maxShareQ0 / 2 - 1000), maxShareQ0 / 2);
     });
 });
