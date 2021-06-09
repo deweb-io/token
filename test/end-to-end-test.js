@@ -5,63 +5,8 @@ const fs = require('fs');
 const hardhat = require('hardhat');
 const path = require('path');
 
-SCENARIOS = [
-    [
-        {action: 'lock', actor: 1, amount: 100, endQuarter: 10},
-        {action: 'declareReward', amount: 100, quarter: 0},
-        {action: 'increaseTime', quarters: 1},
-        {action: 'claim', actor: 1, stake: 0},
-        {action: 'assertBalance', actor: 1, amount: 100}
-    ]
-]
-
 describe('end to end tests', () => {
-    const stakeAmount = 10**6;
-    const rewardAmount = 10**9;
     let owner, stakers, bbsToken, staking, quarterLength;
-
-    async function approveAndDoAs(signer, amount){
-        await bbsToken.mint(signer.address, amount);
-        await bbsToken.connect(signer).approve(staking.address, amount);
-        return staking.connect(signer);
-    }
-
-    async function increaseTime(quarters){
-        await network.provider.send('evm_increaseTime', [quarters * quarterLength]);
-        await network.provider.send('evm_mine');
-        let currentTime, currentQuarter, currentQuarterEnd;
-        while(true){
-            currentQuarterEnd = await staking.currentQuarterEnd();
-            currentQuarter = await staking.currentQuarter()
-            currentTime = ethers.BigNumber.from(((await network.provider.send(
-                'eth_getBlockByNumber', ['latest', false])).timestamp));
-            if(currentTime < currentQuarterEnd) break;
-            await (await approveAndDoAs(owner, rewardAmount)).declareReward(currentQuarter, rewardAmount);
-            await staking.promoteQuarter();
-        }
-    }
-
-    async function runStep(step){
-        if(step['action'] === ''){
-        }else if(step['action'] === ''){
-        }
-    }
-
-    /**
-     * @dev Performs the stake by the given stakes details.
-     * @param stakes Array with stakes details [[staker, stakeAmount, endQuarter, quartersToIncreaseBeforeLock],...]
-     */
-    async function stake(stakes){
-        for (const stake of stakes) {
-            if (stake[3] > 0)
-                await increaseTime(stake[3]);
-            await (await approveAndDoAs(stake[0], stake[1])).lock(stake[1], stake[2]);
-        };
-    }
-
-    async function getBalance(stakerId) {
-        return (await bbsToken.balanceOf(stakers[stakerId].address)).toNumber();
-    }
 
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
@@ -72,53 +17,124 @@ describe('end to end tests', () => {
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
     });
 
-    it('end-to-end-tests-1', async() => {
-        // Quarter 0
-        await stake([
-            [stakers[0], stakeAmount, 3, 0],
-            [stakers[1], stakeAmount, 3, 0],
-            [stakers[2], stakeAmount, 3, 0]]);
-        await increaseTime(1);
+    async function getTime(){
+        await network.provider.send('evm_mine');
+        const stakingQuarter = await staking.currentQuarter();
+        const quarterEnd = (await staking.currentQuarterEnd()).toNumber();
+        const currentTime = ethers.BigNumber.from(
+            (await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp).toNumber();
+        const realQuarter = stakingQuarter + (1 - ((quarterEnd - currentTime) / quarterLength));
+        return {
+            realQuarter: realQuarter,
+            currentTime: currentTime,
+            quarterEnd: quarterEnd,
+            stakingQuarter: stakingQuarter
+        };
+    }
 
-        // Quarter 1
-        /**
-         * The following cleanup the rewards from the first quarter by:
-         * 1. claime the reward.
-         * 2. transfer the rewards (to have balance of 0).
-         */
-        for (const stakerId of [0, 1, 2]) {
-            await staking.connect(stakers[stakerId]).claim(0);
-            await (bbsToken.connect(stakers[stakerId]).transfer(owner.address, await getBalance(stakerId)));
-            expect((await getBalance(stakerId))).to.equal(0);
+    async function increaseTimeTo(quarterIdx){
+        let {realQuarter, currentTime, quarterEnd, stakingQuarter} = await getTime();
+
+        if(realQuarter > quarterIdx) throw(`can not increase time from ${realQuarter} to ${quarterIdx}`)
+
+        await network.provider.send('evm_increaseTime', [(quarterIdx - realQuarter) * quarterLength]);
+        await network.provider.send('evm_mine');
+        currentTime = (await getTime()).currentTime;
+        while(currentTime >= quarterEnd){
+            await staking.promoteQuarter();
+            quarterEnd = await staking.currentQuarterEnd();
         }
-        await increaseTime(1);
 
-        // Quarter 2
-        expect(await staking.currentQuarter()).to.equal(2);
-        await staking.connect(stakers[0]).claim(0);
-        expect(await getBalance(0)).to.equal(Math.floor(rewardAmount / 3));
+        realQuarter = (await getTime()).realQuarter;
+        console.log(`current quarter it is now ${realQuarter} (${quarterIdx} requested)`);
+    }
 
-        await staking.connect(stakers[1]).restake(0);
-        expectBigNum((await staking.stakes(stakers[1].address, 0)).amount).to.equal(
-            stakeAmount + (Math.floor(rewardAmount / 3)));
+    async function approveAndDoAs(signer, amount){
+        await bbsToken.mint(signer.address, amount);
+        await bbsToken.connect(signer).approve(staking.address, amount);
+        return staking.connect(signer);
+    }
 
-        await staking.connect(stakers[2]).extend(0, 5);
+    async function declareReward(quarterIdx, rewardAmount){
+        await (await approveAndDoAs(owner, rewardAmount)).declareReward(quarterIdx, rewardAmount);
+        console.log(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
+    }
 
-        await increaseTime(1);
+    async function lock(staker, amount, endQuarter){
+        await (await approveAndDoAs(staker, amount)).lock(amount, endQuarter);
+        console.log(`locked ${amount} tokens until ${endQuarter} for ${staker.address}`);
+    }
 
-        // Quarter 3
-        expect(await staking.currentQuarter()).to.equal(3);
-        totalshares = (await (await staking.quarters(2)).shares).toNumber();
-        staker0SharesQ2 = (await staking.getShare(stakers[0].address, 0, 2)).toNumber();
-        staker1SharesQ2 = (await staking.getShare(stakers[1].address, 0, 2)).toNumber();
-        staker2SharesQ2 = (await staking.getShare(stakers[2].address, 0, 2)).toNumber();
+    async function extend(staker, stakeIdx, endQuarter, shouldBe){
+        await staking.connect(staker).extend(stakeIdx, endQuarter);
+        const shares = (await staking.shares(staker.address, stakeIdx, await staking.currentQuarter())).toNumber();
+        if(typeof(shouldBe) === typeof(1)) expect(shares).to.equal(shouldBe);
+        console.log(`extended ${staker.address}/${stakeIdx} until ${endQuarter}, current shares are ${shares}`);
+    }
 
-        for (const stakerId of [0, 1, 2])
-            await staking.connect(stakers[stakerId]).claim(0);
+    async function restake(staker, stakeIdx, shouldBe){
+        const startingAmount = (await staking.stakes(staker.address, stakeIdx)).amount;
+        await staking.connect(staker).restake(stakeIdx);
+        const stakeChange = (await staking.stakes(staker.address, stakeIdx)).amount - startingAmount;
+        if(typeof(shouldBe) === typeof(1)) expect(stakeChange).to.equal(shouldBe);
+        console.log(`restaked ${staker.address}/${stakeIdx} for an added ${stakeChange}`);
+    }
 
-        expect(await getBalance(0)).to.equal(stakeAmount + Math.floor(rewardAmount / 3) + Math.floor(rewardAmount * (staker0SharesQ2 / totalshares)));
-        expect(await getBalance(1)).to.equal(stakeAmount + Math.floor(rewardAmount / 3) + Math.floor(rewardAmount * (staker1SharesQ2 / totalshares)));
-        const balance2 = await getBalance(2);
-        expect(balance2 - (Math.floor(rewardAmount / 3) + Math.floor(rewardAmount * (staker2SharesQ2 / totalshares)))).below(1.01);
+    async function getBalance(staker){
+        return (await bbsToken.balanceOf(staker.address)).toNumber();
+    }
+
+    async function claim(staker, stakeIdx, shouldBe){
+        const startingBalance = await getBalance(staker);
+        await staking.connect(staker).claim(stakeIdx);
+        const claimAmount = (await getBalance(staker)) - startingBalance;
+        if(typeof(shouldBe) === typeof(1)) expect(claimAmount).to.equal(shouldBe);
+        console.log(`claimed ${staker.address}/${stakeIdx} and got ${claimAmount}`);
+    }
+
+    async function runScenario(steps){
+        const functions = {
+            declareReward: async(step) => await declareReward(step.quarterIdx, step.amount),
+            lock: async(step) => await lock(step.staker, step.amount, step.endQuarter),
+            increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
+            extend: async(step) => await extend(step.staker, step.stakeIdx, step.endQuarter, step.shouldBe),
+            restake: async(step) => await restake(step.staker, step.stakeIdx, step.shouldBe),
+            claim: async(step) => await claim(step.staker, step.stakeIdx, step.shouldBe)
+        };
+        const names = {
+            alice: stakers[0],
+            bob: stakers[1],
+            carol: stakers[2]
+        };
+        for(const [stepIdx, step] of steps.entries()){
+            console.log(`running step ${stepIdx} - ${step.action}`);
+            if(!(step.action in functions)) throw(`unknown action ${step.action}`);
+            if('staker' in step) step.staker = names[step.staker];
+            await functions[step.action](step);
+        }
+    }
+
+    it('end-to-end-tests-1', async() => {
+        await runScenario([
+            {action: 'declareReward', quarterIdx: 0, amount: 10**9},
+            {action: 'declareReward', quarterIdx: 1, amount: 10**9},
+            {action: 'declareReward', quarterIdx: 2, amount: 10**9},
+            {action: 'declareReward', quarterIdx: 3, amount: 10**9},
+            {action: 'lock', staker: 'alice', amount: 10**6, endQuarter: 3},
+            {action: 'lock', staker: 'bob', amount: 10**6, endQuarter: 3},
+            {action: 'lock', staker: 'carol', amount: 10**6, endQuarter: 3},
+            {action: 'increaseTimeTo', quarterIdx: 1},
+            {action: 'claim', staker: 'alice', stakeIdx: 0},
+            {action: 'claim', staker: 'bob', stakeIdx: 0},
+            {action: 'claim', staker: 'carol', stakeIdx: 0},
+            {action: 'increaseTimeTo', quarterIdx: 2},
+            {action: 'claim', staker: 'alice', stakeIdx: 0, shouldBe: 333333333},
+            {action: 'restake', staker: 'bob', stakeIdx: 0, shouldBe: 333333333},
+            {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, shouldBe: 10**6 * 150},
+            {action: 'increaseTimeTo', quarterIdx: 3},
+            {action: 'claim', staker: 'alice', stakeIdx: 0, shouldBe: 3968827},
+            {action: 'claim', staker: 'bob', stakeIdx: 0, shouldBe: 1326911264},
+            {action: 'claim', staker: 'carol', stakeIdx: 0, shouldBe: 337786574},
+        ]);
     });
 });
