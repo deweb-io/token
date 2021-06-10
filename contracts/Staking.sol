@@ -6,8 +6,13 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/SafeCast.sol";
 
 contract Staking is OwnableUpgradeable {
+    using SafeMath for uint256;
+    using SafeMath for uint16;
+
     IERC20 bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
@@ -48,7 +53,7 @@ contract Staking is OwnableUpgradeable {
         __Ownable_init();
         bbsToken = _bbsToken;
         currentQuarter = 0;
-        nextQuarterStart = block.timestamp + QUARTER_LENGTH;
+        nextQuarterStart = block.timestamp.add(QUARTER_LENGTH);
     }
 
     /**
@@ -66,7 +71,7 @@ contract Staking is OwnableUpgradeable {
      */
     function getTotalShares(address staker, uint16 quarterIdx) public view returns(uint256 numOfShares) {
         for (uint16 stakeIdx = 0; stakeIdx < getNumOfStakes(staker); stakeIdx++) {
-            numOfShares += shares[staker][stakeIdx][quarterIdx];
+            numOfShares = numOfShares.add(shares[staker][stakeIdx][quarterIdx]);
         }
     }
 
@@ -87,7 +92,7 @@ contract Staking is OwnableUpgradeable {
     function declareReward(uint16 quarterIdx, uint256 amount) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
         bbsToken.transferFrom(msg.sender, address(this), amount);
-        quarters[quarterIdx].reward += amount;
+        quarters[quarterIdx].reward = quarters[quarterIdx].reward.add(amount);
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
 
@@ -97,8 +102,8 @@ contract Staking is OwnableUpgradeable {
     function promoteQuarter() public {
         require(block.timestamp >= nextQuarterStart, "current quarter is not yet over");
         require(quarters[currentQuarter].reward > 0, "current quarter has no reward");
-        currentQuarter++;
-        nextQuarterStart += QUARTER_LENGTH;
+        currentQuarter = SafeCast.toUint16(currentQuarter.add(1));
+        nextQuarterStart = SafeMath.add(nextQuarterStart, QUARTER_LENGTH);
         emit QuarterPromoted(currentQuarter);
     }
 
@@ -111,7 +116,7 @@ contract Staking is OwnableUpgradeable {
         Stake memory stake = stakes[staker][stakeIdx];
         for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.unlockQuarter; quarterIdx++) {
             uint256 oldShare = shares[staker][stakeIdx][quarterIdx];
-            uint256 newShare = stake.amount * (100 + ((stake.unlockQuarter - quarterIdx - 1) * 25));
+            uint256 newShare = stake.amount.mul(stake.unlockQuarter.sub(quarterIdx).sub(1).mul(25).add(100));
 
             // For the quarter in which the stake was locked, we reduce the share amount
             // to reflect the part of the quarter that has already passed.
@@ -121,7 +126,7 @@ contract Staking is OwnableUpgradeable {
             }
 
             shares[staker][stakeIdx][quarterIdx] = newShare;
-            quarters[quarterIdx].shares += newShare - oldShare;
+            quarters[quarterIdx].shares = quarters[quarterIdx].shares.sub(oldShare).add(newShare);
         }
     }
 
@@ -136,17 +141,17 @@ contract Staking is OwnableUpgradeable {
             quarterIdx < currentQuarter && quarterIdx < stakes[staker][stakeIdx].unlockQuarter;
             quarterIdx++
         ) {
-            amount +=
-                PRECISION *
-                shares[staker][stakeIdx][quarterIdx] *
-                quarters[quarterIdx].reward /
-                quarters[quarterIdx].shares;
+            amount = amount.add(
+                PRECISION.mul(
+                shares[staker][stakeIdx][quarterIdx]).mul(
+                quarters[quarterIdx].reward).div(
+                quarters[quarterIdx].shares));
             shares[staker][stakeIdx][quarterIdx] = 0;
         }
 
         stakes[staker][stakeIdx].earliestUnclaimedQuarter = currentQuarter;
 
-        return amount / PRECISION;
+        return amount.div(PRECISION);
     }
 
     /**
@@ -201,7 +206,7 @@ contract Staking is OwnableUpgradeable {
         validateUnlockQuarter(stakes[msg.sender][stakeIdx].unlockQuarter);
         uint256 rewards = getRewards(msg.sender, stakeIdx);
         require(rewards > 0, "no rewards to lock");
-        stakes[msg.sender][stakeIdx].amount += rewards;
+        stakes[msg.sender][stakeIdx].amount = stakes[msg.sender][stakeIdx].amount.add(rewards);
         updateShare(msg.sender, stakeIdx);
         emit StakeLocked(rewards, stakes[msg.sender][stakeIdx].unlockQuarter, msg.sender, false);
     }
@@ -214,7 +219,7 @@ contract Staking is OwnableUpgradeable {
         validateCurrentQuarter();
         uint256 claimAmount = getRewards(msg.sender, stakeIdx);
         if (stakes[msg.sender][stakeIdx].unlockQuarter <= currentQuarter) {
-            claimAmount += stakes[msg.sender][stakeIdx].amount;
+            claimAmount = claimAmount.add(stakes[msg.sender][stakeIdx].amount);
             stakes[msg.sender][stakeIdx].amount = 0;
         }
         require(claimAmount > 0, "nothing to claim");
