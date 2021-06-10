@@ -55,16 +55,6 @@ contract Staking is Initializable, OwnableUpgradeable {
     }
 
     /**
-     * @dev Get the share of a stake in a quarter (automatic getters do not return mappings).
-     * @param staker The address of the owner.
-     * @param stakeIdx The index of the stake.
-     * @param quarterIdx The index of the quarter.
-     */
-    function getShare(address staker, uint16 stakeIdx, uint16 quarterIdx) external view returns(uint256 share) {
-        return shares[staker][stakeIdx][quarterIdx];
-    }
-
-    /**
      * @dev Declare a reward for a quarter and transfers the tokens to the contract.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.

@@ -20,12 +20,17 @@
         "url": "http://github.com/Creator-Eco/token.git"
     },
     "dependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@openzeppelin/contracts": "^4.1.0",
         "@openzeppelin/contracts-upgradeable": "^4.1.0",
         "@openzeppelin/hardhat-upgrades": "^1.8.2",
-        "chai": "^4.3.4",
+        "ethers": "^5.3.0",
         "hardhat": "^2.3.0",
         "hardhat-gas-reporter": "^1.0.4",
         "solidity-coverage": "^0.7.16"
+    },
+    "devDependencies": {
+        "chai": "^4.3.4",
+        "eslint": "^7.28.0"
     }
 }
