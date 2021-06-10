@@ -1,9 +1,4 @@
-const {execSync} = require('child_process');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum} = require('./utils');
-const fs = require('fs');
-const hardhat = require('hardhat');
-const path = require('path');
 
 describe('end to end tests', () => {
     let owner, stakers, bbsToken, staking, quarterLength;
@@ -33,9 +28,9 @@ describe('end to end tests', () => {
     }
 
     async function increaseTimeTo(quarterIdx){
-        let {realQuarter, currentTime, quarterEnd, stakingQuarter} = await getTime();
+        let {realQuarter, currentTime, quarterEnd} = await getTime();
 
-        if(realQuarter > quarterIdx) throw(`can not increase time from ${realQuarter} to ${quarterIdx}`)
+        if(realQuarter > quarterIdx) throw(`can not increase time from ${realQuarter} to ${quarterIdx}`);
 
         await network.provider.send('evm_increaseTime', [(quarterIdx - realQuarter) * quarterLength]);
         await network.provider.send('evm_mine');
@@ -62,34 +57,34 @@ describe('end to end tests', () => {
 
     async function lock(staker, amount, endQuarter){
         await (await approveAndDoAs(staker, amount)).lock(amount, endQuarter);
-        console.log(`locked ${amount} tokens until ${endQuarter} for ${staker.address}`);
+        console.log(`locked ${amount} tokens until ${endQuarter} for ${staker.address.slice(0, 5)}`);
     }
 
-    async function extend(staker, stakeIdx, endQuarter, shouldBe){
+    async function extend(staker, stakeIdx, endQuarter, assertSharesEqual){
         await staking.connect(staker).extend(stakeIdx, endQuarter);
         const shares = (await staking.shares(staker.address, stakeIdx, await staking.currentQuarter())).toNumber();
-        if(typeof(shouldBe) === typeof(1)) expect(shares).to.equal(shouldBe);
-        console.log(`extended ${staker.address}/${stakeIdx} until ${endQuarter}, current shares are ${shares}`);
+        if(typeof(assertSharesEqual) === typeof(1)) expect(shares).to.equal(assertSharesEqual);
+        console.log(`extended ${staker.address.slice(0, 5)}/${stakeIdx} until ${endQuarter}, current shares are ${shares}`);
     }
 
-    async function restake(staker, stakeIdx, shouldBe){
+    async function restake(staker, stakeIdx, assertStakeIncreaseEquals){
         const startingAmount = (await staking.stakes(staker.address, stakeIdx)).amount;
         await staking.connect(staker).restake(stakeIdx);
         const stakeChange = (await staking.stakes(staker.address, stakeIdx)).amount - startingAmount;
-        if(typeof(shouldBe) === typeof(1)) expect(stakeChange).to.equal(shouldBe);
-        console.log(`restaked ${staker.address}/${stakeIdx} for an added ${stakeChange}`);
+        if(typeof(assertStakeIncreaseEquals) === typeof(1)) expect(stakeChange).to.equal(assertStakeIncreaseEquals);
+        console.log(`restaked ${staker.address.slice(0, 5)}/${stakeIdx} for an added ${stakeChange}`);
     }
 
     async function getBalance(staker){
         return (await bbsToken.balanceOf(staker.address)).toNumber();
     }
 
-    async function claim(staker, stakeIdx, shouldBe){
+    async function claim(staker, stakeIdx, assertClaimEquals){
         const startingBalance = await getBalance(staker);
         await staking.connect(staker).claim(stakeIdx);
         const claimAmount = (await getBalance(staker)) - startingBalance;
-        if(typeof(shouldBe) === typeof(1)) expect(claimAmount).to.equal(shouldBe);
-        console.log(`claimed ${staker.address}/${stakeIdx} and got ${claimAmount}`);
+        if(typeof(assertClaimEquals) === typeof(1)) expect(claimAmount).to.equal(assertClaimEquals);
+        console.log(`claimed ${staker.address.slice(0, 5)}/${stakeIdx} and got ${claimAmount}`);
     }
 
     async function runScenario(steps){
@@ -97,9 +92,9 @@ describe('end to end tests', () => {
             declareReward: async(step) => await declareReward(step.quarterIdx, step.amount),
             lock: async(step) => await lock(step.staker, step.amount, step.endQuarter),
             increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
-            extend: async(step) => await extend(step.staker, step.stakeIdx, step.endQuarter, step.shouldBe),
-            restake: async(step) => await restake(step.staker, step.stakeIdx, step.shouldBe),
-            claim: async(step) => await claim(step.staker, step.stakeIdx, step.shouldBe)
+            extend: async(step) => await extend(step.staker, step.stakeIdx, step.endQuarter, step.assertSharesEqual),
+            restake: async(step) => await restake(step.staker, step.stakeIdx, step.assertStakeIncreaseEquals),
+            claim: async(step) => await claim(step.staker, step.stakeIdx, step.assertClaimEquals)
         };
         const names = {
             alice: stakers[0],
@@ -128,13 +123,13 @@ describe('end to end tests', () => {
             {action: 'claim', staker: 'bob', stakeIdx: 0},
             {action: 'claim', staker: 'carol', stakeIdx: 0},
             {action: 'increaseTimeTo', quarterIdx: 2},
-            {action: 'claim', staker: 'alice', stakeIdx: 0, shouldBe: 333333333},
-            {action: 'restake', staker: 'bob', stakeIdx: 0, shouldBe: 333333333},
-            {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, shouldBe: 10**6 * 150},
+            {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 333333333},
+            {action: 'restake', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 333333333},
+            {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, assertSharesEqual: 10**6 * 150},
             {action: 'increaseTimeTo', quarterIdx: 3},
-            {action: 'claim', staker: 'alice', stakeIdx: 0, shouldBe: 3968827},
-            {action: 'claim', staker: 'bob', stakeIdx: 0, shouldBe: 1326911264},
-            {action: 'claim', staker: 'carol', stakeIdx: 0, shouldBe: 337786574},
+            {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 3968827},
+            {action: 'claim', staker: 'bob', stakeIdx: 0, assertClaimEquals: 1326911264},
+            {action: 'claim', staker: 'carol', stakeIdx: 0, assertClaimEquals: 337786574},
         ]);
     });
 });

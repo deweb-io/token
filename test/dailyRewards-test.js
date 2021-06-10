@@ -20,8 +20,8 @@ describe('DailyRewards', () => {
             await dailyRewards.declareRewards(...plannedRewards)).blockHash);
         expect(events.length).to.equal(1);
         expect(events[0].eventSignature).to.equal('RewardsDeclared()');
-        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
-            declaredReward = await dailyRewards.declaredRewards(rewardIndex);
+        for(let rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            const declaredReward = await dailyRewards.declaredRewards(rewardIndex);
             expect(declaredReward[0]).to.equal(plannedRewards[0][rewardIndex]);
             expect(declaredReward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
         }
@@ -32,8 +32,8 @@ describe('DailyRewards', () => {
             await dailyRewards.setRewards()).blockHash);
         expect(events.length).to.equal(1);
         expect(events[0].eventSignature).to.equal('RewardsSet()');
-        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
-            reward = await dailyRewards.rewards(rewardIndex);
+        for(let rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+            let reward = await dailyRewards.rewards(rewardIndex);
             expect(reward[0]).to.equal(plannedRewards[0][rewardIndex]);
             expect(reward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
         }
@@ -48,14 +48,14 @@ describe('DailyRewards', () => {
         await network.provider.send('evm_increaseTime', [(await dailyRewards.DECLARATION_INTERVAL()).toNumber()]);
         await dailyRewards.setRewards();
 
-        blockHash = (await dailyRewards.distributeRewards()).blockHash;
+        const blockHash = (await dailyRewards.distributeRewards()).blockHash;
         events = await dailyRewards.queryFilter('RewardsDistributed', blockHash);
         expect(events.length).to.equal(1);
         expect(events[0].eventSignature).to.equal('RewardsDistributed()');
 
         events = await dailyRewards.queryFilter('RewardDistributed', blockHash);
         expect(events.length).to.equal(plannedRewards[0].length);
-        for(rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
+        for(let rewardIndex = 0; rewardIndex < plannedRewards[0].length; rewardIndex++) {
             expect(events[rewardIndex].eventSignature).to.equal('RewardDistributed(address,uint256)');
             expect(events[rewardIndex].args.beneficiary).to.equal(plannedRewards[0][rewardIndex]);
             expect(events[rewardIndex].args.amountBBS.toNumber()).to.equal(plannedRewards[1][rewardIndex]);

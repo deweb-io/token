@@ -22,13 +22,14 @@ describe('Staking', () => {
 
         await network.provider.send('evm_increaseTime', [quarters * quarterLength]);
         await network.provider.send('evm_mine');
-        let currentTime, currentQuarter, currentQuarterEnd;
-        while(true){
-            currentQuarterEnd = await staking.currentQuarterEnd();
-            currentQuarter = await staking.currentQuarter()
-            currentTime = ethers.BigNumber.from(((await network.provider.send(
-                'eth_getBlockByNumber', ['latest', false])).timestamp));
-            if(currentTime < currentQuarterEnd) break;
+        const currentTime = ethers.BigNumber.from(((await network.provider.send(
+            'eth_getBlockByNumber', ['latest', false])).timestamp));
+        for(
+            let currentQuarterEnd = await staking.currentQuarterEnd();
+            currentTime >= currentQuarterEnd;
+            currentQuarterEnd = await staking.currentQuarterEnd()
+        ){
+            const currentQuarter = await staking.currentQuarter();
             await (await approveAndDoAs(owner, rewardAmount)).declareReward(currentQuarter, rewardAmount);
             await staking.promoteQuarter();
         }
@@ -159,9 +160,9 @@ describe('Staking', () => {
         await increaseTime(1);
 
         // Create and deploy upgrade contract.
-        const originalContract = path.join(hardhat.config.paths.sources, 'Staking.sol')
+        const originalContract = path.join(hardhat.config.paths.sources, 'Staking.sol');
         const upgradeContract = path.join(hardhat.config.paths.sources, 'StakingUpgrade.sol');
-        try{fs.unlinkSync(upgradeContract);}catch(error){}
+        try{fs.unlinkSync(upgradeContract);}finally{}
         fs.writeFileSync(upgradeContract, fs.readFileSync(originalContract, 'utf-8')
             .replace('contract Staking is', 'contract StakingUpgrade is')
             .replace('quarterIdx - 1) * 25)', 'quarterIdx - 1) * 50)'));
