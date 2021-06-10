@@ -127,6 +127,16 @@ describe('end to end tests', () => {
             {action: 'restake', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 333333333},
             {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, assertSharesEqual: 10**6 * 150},
             {action: 'increaseTimeTo', quarterIdx: 3},
+            // Alice has 100 * 10**6 shares = 100,000,000
+            // Bob has 100 * (10**6 + 333,333,333) shares = 3,3433,333,300
+            // Carol has 150 * 10**6 shares = 150,000,000
+            // Total shares = 3,3683,333,300
+            // Share price = 10**9 / 3,3683,333,300 = 0.02968827316
+            // Alice reward = 100,000,000 * 0.02968827316 = 2,968,827
+            // Alice claim = 2,968,827 + 10**6 = 3,968,827
+            // Bob reward = 3,3433,333,300 * 0.02968827316 = 992,577,931
+            // Bob claim = 992,577,931 + 10**6 + 333,333,333 = 1,326,911,264
+            // Carol reward and claim = 333,333,333 + (150,000,000 * 0.02968827316) = 337,786,574
             {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 3968827},
             {action: 'claim', staker: 'bob', stakeIdx: 0, assertClaimEquals: 1326911264},
             {action: 'claim', staker: 'carol', stakeIdx: 0, assertClaimEquals: 337786574},
