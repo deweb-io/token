@@ -2,7 +2,6 @@
 artifacts/
 build/
 cache/
-contracts/StakingUpgrade.sol
 coverage.json
 coverage/
 eosio/*.abi

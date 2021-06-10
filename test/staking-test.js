@@ -162,11 +162,11 @@ describe('Staking', () => {
         // Create and deploy upgrade contract.
         const originalContract = path.join(hardhat.config.paths.sources, 'Staking.sol');
         const upgradeContract = path.join(hardhat.config.paths.sources, 'StakingUpgrade.sol');
-        try{fs.unlinkSync(upgradeContract);}finally{}
         fs.writeFileSync(upgradeContract, fs.readFileSync(originalContract, 'utf-8')
             .replace('contract Staking is', 'contract StakingUpgrade is')
             .replace('quarterIdx - 1) * 25)', 'quarterIdx - 1) * 50)'));
         execSync('npx hardhat compile 2> /dev/null');
+        fs.unlinkSync(upgradeContract);
         staking = await upgrades.upgradeProxy(staking.address, await ethers.getContractFactory('StakingUpgrade'));
 
         expect(await staking.currentQuarter()).to.equal(1);
