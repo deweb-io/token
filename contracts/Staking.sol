@@ -70,8 +70,8 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @dev Promote the current quarter if a quarter ended and has a reward.
      */
     function promoteQuarter() public {
-        require(block.timestamp >= currentQuarterEnd, "currnet quarter is not yet over");
-        require(quarters[currentQuarter].reward > 0, "currnet quarter has no reward");
+        require(block.timestamp >= currentQuarterEnd, "current quarter is not yet over");
+        require(quarters[currentQuarter].reward > 0, "current quarter has no reward");
         currentQuarter++;
         currentQuarterEnd += QUARTER_LENGTH;
         emit QuarterPromoted(currentQuarter);
@@ -152,12 +152,12 @@ contract Staking is Initializable, OwnableUpgradeable {
     }
 
     /**
-     * @dev Restake rewards.
+     * @dev lock rewards.
      * @param stakeIdx The index of the stake to be restaked.
      */
-    function restake(uint16 stakeIdx) external {
+    function lockRewards(uint16 stakeIdx) external {
         uint256 rewards = getRewards(msg.sender, stakeIdx);
-        require(rewards > 0, "no rewards to restake");
+        require(rewards > 0, "no rewards to lock");
         stakes[msg.sender][stakeIdx].amount += rewards;
         updateShare(msg.sender, stakeIdx);
     }

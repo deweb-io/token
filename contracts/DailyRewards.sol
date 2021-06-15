@@ -17,7 +17,7 @@ contract DailyRewards is Ownable {
         address beneficiary;
         uint256 amountBBS;
     }
-    IERC20 bbsToken;
+    IERC20 immutable bbsToken;
     Reward[] public rewards;
     Reward[] public declaredRewards;
     uint256 public declarationTimestamp;

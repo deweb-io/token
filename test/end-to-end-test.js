@@ -67,9 +67,9 @@ describe('end to end tests', () => {
         console.log(`extended ${staker.address.slice(0, 5)}/${stakeIdx} until ${endQuarter}, current shares are ${shares}`);
     }
 
-    async function restake(staker, stakeIdx, assertStakeIncreaseEquals){
+    async function lockRewards(staker, stakeIdx, assertStakeIncreaseEquals){
         const startingAmount = (await staking.stakes(staker.address, stakeIdx)).amount;
-        await staking.connect(staker).restake(stakeIdx);
+        await staking.connect(staker).lockRewards(stakeIdx);
         const stakeChange = (await staking.stakes(staker.address, stakeIdx)).amount - startingAmount;
         if(typeof(assertStakeIncreaseEquals) === typeof(1)) expect(stakeChange).to.equal(assertStakeIncreaseEquals);
         console.log(`restaked ${staker.address.slice(0, 5)}/${stakeIdx} for an added ${stakeChange}`);
@@ -93,7 +93,7 @@ describe('end to end tests', () => {
             lock: async(step) => await lock(step.staker, step.amount, step.endQuarter),
             increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
             extend: async(step) => await extend(step.staker, step.stakeIdx, step.endQuarter, step.assertSharesEqual),
-            restake: async(step) => await restake(step.staker, step.stakeIdx, step.assertStakeIncreaseEquals),
+            lockRewards: async(step) => await lockRewards(step.staker, step.stakeIdx, step.assertStakeIncreaseEquals),
             claim: async(step) => await claim(step.staker, step.stakeIdx, step.assertClaimEquals)
         };
         const names = {
@@ -125,7 +125,7 @@ describe('end to end tests', () => {
             {action: 'claim', staker: 'carol', stakeIdx: 0},
             {action: 'increaseTimeTo', quarterIdx: 2},
             {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 333333333},
-            {action: 'restake', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 333333333},
+            {action: 'lockRewards', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 333333333},
             {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, assertSharesEqual: 10**6 * 150},
             {action: 'increaseTimeTo', quarterIdx: 3},
             // Alice shares in Q2 = ׂ100 * 10**6 shares = 100,000,000
