@@ -15,29 +15,29 @@ describe('end to end tests', () => {
     async function getTime(){
         await network.provider.send('evm_mine');
         const stakingQuarter = await staking.currentQuarter();
-        const quarterEnd = (await staking.currentQuarterEnd()).toNumber();
+        const nextQuarterStart = (await staking.nextQuarterStart()).toNumber();
         const currentTime = ethers.BigNumber.from(
             (await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp).toNumber();
-        const realQuarter = stakingQuarter + (1 - ((quarterEnd - currentTime) / quarterLength));
+        const realQuarter = stakingQuarter + (1 - ((nextQuarterStart - currentTime) / quarterLength));
         return {
             realQuarter: realQuarter,
             currentTime: currentTime,
-            quarterEnd: quarterEnd,
+            nextQuarterStart: nextQuarterStart,
             stakingQuarter: stakingQuarter
         };
     }
 
     async function increaseTimeTo(quarterIdx){
-        let {realQuarter, currentTime, quarterEnd} = await getTime();
+        let {realQuarter, currentTime, nextQuarterStart} = await getTime();
 
         if(realQuarter > quarterIdx) throw(`can not increase time from ${realQuarter} to ${quarterIdx}`);
 
         await network.provider.send('evm_increaseTime', [(quarterIdx - realQuarter) * quarterLength]);
         await network.provider.send('evm_mine');
         currentTime = (await getTime()).currentTime;
-        while(currentTime >= quarterEnd){
+        while(currentTime >= nextQuarterStart){
             await staking.promoteQuarter();
-            quarterEnd = await staking.currentQuarterEnd();
+            nextQuarterStart = await staking.nextQuarterStart();
         }
 
         realQuarter = (await getTime()).realQuarter;
@@ -55,16 +55,16 @@ describe('end to end tests', () => {
         console.log(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
     }
 
-    async function lock(staker, amount, endQuarter){
-        await (await approveAndDoAs(staker, amount)).lock(amount, endQuarter);
-        console.log(`locked ${amount} tokens until ${endQuarter} for ${staker.address.slice(0, 5)}`);
+    async function lock(staker, amount, unlockQuarter){
+        await (await approveAndDoAs(staker, amount)).lock(amount, unlockQuarter);
+        console.log(`locked ${amount} tokens until ${unlockQuarter} for ${staker.address.slice(0, 5)}`);
     }
 
-    async function extend(staker, stakeIdx, endQuarter, assertSharesEqual){
-        await staking.connect(staker).extend(stakeIdx, endQuarter);
+    async function extend(staker, stakeIdx, unlockQuarter, assertSharesEqual){
+        await staking.connect(staker).extend(stakeIdx, unlockQuarter);
         const shares = (await staking.shares(staker.address, stakeIdx, await staking.currentQuarter())).toNumber();
         if(typeof(assertSharesEqual) === typeof(1)) expect(shares).to.equal(assertSharesEqual);
-        console.log(`extended ${staker.address.slice(0, 5)}/${stakeIdx} until ${endQuarter}, current shares are ${shares}`);
+        console.log(`extended ${staker.address.slice(0, 5)}/${stakeIdx} until ${unlockQuarter}, current shares are ${shares}`);
     }
 
     async function lockRewards(staker, stakeIdx, assertStakeIncreaseEquals){
@@ -90,9 +90,9 @@ describe('end to end tests', () => {
     async function runScenario(steps){
         const functions = {
             declareReward: async(step) => await declareReward(step.quarterIdx, step.amount),
-            lock: async(step) => await lock(step.staker, step.amount, step.endQuarter),
+            lock: async(step) => await lock(step.staker, step.amount, step.unlockQuarter),
             increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
-            extend: async(step) => await extend(step.staker, step.stakeIdx, step.endQuarter, step.assertSharesEqual),
+            extend: async(step) => await extend(step.staker, step.stakeIdx, step.unlockQuarter, step.assertSharesEqual),
             lockRewards: async(step) => await lockRewards(step.staker, step.stakeIdx, step.assertStakeIncreaseEquals),
             claim: async(step) => await claim(step.staker, step.stakeIdx, step.assertClaimEquals)
         };
@@ -116,9 +116,9 @@ describe('end to end tests', () => {
             {action: 'declareReward', quarterIdx: 1, amount: 10**9},
             {action: 'declareReward', quarterIdx: 2, amount: 10**9},
             {action: 'declareReward', quarterIdx: 3, amount: 10**9},
-            {action: 'lock', staker: 'alice', amount: 10**6, endQuarter: 3},
-            {action: 'lock', staker: 'bob', amount: 10**6, endQuarter: 3},
-            {action: 'lock', staker: 'carol', amount: 10**6, endQuarter: 3},
+            {action: 'lock', staker: 'alice', amount: 10**6, unlockQuarter: 3},
+            {action: 'lock', staker: 'bob', amount: 10**6, unlockQuarter: 3},
+            {action: 'lock', staker: 'carol', amount: 10**6, unlockQuarter: 3},
             {action: 'increaseTimeTo', quarterIdx: 1},
             {action: 'claim', staker: 'alice', stakeIdx: 0},
             {action: 'claim', staker: 'bob', stakeIdx: 0},
@@ -126,7 +126,7 @@ describe('end to end tests', () => {
             {action: 'increaseTimeTo', quarterIdx: 2},
             {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 333333333},
             {action: 'lockRewards', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 333333333},
-            {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, assertSharesEqual: 10**6 * 150},
+            {action: 'extend', staker: 'carol', stakeIdx: 0, unlockQuarter: 5, assertSharesEqual: 10**6 * 150},
             {action: 'increaseTimeTo', quarterIdx: 3},
             // Alice shares in Q2 = ׂ100 * 10**6 shares = 100,000,000
             // Bob shares in Q2 = 100 * (10**6 (Inital stack) + 333,333,333 (Q1 rewards)) shares = 3,3433,333,300
@@ -149,10 +149,10 @@ describe('end to end tests', () => {
             {action: 'declareReward', quarterIdx: 1, amount: 10**9},
             {action: 'declareReward', quarterIdx: 2, amount: 10**9},
             {action: 'declareReward', quarterIdx: 3, amount: 10**9},
-            {action: 'lock', staker: 'alice', amount: 10**6, endQuarter: 3},
-            {action: 'lock', staker: 'bob', amount: 10**6, endQuarter: 3},
-            {action: 'lock', staker: 'carol', amount: 10**6, endQuarter: 3},
-            {action: 'lock', staker: 'tal', amount: 10**6, endQuarter: 3},
+            {action: 'lock', staker: 'alice', amount: 10**6, unlockQuarter: 3},
+            {action: 'lock', staker: 'bob', amount: 10**6, unlockQuarter: 3},
+            {action: 'lock', staker: 'carol', amount: 10**6, unlockQuarter: 3},
+            {action: 'lock', staker: 'tal', amount: 10**6, unlockQuarter: 3},
             {action: 'increaseTimeTo', quarterIdx: 1},
             {action: 'claim', staker: 'alice', stakeIdx: 0},
             {action: 'claim', staker: 'bob', stakeIdx: 0},
@@ -160,8 +160,8 @@ describe('end to end tests', () => {
             {action: 'claim', staker: 'tal', stakeIdx: 0},
             {action: 'increaseTimeTo', quarterIdx: 2},
             {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 250000000},
-            {action: 'restake', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 250000000},
-            {action: 'extend', staker: 'carol', stakeIdx: 0, endQuarter: 5, assertSharesEqual: 10**6 * 150},
+            {action: 'lockRewards', staker: 'bob', stakeIdx: 0, assertStakeIncreaseEquals: 250000000},
+            {action: 'extend', staker: 'carol', stakeIdx: 0, unlockQuarter: 5, assertSharesEqual: 10**6 * 150},
             {action: 'increaseTimeTo', quarterIdx: 3},
             // Alice shares in Q2 = 100 * (10**6) = 100,000,000
             // Bob shares in Q2 = 100 * (10**6 + 250000000) = 25100000000

@@ -25,9 +25,9 @@ describe('Staking', () => {
         const currentTime = ethers.BigNumber.from(((await network.provider.send(
             'eth_getBlockByNumber', ['latest', false])).timestamp));
         for(
-            let currentQuarterEnd = await staking.currentQuarterEnd();
-            currentTime >= currentQuarterEnd;
-            currentQuarterEnd = await staking.currentQuarterEnd()
+            let nextQuarterStart = await staking.nextQuarterStart();
+            currentTime >= nextQuarterStart;
+            nextQuarterStart = await staking.nextQuarterStart()
         ){
             const currentQuarter = await staking.currentQuarter();
             await (await approveAndDoAs(owner, rewardAmount)).declareReward(currentQuarter, rewardAmount);

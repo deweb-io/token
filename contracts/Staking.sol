@@ -7,12 +7,13 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Staking is Initializable, OwnableUpgradeable {
+    IERC20 bbsToken;
+
     uint256 public constant QUARTER_LENGTH = 91 days;
     uint256 public constant PRECISION = 10**18;
 
-    uint256 public currentQuarterEnd;
+    uint256 public nextQuarterStart;
     uint16 public currentQuarter;
-    IERC20 bbsToken;
 
     struct Quarter {
         uint256 shares;
@@ -43,7 +44,7 @@ contract Staking is Initializable, OwnableUpgradeable {
         __Ownable_init();
         bbsToken = _bbsToken;
         currentQuarter = 0;
-        currentQuarterEnd = block.timestamp + QUARTER_LENGTH;
+        nextQuarterStart = block.timestamp + QUARTER_LENGTH;
     }
 
     /**
@@ -70,10 +71,10 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @dev Promote the current quarter if a quarter ended and has a reward.
      */
     function promoteQuarter() public {
-        require(block.timestamp >= currentQuarterEnd, "current quarter is not yet over");
+        require(block.timestamp >= nextQuarterStart, "current quarter is not yet over");
         require(quarters[currentQuarter].reward > 0, "current quarter has no reward");
         currentQuarter++;
-        currentQuarterEnd += QUARTER_LENGTH;
+        nextQuarterStart += QUARTER_LENGTH;
         emit QuarterPromoted(currentQuarter);
     }
 
@@ -84,17 +85,13 @@ contract Staking is Initializable, OwnableUpgradeable {
      */
     function updateShare(address staker, uint16 stakeIdx) internal {
         Stake memory stake = stakes[staker][stakeIdx];
-        require(block.timestamp < currentQuarterEnd, "quarter must be promoted");
-        require(stake.unlockQuarter > currentQuarter, "can not lock for less than one quarter");
-        require(stake.unlockQuarter - currentQuarter <= 13, "can not lock for more than 13 quarters");
-
         for (uint16 quarterIdx = currentQuarter; quarterIdx < stake.unlockQuarter; quarterIdx++) {
             uint256 oldShare = shares[staker][stakeIdx][quarterIdx];
             uint256 newShare = stake.amount * (100 + ((stake.unlockQuarter - quarterIdx - 1) * 25));
 
             // This only happens when quarterIdx == currentQuarter.
             if (quarterIdx == stake.lockQuarter) {
-                newShare = newShare * (currentQuarterEnd - stake.lockTime) / QUARTER_LENGTH;
+                newShare = newShare * (nextQuarterStart - stake.lockTime) / QUARTER_LENGTH;
             }
 
             shares[staker][stakeIdx][quarterIdx] = newShare;
@@ -108,8 +105,6 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @param stakeIdx The index of the stake for that staker.
      */
     function getRewards(address staker, uint16 stakeIdx) internal returns(uint256 amount) {
-        require(block.timestamp < currentQuarterEnd, "quarter must be promoted");
-
         for (
             uint16 quarterIdx = stakes[staker][stakeIdx].firstUnclaimedQuarter;
             quarterIdx < currentQuarter && quarterIdx < stakes[staker][stakeIdx].unlockQuarter;
@@ -129,11 +124,29 @@ contract Staking is Initializable, OwnableUpgradeable {
     }
 
     /**
+     * @dev Require currentQuarter to be valid.
+     */
+    function validateCurrentQuarter() internal view {
+        require(block.timestamp < nextQuarterStart, "quarter must be promoted");
+    }
+
+    /**
+     * @dev Require a valid unlock quarter, which also requires currentQuarter to be valid.
+     * @param unlockQuarter Quarter in which a stake will unlock.
+     */
+    function validateUnlockQuarter(uint16 unlockQuarter) internal view {
+        validateCurrentQuarter();
+        require(unlockQuarter > currentQuarter, "can not lock for less than one quarter");
+        require(unlockQuarter - currentQuarter <= 13, "can not lock for more than 13 quarters");
+    }
+
+    /**
      * @dev Lock a stake of tokens.
      * @param amount Amount of tokens to lock.
      * @param unlockQuarter The index of the quarter the stake unlocks on.
      */
     function lock(uint256 amount, uint16 unlockQuarter) external {
+        validateUnlockQuarter(unlockQuarter);
         bbsToken.transferFrom(msg.sender, address(this), amount);
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
@@ -146,6 +159,7 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @param unlockQuarter The index of the new quarter the lock ends on.
      */
     function extend(uint16 stakeIdx, uint16 unlockQuarter) external {
+        validateUnlockQuarter(unlockQuarter);
         require(unlockQuarter > stakes[msg.sender][stakeIdx].unlockQuarter, "must extend beyond current end quarter");
         stakes[msg.sender][stakeIdx].unlockQuarter = unlockQuarter;
         updateShare(msg.sender, stakeIdx);
@@ -156,6 +170,7 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @param stakeIdx The index of the stake to be restaked.
      */
     function lockRewards(uint16 stakeIdx) external {
+        validateUnlockQuarter(stakes[msg.sender][stakeIdx].unlockQuarter);
         uint256 rewards = getRewards(msg.sender, stakeIdx);
         require(rewards > 0, "no rewards to lock");
         stakes[msg.sender][stakeIdx].amount += rewards;
@@ -167,6 +182,7 @@ contract Staking is Initializable, OwnableUpgradeable {
      * @param stakeIdx The index of the stake to be claimed.
      */
     function claim(uint16 stakeIdx) external {
+        validateCurrentQuarter();
         uint256 claimAmount = getRewards(msg.sender, stakeIdx);
         if (stakes[msg.sender][stakeIdx].unlockQuarter <= currentQuarter) {
             claimAmount += stakes[msg.sender][stakeIdx].amount;
