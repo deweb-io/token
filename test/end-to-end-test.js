@@ -166,6 +166,7 @@ describe('end to end tests', () => {
             // Alice shares in Q2 = 100 * (10**6) = 100,000,000
             // Bob shares in Q2 = 100 * (10**6 + 250000000) = 25100000000
             // Carol shares in Q2 = 150 * (10**6)
+            // Tal shares in Q2 = 100 * (10**6) = 100,000,000
             // Total shares Q2 = 25450000000
             // Q2 share price = 10**9 / 25450000000 = 0.0392927308447937 (BBS per share)
             {action: 'claim', staker: 'alice', stakeIdx: 0, assertClaimEquals: 4929273}, // Q2 rewards + initial stake
