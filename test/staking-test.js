@@ -25,9 +25,9 @@ describe('Staking', () => {
         const currentTime = ethers.BigNumber.from(((await network.provider.send(
             'eth_getBlockByNumber', ['latest', false])).timestamp));
         for(
-            let currentQuarterEnd = await staking.currentQuarterEnd();
-            currentTime >= currentQuarterEnd;
-            currentQuarterEnd = await staking.currentQuarterEnd()
+            let nextQuarterStart = await staking.nextQuarterStart();
+            currentTime >= nextQuarterStart;
+            nextQuarterStart = await staking.nextQuarterStart()
         ){
             const currentQuarter = await staking.currentQuarter();
             await (await approveAndDoAs(owner, rewardAmount)).declareReward(currentQuarter, rewardAmount);
@@ -63,13 +63,13 @@ describe('Staking', () => {
             (await approveAndDoAs(owner, rewardAmount)).declareReward(0, rewardAmount),
             'can not declare rewards for past quarters');
         await (await approveAndDoAs(owner, rewardAmount)).declareReward(1, rewardAmount);
-        await expectRevert(staking.promoteQuarter(), 'currnet quarter is not yet over');
+        await expectRevert(staking.promoteQuarter(), 'current quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await staking.promoteQuarter();
         expect(await staking.currentQuarter()).to.equal(2);
 
         await network.provider.send('evm_increaseTime', [quarterLength]);
-        await expectRevert(staking.promoteQuarter(), 'currnet quarter has no reward');
+        await expectRevert(staking.promoteQuarter(), 'current quarter has no reward');
         await (await approveAndDoAs(owner, rewardAmount)).declareReward(2, rewardAmount);
         await staking.promoteQuarter();
         expect(await staking.currentQuarter()).to.equal(3);
@@ -83,7 +83,7 @@ describe('Staking', () => {
         await expectRevert(
             (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 13), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).claim(0), 'quarter must be promoted');
-        await expectRevert(staking.connect(stakers[0]).restake(0), 'quarter must be promoted');
+        await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).extend(0, 10), 'quarter must be promoted');
 
     });
@@ -150,9 +150,9 @@ describe('Staking', () => {
         await staking.connect(stakers[0]).claim(0);
         await increaseTime(1);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
-        await staking.connect(stakers[0]).restake(0);
+        await staking.connect(stakers[0]).lockRewards(0);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount + (0.5 * rewardAmount));
-        await expectRevert(staking.connect(stakers[0]).restake(0), 'no rewards to restake');
+        await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'no rewards to lock');
     });
 
     it('contract upgrade', async() => {

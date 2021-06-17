@@ -9,19 +9,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Set and distribute daily rewards.
  */
 contract DailyRewards is Ownable {
+    IERC20 immutable bbsToken;
 
     uint256 public constant DECLARATION_INTERVAL = 1 days;
     uint256 public constant DISTRIBUTION_INTERVAL = 1 days;
+    uint256 public declarationTimestamp;
+    uint256 public distributionTimestamp;
 
     struct Reward {
         address beneficiary;
         uint256 amountBBS;
     }
-    IERC20 bbsToken;
     Reward[] public rewards;
     Reward[] public declaredRewards;
-    uint256 public declarationTimestamp;
-    uint256 public distributionTimestamp;
 
     event RewardsDeclared();
     event RewardsSet();

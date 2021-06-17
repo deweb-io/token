@@ -61,7 +61,7 @@ td.action{
         <ul>
             <li>At any point, anyone can stake BBS tokens (possibly contained in a Bancor position), locking them for a number of quarters between one and thirteen (locking a stake for one quarter means that the stake will be freed at the end of the current quarter)</li>
             <li>At any point, anyone with a stake can extend the locking period for up to thirteen quarters into the future</li>
-            <li>At any point, anyone with a stake can restake the rewards he earned during all past quarters</li>
+            <li>At any point, anyone with a stake can lock the rewards he earned during all past quarters</li>
             <li>At any point, anyone with a stake can collect the rewards he earned during all past quarters</li>
             <li>At any point, anyone with a stake that is no longer locked can reclaim it</li>
             <li>Once per quarter (defined as exactly 91 days), a reward is sent to the contract, marking the end of the current quarter</li>
@@ -288,7 +288,7 @@ let locks = {
                         currentQuarter + posIntVal(prompt('how many quarters to lock'), 13),
                         position.lockDay || 1);
                 }],
-                ['restake', () => {
+                ['lockRewards', () => {
                     position.calculateReward()
                     locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill, position.lockDay);
                     position.unclaimeQuarter = currentQuarter;
