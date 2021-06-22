@@ -28,4 +28,8 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         await expectRevert(bbsToken.connect(accounts[1]).transferOwnership(notOwnerAddress), 'caller is not the owner');
         await expectRevert(bbsToken.connect(accounts[1]).mint(notOwnerAddress, 100), 'caller is not the owner');
     });
+
+    it('test permit mechanism', async() => {
+        expect('a simple permit test').to.eq('the test we currently have');
+    });
 });
