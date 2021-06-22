@@ -1,7 +1,7 @@
 const {expect} = require('chai');
 const {expectRevert, expectBigNum} = require('./utils');
 
-describe('BBSToken', () => {
+describe('BBSToken (our token is almost entirely written by openzeppelin, so we just verify our usage)', () => {
     let accounts, bbsToken, ownerAddress, notOwnerAddress;
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
