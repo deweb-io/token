@@ -282,14 +282,12 @@ let locks = {
             // Action cell.
             for(const [title, function_] of [
                 ['extend', () => {
-                    let lockDay = position.lockDay
                     locks.lock(
                         positionId, position.lockAmount,
                         currentQuarter + posIntVal(prompt('how many quarters to lock'), 13),
                         position.lockDay || 1);
                 }],
                 ['lockRewards', () => {
-                    position.calculateReward()
                     locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill, position.lockDay);
                     position.unclaimeQuarter = currentQuarter;
                     locks.draw();
