@@ -10,7 +10,7 @@ module.exports = {
         promise.catch(() => {}); // Avoids uncaught promise rejections in case an input validation causes us to return early
         try{await promise;}
         catch(error){
-            error.message.endsWith(expectedError) || expect(error.message).to.equal(
+            error.message.endsWith(`${expectedError}'`) || expect(error.message).to.equal(
                 expectedError, 'error does not end in expected string');
             return;
         }
