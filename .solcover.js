@@ -1,4 +1,8 @@
 module.exports = {
     skipFiles: ['StakingUpgrade.sol'],
-    silent: false
+    silent: false,
+    mocha: {
+        grep: "@skipOnCoverage",
+        invert: true
+    }
 };

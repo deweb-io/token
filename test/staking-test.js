@@ -180,7 +180,7 @@ describe('Staking', () => {
         expectBigNum(await staking.getVotingPower(stakers[0].address)).to.equal(sharesForNextQuarter.toNumber());
     });
 
-    it('load testing', async function(){ // Do not use arrow notation or you won't have "this".
+    it('load testing [ @skipOnCoverage ]', async function(){ // Do not use arrow notation or you won't have "this".
         const iterations = 5; // Change this when actually running load tests.
         if(iterations < 1000) console.warn(`running with only ${iterations} iterations`);
         this.timeout(iterations * 200);

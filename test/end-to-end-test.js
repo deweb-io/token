@@ -110,7 +110,7 @@ describe('end to end tests', () => {
         }
     }
 
-    it('end-to-end-tests-1', async() => {
+    it('end-to-end-tests-1 [ @skipOnCoverage ]', async() => {
         await runScenario([
             {action: 'declareReward', quarterIdx: 0, amount: 10**9},
             {action: 'declareReward', quarterIdx: 1, amount: 10**9},
@@ -143,7 +143,7 @@ describe('end to end tests', () => {
         ]);
     });
 
-    it('end-to-end-tests-2', async() => {
+    it('end-to-end-tests-2 [ @skipOnCoverage ]', async() => {
         await runScenario([
             {action: 'declareReward', quarterIdx: 0, amount: 10**9},
             {action: 'declareReward', quarterIdx: 1, amount: 10**9},
