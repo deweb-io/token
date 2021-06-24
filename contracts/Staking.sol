@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
+// BBS staking rewards program.
+// Token holders lock transfer approved tokens until the end of the current quarter plus 0 to 12 additional quarters.
+// Rewards are divided pro-rata, with a 25% boost given for every locked quarter beyond the current one.
 pragma solidity ^0.8.0;
-// This is a draft for our staking rewards program.
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -10,6 +12,8 @@ contract Staking is Initializable, OwnableUpgradeable {
     IERC20 bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
+
+    // This has nothing to do with decimals, it's just a precision multiplier to minimize dust.
     uint256 public constant PRECISION = 10**18;
 
     uint256 public nextQuarterStart;
@@ -25,7 +29,7 @@ contract Staking is Initializable, OwnableUpgradeable {
         uint256 lockTime;
         uint16 lockQuarter;
         uint16 unlockQuarter;
-        uint16 firstUnclaimedQuarter;
+        uint16 earliestUnclaimedQuarter;
     }
 
     mapping(uint16 => Quarter) public quarters;
@@ -34,7 +38,8 @@ contract Staking is Initializable, OwnableUpgradeable {
 
     event QuarterPromoted(uint16 quarterIdx);
     event RewardDeclared(uint16 quarterIdx, uint256 amount, uint256 totalAmount);
-    event StakeLocked(uint256 amount, uint16 unlockQuarter, address locker, bool isNew);
+    event StakeLocked(uint256 amount, uint16 unlockQuarter, address staker, bool isNew);
+    event RewardsClaimed(uint256 amount, address staker);
 
     /**
      * @dev Initializer function.
@@ -49,14 +54,34 @@ contract Staking is Initializable, OwnableUpgradeable {
 
     /**
      * @dev Get the number of stakes for an address (automatic getters require the index of the stake).
-     * @param staker The address of the owner.
+     * @param staker The address of the staker.
      */
-    function getNumOfStakes(address staker) external view returns(uint256 numOfStakes) {
+    function getNumOfStakes(address staker) public view returns(uint256 numOfStakes) {
         return stakes[staker].length;
     }
 
     /**
-     * @dev Declare a reward for a quarter and transfers the tokens to the contract.
+     * @dev Get the total number of shares for an address on a quarter (sum of all its stakes).
+     * @param staker The address of the staker.
+     * @param quarterIdx The index of the quarter a reward is declared for.
+     */
+    function getTotalShares(address staker, uint16 quarterIdx) public view returns(uint256 numOfShares) {
+        for (uint16 stakeIdx = 0; stakeIdx < getNumOfStakes(staker); stakeIdx++) {
+            numOfShares += shares[staker][stakeIdx][quarterIdx];
+        }
+    }
+
+    /**
+     * @dev Get the voting power of an address, which is currently defined as the number of shares for next quarter.
+     * Mostly here for Snapshot integration.
+     * @param voter The address of the voter.
+     */
+    function getVotingPower(address voter) external view returns(uint256 votingPower) {
+        return getTotalShares(voter, currentQuarter + 1);
+    }
+
+    /**
+     * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
      */
@@ -89,7 +114,9 @@ contract Staking is Initializable, OwnableUpgradeable {
             uint256 oldShare = shares[staker][stakeIdx][quarterIdx];
             uint256 newShare = stake.amount * (100 + ((stake.unlockQuarter - quarterIdx - 1) * 25));
 
-            // This only happens when quarterIdx == currentQuarter.
+            // For the quarter in which the stake was locked, we reduce the share amount
+            // to reflect the part of the quarter that has already passed.
+            // Note that this only happens when quarterIdx == currentQuarter.
             if (quarterIdx == stake.lockQuarter) {
                 newShare = newShare * (nextQuarterStart - stake.lockTime) / QUARTER_LENGTH;
             }
@@ -106,7 +133,7 @@ contract Staking is Initializable, OwnableUpgradeable {
      */
     function getRewards(address staker, uint16 stakeIdx) internal returns(uint256 amount) {
         for (
-            uint16 quarterIdx = stakes[staker][stakeIdx].firstUnclaimedQuarter;
+            uint16 quarterIdx = stakes[staker][stakeIdx].earliestUnclaimedQuarter;
             quarterIdx < currentQuarter && quarterIdx < stakes[staker][stakeIdx].unlockQuarter;
             quarterIdx++
         ) {
@@ -118,7 +145,7 @@ contract Staking is Initializable, OwnableUpgradeable {
             shares[staker][stakeIdx][quarterIdx] = 0;
         }
 
-        stakes[staker][stakeIdx].firstUnclaimedQuarter = currentQuarter;
+        stakes[staker][stakeIdx].earliestUnclaimedQuarter = currentQuarter;
 
         return amount / PRECISION;
     }
@@ -151,6 +178,7 @@ contract Staking is Initializable, OwnableUpgradeable {
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
         updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
+        emit StakeLocked(amount, unlockQuarter, msg.sender, true);
     }
 
     /**
@@ -163,10 +191,11 @@ contract Staking is Initializable, OwnableUpgradeable {
         require(unlockQuarter > stakes[msg.sender][stakeIdx].unlockQuarter, "must extend beyond current end quarter");
         stakes[msg.sender][stakeIdx].unlockQuarter = unlockQuarter;
         updateShare(msg.sender, stakeIdx);
+        emit StakeLocked(stakes[msg.sender][stakeIdx].amount, unlockQuarter, msg.sender, false);
     }
 
     /**
-     * @dev lock rewards.
+     * @dev Add the rewards of a stake to the locked amount.
      * @param stakeIdx The index of the stake to be restaked.
      */
     function lockRewards(uint16 stakeIdx) external {
@@ -175,10 +204,11 @@ contract Staking is Initializable, OwnableUpgradeable {
         require(rewards > 0, "no rewards to lock");
         stakes[msg.sender][stakeIdx].amount += rewards;
         updateShare(msg.sender, stakeIdx);
+        emit StakeLocked(rewards, stakes[msg.sender][stakeIdx].unlockQuarter, msg.sender, false);
     }
 
     /**
-     * @dev Claim rewards and stake if unlocked.
+     * @dev Claim rewards for a stake, and the locked amount if the stake is no longer locked.
      * @param stakeIdx The index of the stake to be claimed.
      */
     function claim(uint16 stakeIdx) external {
@@ -190,5 +220,6 @@ contract Staking is Initializable, OwnableUpgradeable {
         }
         require(claimAmount > 0, "nothing to claim");
         bbsToken.transfer(msg.sender, claimAmount);
+        emit RewardsClaimed(claimAmount, msg.sender);
     }
 }

@@ -155,6 +155,32 @@ describe('Staking', () => {
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'no rewards to lock');
     });
 
+    it('multiple stakes for account', async() => {
+        await stake(4);
+        await stake(4);
+
+        expectBigNum((await staking.shares(stakers[0].address, 0, 2))).to.equal(stakeAmount * 125);
+        expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 125);
+        expectBigNum(await staking.getNumOfStakes(stakers[0].address)).to.equal(2);
+        expectBigNum(await staking.getTotalShares(stakers[0].address, 2)).to.equal(2 * stakeAmount * 125);
+
+        const maxShareQ0 = stakeAmount * 175;
+        expectBigNum((await staking.shares(stakers[0].address, 0, 0))).to.be.within(
+            maxShareQ0 - 1000, maxShareQ0);
+        expectBigNum((await staking.shares(stakers[0].address, 1, 0))).to.be.within(
+            (maxShareQ0 / 2 - 1000), maxShareQ0 / 2);
+    });
+
+    it('voting power', async() => {
+        await stake(4);
+        await stake(4);
+
+        const nextQuarter = 1 + (await staking.currentQuarter());
+        const sharesForNextQuarter = await staking.getTotalShares(stakers[0].address, nextQuarter);
+        expectBigNum(await staking.getVotingPower(stakers[0].address)).to.equal(sharesForNextQuarter.toNumber());
+    });
+
+    // This test can affect the line counters for the coverage report, so keep it at the end.
     it('contract upgrade', async() => {
         await stake(2);
         await increaseTime(1);
@@ -177,17 +203,5 @@ describe('Staking', () => {
         await stake(4);
         expectBigNum((await staking.shares(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
-    });
-
-    it('multiple stakes for account', async() => {
-        await stake(4);
-        await stake(4);
-        expectBigNum((await staking.shares(stakers[0].address, 0, 2))).to.equal(stakeAmount * 125);
-        expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 125);
-        const maxShareQ0 = stakeAmount * 175;
-        expectBigNum((await staking.shares(stakers[0].address, 0, 0))).to.be.within(
-            maxShareQ0 - 1000, maxShareQ0);
-        expectBigNum((await staking.shares(stakers[0].address, 1, 0))).to.be.within(
-            (maxShareQ0 / 2 - 1000), maxShareQ0 / 2);
     });
 });
