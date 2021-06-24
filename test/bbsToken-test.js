@@ -1,5 +1,8 @@
 const {expect} = require('chai');
 const {expectRevert, expectBigNum} = require('./utils');
+const { fromRpcSig } = require('ethereumjs-util');
+const ethSigUtil = require('eth-sig-util');
+const Wallet = require('ethereumjs-wallet').default;
 
 describe('BBSToken (our token is almost entirely written by openzeppelin, so we just verify our usage)', () => {
     let accounts, bbsToken, ownerAddress, notOwnerAddress;
@@ -30,6 +33,46 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
     });
 
     it('test permit mechanism', async() => {
-        expect('a simple permit test').to.eq('the test we currently have');
+        const Permit = [
+          { name: 'owner', type: 'address' },
+          { name: 'spender', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ];
+
+        const EIP712Domain = [
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' },
+        ];
+
+        const wallet = Wallet.generate();
+        const owner = wallet.getAddressString();
+        const spender = accounts[1].address;
+        const value = 100;
+        const nonce = (await bbsToken.nonces(owner)).toNumber();
+        const chainId = (await bbsToken.getChainId()).toNumber();
+
+        const provider = ethers.getDefaultProvider();
+        const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber( ))).timestamp;
+        const deadline = latestBlockTimestamp + 10000000000;
+
+        const buildData = (chainId, verifyingContract, deadline) => ({
+            primaryType: 'Permit',
+            types: { EIP712Domain, Permit },
+            domain: { name: 'BBS', version: '1', chainId, verifyingContract},
+            message: { owner, spender, value, nonce, deadline },
+        });
+
+        const data = buildData(chainId, bbsToken.address, deadline);
+        const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
+        const { v, r, s } = fromRpcSig(signature);
+
+        expect((await bbsToken.allowance(owner, spender)).toNumber()).to.equal(0);
+        await bbsToken.permit(owner, spender, value, deadline, v, r, s);
+        expect((await bbsToken.allowance(owner, spender)).toNumber()).to.equal(100);
+        expect((await bbsToken.nonces(owner)).toNumber()).to.equal(1);
     });
 });

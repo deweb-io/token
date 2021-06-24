@@ -11,4 +11,8 @@ contract BBSToken is ERC20, ERC20Permit, Ownable {
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
     }
+
+    function getChainId() external view returns (uint256) {
+        return block.chainid;
+    }
 }
