@@ -38,28 +38,26 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
           { name: 'deadline', type: 'uint256' },
         ];
 
-        const mnemonic = "announce room limb pattern dry unit scale effort smooth jazz weasel alcohol";
-        const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-        const owner = wallet.address;
+        const owner = accounts[0];
         const spender = accounts[1].address;
         const value = 100;
-        const nonce = (await bbsToken.nonces(owner)).toNumber();
+        const nonce = (await bbsToken.nonces(owner.address)).toNumber();
         const chainId = (await bbsToken.getChainId()).toNumber();
 
         const provider = ethers.getDefaultProvider();
         const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber( ))).timestamp;
         const deadline = latestBlockTimestamp + 10000000000;
 
-        const signature = await wallet._signTypedData(
+        const signature = await owner._signTypedData(
             { name: 'BBS', version: '1', chainId, verifyingContract: bbsToken.address},
             { Permit },
-            { owner, spender, value, nonce, deadline });
+            { owner: owner.address, spender, value, nonce, deadline });
 
         const { v, r, s }  = ethers.utils.splitSignature(signature);
 
-        expect((await bbsToken.allowance(owner, spender)).toNumber()).to.equal(0);
-        await bbsToken.permit(owner, spender, value, deadline, v, r, s);
-        expect((await bbsToken.allowance(owner, spender)).toNumber()).to.equal(100);
-        expect((await bbsToken.nonces(owner)).toNumber()).to.equal(1);
+        expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(0);
+        await bbsToken.permit(owner.address, spender, value, deadline, v, r, s);
+        expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(100);
+        expect((await bbsToken.nonces(owner.address)).toNumber()).to.equal(1);
     });
 });
