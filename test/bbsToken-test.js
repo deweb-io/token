@@ -54,7 +54,7 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
             {Permit},
             {owner: owner.address, spender, value, nonce, deadline});
 
-        const { v, r, s } = ethers.utils.splitSignature(signature);
+        const {v, r, s} = ethers.utils.splitSignature(signature);
 
         expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(0);
         await bbsToken.permit(owner.address, spender, value, deadline, v, r, s);
