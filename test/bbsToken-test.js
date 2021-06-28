@@ -31,16 +31,17 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
 
     it('test permit mechanism', async() => {
         const Permit = [
-          { name: 'owner', type: 'address' },
-          { name: 'spender', type: 'address' },
-          { name: 'value', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
-          { name: 'deadline', type: 'uint256' },
+          {name: 'owner', type: 'address'},
+          {name: 'spender', type: 'address'},
+          {name: 'value', type: 'uint256'},
+          {name: 'nonce', type: 'uint256'},
+          {name: 'deadline', type: 'uint256'}
         ];
 
         const owner = accounts[0];
         const spender = accounts[1].address;
         const value = 100;
+        const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(owner.address)).toNumber();
         const chainId = (await bbsToken.getChainId()).toNumber();
 
@@ -49,15 +50,15 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const deadline = latestBlockTimestamp + 10000000000;
 
         const signature = await owner._signTypedData(
-            { name: 'BBS', version: '1', chainId, verifyingContract: bbsToken.address},
-            { Permit },
-            { owner: owner.address, spender, value, nonce, deadline });
+            {name: tokenName, version: '1', chainId, verifyingContract: bbsToken.address},
+            {Permit},
+            {owner: owner.address, spender, value, nonce, deadline});
 
-        const { v, r, s }  = ethers.utils.splitSignature(signature);
+        const { v, r, s } = ethers.utils.splitSignature(signature);
 
         expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(0);
         await bbsToken.permit(owner.address, spender, value, deadline, v, r, s);
-        expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(100);
-        expect((await bbsToken.nonces(owner.address)).toNumber()).to.equal(1);
+        expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(value);
+        expect((await bbsToken.nonces(owner.address)).toNumber()).to.equal(nonce + 1);
     });
 });
