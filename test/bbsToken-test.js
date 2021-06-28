@@ -1,8 +1,5 @@
 const {expect} = require('chai');
 const {expectRevert, expectBigNum} = require('./utils');
-const { fromRpcSig } = require('ethereumjs-util');
-const ethSigUtil = require('eth-sig-util');
-const Wallet = require('ethereumjs-wallet').default;
 
 describe('BBSToken (our token is almost entirely written by openzeppelin, so we just verify our usage)', () => {
     let accounts, bbsToken, ownerAddress, notOwnerAddress;
@@ -41,15 +38,9 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
           { name: 'deadline', type: 'uint256' },
         ];
 
-        const EIP712Domain = [
-          { name: 'name', type: 'string' },
-          { name: 'version', type: 'string' },
-          { name: 'chainId', type: 'uint256' },
-          { name: 'verifyingContract', type: 'address' },
-        ];
-
-        const wallet = Wallet.generate();
-        const owner = wallet.getAddressString();
+        const mnemonic = "announce room limb pattern dry unit scale effort smooth jazz weasel alcohol";
+        const wallet = ethers.Wallet.fromMnemonic(mnemonic);
+        const owner = wallet.address;
         const spender = accounts[1].address;
         const value = 100;
         const nonce = (await bbsToken.nonces(owner)).toNumber();
@@ -59,16 +50,12 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber( ))).timestamp;
         const deadline = latestBlockTimestamp + 10000000000;
 
-        const buildData = (chainId, verifyingContract, deadline) => ({
-            primaryType: 'Permit',
-            types: { EIP712Domain, Permit },
-            domain: { name: 'BBS', version: '1', chainId, verifyingContract},
-            message: { owner, spender, value, nonce, deadline },
-        });
+        const signature = await wallet._signTypedData(
+            { name: 'BBS', version: '1', chainId, verifyingContract: bbsToken.address},
+            { Permit },
+            { owner, spender, value, nonce, deadline });
 
-        const data = buildData(chainId, bbsToken.address, deadline);
-        const signature = ethSigUtil.signTypedMessage(wallet.getPrivateKey(), { data });
-        const { v, r, s } = fromRpcSig(signature);
+        const { v, r, s }  = ethers.utils.splitSignature(signature);
 
         expect((await bbsToken.allowance(owner, spender)).toNumber()).to.equal(0);
         await bbsToken.permit(owner, spender, value, deadline, v, r, s);
