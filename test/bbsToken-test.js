@@ -43,10 +43,9 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const value = 100;
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(owner.address)).toNumber();
-        const chainId = (await bbsToken.getChainId()).toNumber();
-
-        const provider = ethers.getDefaultProvider();
-        const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber( ))).timestamp;
+        const provider = accounts[0].provider;
+        const chainId = provider._network.chainId;
+        const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber())).timestamp;
         const deadline = latestBlockTimestamp + 10000000000;
 
         const signature = await owner._signTypedData(
