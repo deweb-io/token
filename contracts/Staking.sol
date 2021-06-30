@@ -5,10 +5,9 @@
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Staking is Initializable, OwnableUpgradeable {
+contract Staking is OwnableUpgradeable {
     IERC20 bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
