@@ -2,7 +2,7 @@ const {expect} = require('chai');
 const {expectRevert} = require('./utils');
 
 describe('DailyRewards', () => {
-    let accounts, bbsToken, dailyRewards, plannedRewards, events;
+    let accounts, bbsToken, dailyRewards, plannedRewards, invalidRewards, events;
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const DailyRewards = await ethers.getContractFactory('DailyRewards');
@@ -10,10 +10,13 @@ describe('DailyRewards', () => {
         dailyRewards = await DailyRewards.deploy(bbsToken.address);
         accounts = await ethers.getSigners();
         plannedRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234, 345]];
+        invalidRewards = [[accounts[1].address, accounts[2].address, accounts[3].address], [123, 234]];
     });
 
     it('setting rewards', async() => {
         await expectRevert(dailyRewards.setRewards(), 'no rewards declared');
+        await expectRevert(
+            dailyRewards.declareRewards(...invalidRewards), 'missing amounts to set for all beneficiaries');
         await expectRevert(
             dailyRewards.connect(accounts[1]).declareRewards(...plannedRewards), 'caller is not the owner');
         events = await dailyRewards.queryFilter('RewardsDeclared', (

@@ -42,6 +42,7 @@ contract DailyRewards is Ownable {
      * @param amountsToSet A list of BBS amounts to reward the corresponding beneficiaries every day.
      */
     function declareRewards(address[] calldata beneficiariesToSet, uint256[] calldata amountsToSet) external onlyOwner {
+        require(beneficiariesToSet.length == amountsToSet.length, "missing amounts to set for all beneficiaries");
         delete declaredRewards;
         for (uint16 rewardIndex = 0; rewardIndex < beneficiariesToSet.length; rewardIndex++) {
             declaredRewards.push(Reward(beneficiariesToSet[rewardIndex], amountsToSet[rewardIndex]));
