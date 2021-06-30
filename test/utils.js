@@ -1,7 +1,11 @@
 /* Utilities for our tests. */
 const {expect} = require('chai');
 
+// A simple generator to create a reversed range ([n-1, n-2 ... 1, 0]).
+function* reversedXrange(length){while(length > 0){yield --length;}}
+
 module.exports = {
+    range: (length) => [...reversedXrange(length)].reverse(),
     expectBigNum: (bigNumber) => expect(bigNumber.toNumber()),
     // This is more or less lifted from openzeppeling/test-helpers, which
     // provides more help than we currently need, and, in fact, provides so

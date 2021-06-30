@@ -65,19 +65,24 @@ To test on Hardhat network:
 npx hardhat test
 ```
 
-To get gas report:
-```shell
-REPORT_GAS=1 npx hardhat test
-```
-
-To get coverage report:
+To run tests with a coverage report:
 ```shell
 npx hardhat coverage
 ```
 
+To run tests with a gas report:
+```shell
+REPORT_GAS=true npx hardhat test
+```
+
+To run tests with load testing (use any desired number of iterations):
+```shell
+LOAD_TEST_ITERATIONS=1000 npx hardhat test
+```
+
 ## Deployment
 
-Currently we have two deployment procedures, one for eos and one for ethereum.
+Currently we have two deployment procedures, one for ethereum and one for eos.
 
 ### ethereum Deployment
 
