@@ -189,7 +189,7 @@ describe('end to end tests', () => {
         // Declare rewards.
         const rewardAmount = 10**9;
         let totalRewards = 0;
-        for(const quarterIdx of range(13)){
+        for(const quarterIdx of range(14)){
             await declareReward(quarterIdx, rewardAmount);
             totalRewards += rewardAmount;
         }
@@ -204,17 +204,41 @@ describe('end to end tests', () => {
             totalStakes += stakeAmount;
         }
 
-        // Promote time.
-        await increaseTimeTo(13);
-
-        // Claim stakes and rewards.
+        // Promote to quarter 1, extend locks, and claim all rewards on quarter 0 to clear partial quarters.
+        await increaseTimeTo(1);
         let totalClaims = 0;
         for(const [index, staker] of stakers.entries()){
-            owner.sendTransaction({to: staker.address, value: ethers.utils.parseEther('0.1')});
-            console.log(`claiming (${index + 1}/${iterations})`);
+            console.log(`extending and claiming rewards of quarter 0 (${index + 1}/${iterations})`);
+            await extend(staker, 0, 14 - (index % 13));
             totalClaims += await claim(staker, 0);
         }
 
+        // Go over each quarter, claiming and expecting.
+        for(let quarterShift in range(13)){
+            // Why do I need to parseInt here, javascript?! Why???
+            await increaseTimeTo(parseInt(quarterShift, 10) + 2);
+
+            // Collect data, only asserting consistency.
+            let sampleClaims = [];
+            for(const [index, staker] of stakers.entries()){
+                console.log(`claiming (${index + 1}/${iterations})`);
+                if(index % 13 >= 13 - quarterShift) continue;
+                let currentClaim = await claim(staker, 0);
+                totalClaims += currentClaim;
+                if(index % 13 === 12 - quarterShift) currentClaim -= stakeAmount;
+                if(sampleClaims.length < 13 - quarterShift) sampleClaims.push(currentClaim);
+                else expect(currentClaim).to.equal(sampleClaims[index % 13]);
+            }
+
+            // Verify that the boosts are correct.
+            let baseClaim = sampleClaims.pop();
+            for(const [index, sample] of Object.entries(sampleClaims)){
+                const expectedRatio = 1 + (0.25 * (sampleClaims.length - index));
+                expect(Math.abs(expectedRatio - (sample / baseClaim))).to.be.below(0.001);
+            }
+        }
+
+        // Verify totals.
         expect(totalStakes + totalRewards - totalClaims).to.be.within(0, (iterations - 1) * 13);
     });
 });
