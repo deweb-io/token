@@ -1,4 +1,5 @@
 const {expect} = require('chai');
+const {range} = require('./utils');
 
 describe('end to end tests', () => {
     let owner, stakers, bbsToken, staking, quarterLength;
@@ -85,6 +86,7 @@ describe('end to end tests', () => {
         const claimAmount = (await getBalance(staker)) - startingBalance;
         if(typeof(assertClaimEquals) === typeof(1)) expect(claimAmount).to.equal(assertClaimEquals);
         console.log(`claimed ${staker.address.slice(0, 5)}/${stakeIdx} and got ${claimAmount}`);
+        return claimAmount;
     }
 
     async function runScenario(steps){
@@ -175,5 +177,44 @@ describe('end to end tests', () => {
         ]);
     });
 
-});
+    it('load testing [ @skipOnCoverage ]', async function(){ // Do not use arrow notation or you won't have "this".
+        const iterations = parseInt(process.env.LOAD_TEST_ITERATIONS, 10) || 5;
+        if(iterations < 1000) console.warn(`running with only ${iterations} iterations`);
+        this.timeout(5000 + (iterations * 1000));
 
+        // Create/remove stakers as needed.
+        while(stakers.length < iterations) stakers.push(new ethers.Wallet(stakers.length, owner.provider));
+        stakers = stakers.slice(0, iterations);
+
+        // Declare rewards.
+        const rewardAmount = 10**9;
+        let totalRewards = 0;
+        for(const quarterIdx of range(13)){
+            await declareReward(quarterIdx, rewardAmount);
+            totalRewards += rewardAmount;
+        }
+
+        // Lock stakes.
+        const stakeAmount = 10**6;
+        let totalStakes = 0;
+        for(const [index, staker] of stakers.entries()){
+            owner.sendTransaction({to: staker.address, value: ethers.utils.parseEther('0.1')});
+            console.log(`locking (${index + 1}/${iterations})`);
+            await lock(staker, stakeAmount, 13 - (index % 13));
+            totalStakes += stakeAmount;
+        }
+
+        // Promote time.
+        await increaseTimeTo(13);
+
+        // Claim stakes and rewards.
+        let totalClaims = 0;
+        for(const [index, staker] of stakers.entries()){
+            owner.sendTransaction({to: staker.address, value: ethers.utils.parseEther('0.1')});
+            console.log(`claiming (${index + 1}/${iterations})`);
+            totalClaims += await claim(staker, 0);
+        }
+
+        expect(totalStakes + totalRewards - totalClaims).to.be.within(0, (iterations - 1) * 13);
+    });
+});

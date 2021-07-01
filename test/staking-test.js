@@ -180,23 +180,6 @@ describe('Staking', () => {
         expectBigNum(await staking.getVotingPower(stakers[0].address)).to.equal(sharesForNextQuarter.toNumber());
     });
 
-    it('load testing [ @skipOnCoverage ]', async function(){ // Do not use arrow notation or you won't have "this".
-        const iterations = 5; // Change this when actually running load tests.
-        if(iterations < 1000) console.warn(`running with only ${iterations} iterations`);
-        this.timeout(iterations * 200);
-
-        // Create stakers.
-        function* range(length){while(length){yield length--;}}
-        stakers = [...range(iterations)].reverse().map((index) => Object.assign(
-            new ethers.Wallet(index, owner.provider), {index: index}));
-
-        for(const staker of stakers){
-            owner.sendTransaction({to: staker.address, value: ethers.utils.parseEther('0.1')});
-            console.log(`locking (${staker.index}/${iterations})`);
-            await (await approveAndDoAs(staker, stakeAmount)).lock(stakeAmount, 13);
-        }
-    });
-
     // This test can affect the line counters for the coverage report, so keep it at the end.
     it('contract upgrade', async() => {
         await stake(2);
