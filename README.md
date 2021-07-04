@@ -77,7 +77,12 @@ REPORT_GAS=true npx hardhat test
 
 To run tests with load testing (use any desired number of iterations):
 ```shell
-LOAD_TEST_ITERATIONS=1000 npx hardhat test
+TEST_ITERATIONS=1000 npx hardhat test
+```
+
+To run tests with extra console.debug messages:
+```shell
+TEST_DEBUG=true npx hardhat test
 ```
 
 ## Deployment
