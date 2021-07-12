@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LM Demo</title>
+    <link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400&display=swap" rel="stylesheet">
+    <style>
+body{
+    background-color: #cccccc;
+    font-family: 'Roboto';
+}
+h1,h2,h3{
+  font-family: 'Righteous', cursive;
+  padding: 0.5em 0em;
+}
+#errors{
+    display: none;
+    background-color: red;
+    color: black;
+    font-size: 4em;
+    text-align: center;
+    margin: auto;
+    position: fixed;
+    top: 0px;
+}
+div.page{
+    width: 55em;
+    margin: auto;
+    background-color: white;
+    padding: 2em;
+}
+div.half-screen {
+  width: 48%;
+  display: inline-block;
+  vertical-align: top;
+}
+form,table{
+    margin: auto;
+    padding: 1em;
+    margin-top: 1em;
+}
+table {
+    border-collapse: collapse;
+}
+form{
+    border: 1px dotted #333333;
+    height: 18em;
+}
+input,button{
+    display: block;
+    margin: 1em;
+    background-color: #111111;
+    color: #dddddd;
+}
+input[type=radio] {
+  display: inline-block;
+}
+tr,th,td{
+    font-family:'Lucida Console', monospace;
+    border: 1px solid #333333;
+    padding: 1em;
+}
+td.action{
+    cursor: pointer;
+    text-decoration: underline;
+}
+textarea {
+  width: 100%;
+}
+#rewardsLog {
+  background-color: #f9f9f9;
+  height: 4em;
+  overflow-y: scroll;
+  padding: 1em;
+  scrollbar-color:#dddddd #111111;
+}
+    </style>
+</head>
+<body>
+    <div class=page>
+        <h1>BBS Staking End-To-End Test Machine</h1>
+        <p>This is a BBS staking simulator which generates code to be copy-pasted into test/end-to-end-test.js file for actual testing.</p>
+        <p>You may lock as many positions as you like for each staker. </p>
+        <p>Since first quarter reward is wimzy due to fraction calculation, the machine prevents restaking before claiming.<br>
+        Furthermore when locking a new position - claiming and restaking of all existing positions becomes unavailable. <br>
+        Therefore it's best to lock new positions only after you have finished manipulating the existing ones.</p>
+        <p>At each point at the test you may press the [Generate Code!] button to get the code corresponding with your actions. <br>
+        To avoid duplication errors, please make sure to assign unique indexes when adding scenarios to the test/end-to-end-test.js file (change [End to end X] place holder).</p>
+        <p>Happy testing (:</p>
+
+        <div class="half-screen">
+          <h2>Locking</h2>
+          <form id=lockForm onsubmit='return false;'>
+              Staker
+              <div>
+                <input type="radio" id="alice" name="staker" value="alice-0">
+                <label for="alice">Alice</label>
+
+                <input type="radio" id="bob" name="staker" value="bob-0">
+                <label for="bob">Bob</label>
+
+                <input type="radio" id="carol" name="staker" value="carol-0">
+                <label for="carol">Carol</label>
+              </div>
+              Amount of BBS in position <input id=lockAmount>
+              Locking period in quarters <input id=lockQuarters>
+              <button>Lock Position</button>
+              <p>Number of positions: <span id=numPositions>0</span></p>
+          </form>
+        </div>
+        <div class="half-screen">
+          <h2>rewarding</h2>
+
+          <form id=rewardForm onsubmit='return false;'>
+              Reward amount <input id=rewardAmount>
+              <button>Send Reward</button>
+              <p>Current quarter: <span id=currentQuarter>0</span></p>
+              <p>Rewards:</p>
+              <div id="rewardsLog"></div>
+          </form>
+        </div>
+        <p>
+            The new stake will appear in the stakes table:
+        </p>
+        <table><thead><tr>
+            <th>position ID</th><th>amount</th><th>quarters</th>
+            <th>shares</th><th>percent</th><th colspan=4>actions</th>
+        </tr></thead><tbody id=positions></tbody></table>
+
+        <h2>End to end test code</h2>
+        <div id="ete-test-code">
+          <button onclick="codeGenerator.generateCode()">Generate Code!</button>
+          <textarea id="code" rows="10"></textarea>
+        </div>
+    </div>
+    <div id=errors></div>
+    <script>
+/* jshint esversion: 7*/
+const ERRORS_DISPLAY = document.getElementById('errors');
+const REWARDS_LOG = document.getElementById('rewardsLog');
+const CURRENT_QUARTER_DISPLAY = document.getElementById('currentQuarter');
+const POSITIONS_DISPLAY = document.getElementById('positions');
+const NUM_POSITIONS_DISPLAY = document.getElementById('numPositions');
+const TEST_CODE_DISPLAY = document.getElementById('code');
+const DEFAULT_LOCK_DAY = 1;
+const STAKER_NAME = 0;
+const STAKER_POS = 1;
+
+let currentQuarter = 0;
+let rewards = {
+    quarters: {},
+
+    get: (index) => {
+        if(typeof(index) === 'undefined') index = currentQuarter;
+        if(!rewards.quarters.hasOwnProperty(index)) rewards.quarters[index] = {amount: 0, shares: 0};
+        return rewards.quarters[index];
+    },
+
+    iterate: (last, first, function_) => {
+        for(let quarterIdx = last; quarterIdx >= first; quarterIdx--){
+            function_(quarterIdx, rewards.get(quarterIdx));
+        }
+    },
+
+    draw: () => {
+        if (currentQuarter > 0) {
+          REWARDS_LOG.innerHTML += `[${currentQuarter-1}]=${inputVal('rewardAmount')}  `;
+        }
+    },
+
+    endQuarter: (amount) => {
+        rewards.get().amount += amount;
+        currentQuarter++;
+        rewards.draw();
+    }
+};
+
+let locks = {
+    positions: {},
+
+    lock: (positionId, lockAmount, lockTill, newStakeLocked = true) => {
+        let position = locks.positions[positionId];
+        if(!position){
+            position = locks.positions[positionId] = {
+                lockQuarter: currentQuarter,
+                lockDay: DEFAULT_LOCK_DAY,
+                shares: {},
+                unclaimeQuarter: 0,
+                claimedReward: 0,
+                lastClaimedReward: 0,
+                quartersToGo: () => currentQuarter < position.lockTill ? position.lockTill - currentQuarter : 0,
+                currentShares: () => position.shares[currentQuarter] || 0,
+                currentSharePercent: () => (
+                    `${Math.floor(rewards.get().shares && position.currentShares() / rewards.get().shares * 10000) / 100}%`
+                ),
+                calculateReward: () => {
+                    let total = 0;
+                    rewards.iterate(currentQuarter - 1, position.unclaimeQuarter, (quarterIdx, reward) => {
+                        if(position.shares[quarterIdx] && position.shares[quarterIdx] > 0){
+                            total += position.shares[quarterIdx] * reward.amount / reward.shares;
+                        }
+                    });
+                    return Math.floor(total);
+                },
+                reclaim: () => {
+                    if(currentQuarter < position.lockTill){
+                        throw(`position ${positionId} is locked until quarter ${position.lockTill}`);
+                    }
+                    delete locks.positions[positionId];
+                    locks.draw();
+                }
+            };
+        }else{
+            if(position.lockAmount && (lockAmount < position.lockAmount)) throw(
+                `position ${positionId} has already locked ${position.lockAmount}`);
+            if(position.lockTill && lockTill <= position.lockTill && lockAmount === position.lockAmount) throw(
+                `position ${positionId} is already locked until quarter ${position.lockTill}`);
+        }
+        position.lockAmount = lockAmount;
+        position.lockTill = lockTill;
+
+        for(let quarterIdx = currentQuarter; quarterIdx < position.lockTill; quarterIdx++){
+            const shares = lockAmount * (100 + ((position.lockTill - quarterIdx - 1) * 25)); /* (
+                quarterIdx === position.lockQuarter ? (92 - lockDay) / 91 : 1);*/
+            if(typeof(position.shares[quarterIdx]) === 'undefined'){
+                position.shares[quarterIdx] = 0;
+            }
+            rewards.get(quarterIdx).shares += shares - position.shares[quarterIdx];
+            position.shares[quarterIdx] = shares;
+        }
+
+        locks.draw(newStakeLocked);
+    },
+
+    draw: (newStakeLocked = false) => {
+        POSITIONS_DISPLAY.innerHTML = '';
+        for(let [positionId, position] of Object.entries(locks.positions)){
+            let row = document.createElement('tr');
+
+            // Data cells.
+            for(const cellValue of [
+                positionId, position.lockAmount, position.quartersToGo(), position.currentShares(),
+                position.currentSharePercent()
+            ]){
+                const cell = document.createElement('td');
+                cell.appendChild(document.createTextNode(cellValue));
+                row.appendChild(cell);
+            }
+
+            // Action cell.
+
+            for(const [title, function_] of [
+                ['extend', (position.lockTill <= currentQuarter || position.lockTill - currentQuarter === 13) ? null : () => {
+                    locks.lock(
+                        positionId, position.lockAmount,
+                        currentQuarter + posIntVal(prompt('how many quarters to lock'), 13),
+                        newStakeLocked);
+                    codeGenerator.addLine('extend', {posId: positionId});
+                }],
+                ['restake', (position.lockTill <= currentQuarter || position.claimedReward === 0 ||
+                    position.calculateReward() === 0 || newStakeLocked) ? null : () => {
+                    codeGenerator.addLine('lockRewards', {posId: positionId});
+                    locks.lock(positionId, position.lockAmount + position.calculateReward(), position.lockTill);
+                    position.unclaimeQuarter = currentQuarter;
+                    locks.draw();
+                }],
+                ['claim', (position.calculateReward() === 0 || newStakeLocked) ? null : () => {
+                    position.lastClaimedReward = position.calculateReward();
+                    position.claimedReward += position.lastClaimedReward;
+                    position.unclaimeQuarter = currentQuarter;
+                    locks.draw();
+                    codeGenerator.addLine('claim', {posId: positionId});
+                    if (position.lockTill <= currentQuarter) {
+                      position.reclaim();
+                    }
+                }],
+            ]){
+                const cell = document.createElement('td');
+                cell.appendChild(document.createTextNode(title));
+                if (function_) {
+                  cell.classList.add('action');
+                  cell.addEventListener('click', (...args) => function_(...args));
+                }
+                row.appendChild(cell);
+            }
+            POSITIONS_DISPLAY.appendChild(row);
+        }
+        NUM_POSITIONS_DISPLAY.innerHTML = Object.keys(locks.positions).length;
+    }
+};
+
+// claim lines of code to generate end-to-end test code
+let codeGenerator = {
+  lines: [],
+  addLine: (action, actionParam = {}) => {
+    const line = {action: "'" + action + "'"};
+    const position = locks.positions[actionParam.posId];
+
+    if (!(position === undefined)) {
+      line.staker = "'" + actionParam.posId.split("-")[STAKER_NAME] + "'";
+      line.stakeIdx = actionParam.posId.split("-")[STAKER_POS];
+    }
+
+    switch (action) {
+      case 'lock':
+        line.amount = position.lockAmount;
+        line.unlockQuarter = position.lockTill;
+        break;
+      case 'extend':
+        line.unlockQuarter = position.lockTill;
+        // 'assertSharesEqual' should not be checked on the first month only
+        if (position.lockQuarter !== currentQuarter) {
+          line.assertSharesEqual = position.shares[currentQuarter];
+        } break;
+      case 'lockRewards':
+        line.assertStakeIncreaseEquals = position.calculateReward();
+        break;
+      case 'claim':
+        if (position.lastClaimedReward > 0 && position.claimedReward !== position.lastClaimedReward) {
+          line.assertClaimEquals = position.lockTill > currentQuarter ? position.lastClaimedReward : position.lastClaimedReward + position.lockAmount;
+        } break;
+      case 'declareReward':
+        line.amount = actionParam.reward;
+        line.quarterIdx= currentQuarter;
+        break;
+      case 'increaseTimeTo':
+        line.quarterIdx= currentQuarter;
+        break;
+    }
+    codeGenerator.lines.push (JSON.stringify(line).replace(/"/g, ""));
+  },
+  generateCode: () => {
+    let generatedCode = "";
+    codeGenerator.lines.forEach(line => {
+        generatedCode += `
+             ${line} ,`});
+    generatedCode = generatedCode.substring(0, generatedCode.length - 1);
+    generatedCode = `it('End to end X [ @skipOnCoverage ]', async() => {
+        await runScenario([${generatedCode}
+        ]);
+      });`
+    TEST_CODE_DISPLAY.value = generatedCode;
+  }
+
+};
+
+// Get a positive integer value (possibly limited).
+function posIntVal(value, limit){
+    try{
+        value = parseFloat(value);
+    }catch(e){
+        throw(`not a number - ${value}`);
+    }
+    if(!Number.isInteger(value)){
+        throw(`not an integer - ${value}`);
+    }
+    if(value < 1){
+        throw(`not positive - ${value}`);
+    }
+    if(limit && value > limit){
+        throw(`larger than ${limit} - ${value}`);
+    }
+    return value;
+}
+
+// Get a positive integer value (possibly limited) from the name of an input field.
+function inputVal(inputId, limit){
+    return posIntVal(document.getElementById(inputId).value, limit);
+}
+
+// Bind functionality.
+window.addEventListener('error', (error) => {
+    ERRORS_DISPLAY.style.display = 'block';
+    ERRORS_DISPLAY.innerHTML = error.message.slice(20);
+    setTimeout(() => ERRORS_DISPLAY.style.display = 'none', 5000);
+});
+window.addEventListener('load', () => {
+    rewards.draw();
+});
+document.getElementById('lockForm').addEventListener('submit', () => {
+    let stakerNameAndPos = document.querySelector('input[name="staker"]:checked').value;
+    locks.lock(
+        stakerNameAndPos, //Math.floor(Math.random() * 2**32),
+        inputVal('lockAmount'), currentQuarter + inputVal('lockQuarters', 13));
+    // incriment staker's position count
+    codeGenerator.addLine('lock', {posId: stakerNameAndPos});
+    let arrNamePose = stakerNameAndPos.split("-");
+    document.querySelector('input[name="staker"]:checked').value = arrNamePose[STAKER_NAME] + "-" + (parseInt(arrNamePose[STAKER_POS]) + 1) ;
+    return false;
+});
+document.getElementById('rewardForm').addEventListener('submit', () => {
+    codeGenerator.addLine('declareReward',  {reward: inputVal('rewardAmount')} );
+    rewards.endQuarter(inputVal('rewardAmount'));
+    codeGenerator.addLine('increaseTimeTo');
+    locks.draw();
+    return false;
+});
+    </script>
+</body>
+</html>
