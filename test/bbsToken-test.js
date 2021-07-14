@@ -7,6 +7,7 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const BBSToken = await ethers.getContractFactory('BBSToken');
         bbsToken = await BBSToken.deploy();
         accounts = await ethers.getSigners();
+        console.log('asdasdsd', accounts[1].address);
         ownerAddress = accounts[0].address;
         notOwnerAddress = accounts[1].address;
     });

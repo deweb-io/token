@@ -23,9 +23,13 @@ module.exports = {
     },
     networks: {
         rinkeby: {
-            url: 'https://rinkeby.infura.io/v3/b481942a6a15462988f7ab9000ca51ab',
+            url: 'https://ropsten.infura.io/v3/b481942a6a15462988f7ab9000ca51ab',
             // Public-key:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
-            accounts : ['0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80']
+            accounts : ['0xa54eb7f94dae3fdf83bdb0036eea1c673e824fc8109a70bdb6748adddffe3538']
+        },
+        localhost: {
+            url: 'http://127.0.0.1:8545',
+            accounts : ['0x0000000000000000000000000000000000000000000000000000000000000001']
         }
     }
 };
