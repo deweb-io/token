@@ -1,5 +1,6 @@
 .openzeppelin/
 artifacts/
+bancor_test_env/
 build/
 cache/
 coverage.json

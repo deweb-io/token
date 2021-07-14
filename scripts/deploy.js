@@ -4,15 +4,15 @@ async function main() {
     const token = await Token.deploy();
     console.log('token deployed to:', token.address);
 
-    // const Rewards = await hardhat.ethers.getContractFactory('DailyRewards');
-    // const rewards = await Rewards.deploy(bbsToken.address);
-    // await rewards.deployed();
-    // console.log('rewards deployed to:', rewards.address);
+    const Rewards = await hardhat.ethers.getContractFactory('DailyRewards');
+    const rewards = await Rewards.deploy(token.address);
+    await rewards.deployed();
+    console.log('rewards deployed to:', rewards.address);
 
-    // const Staking = await hardhat.ethers.getContractFactory('Staking');
-    // const staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-    // await staking.deployed();
-    // console.log('staking deployed to:', staking.address);
+    const Staking = await hardhat.ethers.getContractFactory('Staking');
+    const staking = await upgrades.deployProxy(Staking, [token.address]);
+    await staking.deployed();
+    console.log('staking deployed to:', staking.address);
 }
 
 main().then(() => process.exit(0)).catch(error => {
