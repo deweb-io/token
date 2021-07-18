@@ -40,6 +40,7 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
 
         const owner = accounts[0];
         const spender = accounts[1].address;
+        const permitSigner = accounts[2]; //any account can sign on the permit transaction
         const value = 100;
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(owner.address)).toNumber();
@@ -56,7 +57,7 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const {v, r, s} = ethers.utils.splitSignature(signature);
 
         expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(0);
-        await bbsToken.permit(owner.address, spender, value, deadline, v, r, s);
+        await bbsToken.connect(permitSigner).permit(owner.address, spender, value, deadline, v, r, s);
         expect((await bbsToken.allowance(owner.address, spender)).toNumber()).to.equal(value);
         expect((await bbsToken.nonces(owner.address)).toNumber()).to.equal(nonce + 1);
     });
