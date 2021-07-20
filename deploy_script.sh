@@ -16,10 +16,11 @@ fi
 
 echo RUNNING GANACHE
 account=0x0000000000000000000000000000000000000000000000000000000000000001
+reporter=0xe427e1a30d344c90f0b3884df1e58273ee7b6084c055bcc84090e2915967d8c6
 yarn ganache-cli \
      --port=8545 \
-     --gasLimit=6721975 \
-     --account=$account,10000000000000000000000000000000000000000 &
+     --gasLimit=30000000 \
+     --account=$account,10000000000000000000000000000000000000000 --account=$reporter,10000000000000000000000000000000000000000 &
 ganache_pid=$!
 cleanup() {
     # Killing the original ganache-cli process will not suffice, you need to kill it's grandson.
@@ -33,7 +34,7 @@ trap cleanup EXIT
 sleep 5
 
 echo DEPLOYING TOKEN
-bbs_token="$(npx hardhat --network localhost run ./scripts/deploy_token.js | grep -Po '(?<=token deployed to: )0x.*')"
+bbs_token="$(npx hardhat --network localhost run ./scripts/deploy_token.js | grep -o '(?<=token deployed to: )0x.*')"
 
 pushd $testdir/solidity/utils/
 
@@ -47,20 +48,21 @@ deploy_script="$(sed '434q' test_deployment.js)
         '500000000000000000000',
         1,
         contractRegistry._address,
-        '$bbs_token'
+        '0xF2E246BB76DF876Cef8b38ae84130F4F55De395b'
     ]);
 
     // register bancorX
     await execute(contractRegistry.methods.registerAddress(Web3.utils.asciiToHex('BancorX'), bancorX._address));
+
+    const REPORTER1_ADDRESS = '0x41C87AC77a3ec4E192F0f3a0c598f8027Ec16177';
+    // const REPORTER1_PRIVATE_KEY = '0xe427e1a30d344c90f0b3884df1e58273ee7b6084c055bcc84090e2915967d8c6';
+    await execute(bancorX.methods.setReporter(REPORTER1_ADDRESS, true));
 
     web3.currentProvider.disconnect();
 };
 
 run();
 "
-#    const REPORTER1_ADDRESS = '0x41C87AC77a3ec4E192F0f3a0c598f8027Ec16177';
-#    // const REPORTER1_PRIVATE_KEY = '0xe427e1a30d344c90f0b3884df1e58273ee7b6084c055bcc84090e2915967d8c6';
-#    await execute(bancorX.methods.setReporter(REPORTER1_ADDRESS, true));
 echo "$deploy_script" > test_deployment.js
 
 cat << EOF > config.json
@@ -165,8 +167,8 @@ deployment_log="$(echo 1 | node ./test_deployment.js \
      http://localhost:8545 \
      $account)"
 echo "$deployment_log"
-BANCOR_ENV_REGISTRY="$(grep -Po '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")"
-BANCOR_ENV_BANCOR_X="$(grep -Po '(?<=bancorX deployed at )0x.*' <<<"$deployment_log")"
+BANCOR_ENV_REGISTRY="$(grep -o '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")"
+BANCOR_ENV_BANCOR_X="$(grep -o '(?<=bancorX deployed at )0x.*' <<<"$deployment_log")"
 BANCOR_ENV_BBS_TOKEN="$bbs_token"
 export BANCOR_ENV_REGISTRY
 export BANCOR_ENV_BANCOR_X
