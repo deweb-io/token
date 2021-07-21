@@ -9,7 +9,7 @@ if grep linux <<<"$OSTYPE" > /dev/null; then
 else
     is_linux=''
     get_deployment_address(){
-        grep "$1 deployed at 0x" | sed "s/$1 deployed at 0x/0x/"
+        grep "$1 deployed at 0x" | grep -o '0x[^ ]*'
     }
 fi
 
