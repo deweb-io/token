@@ -3,10 +3,14 @@ testdir=bancor_test_env
 
 if grep linux <<<"$OSTYPE" > /dev/null; then
     is_linux=yes
-    exclusive_perl_grep='grep -Po'
+    get_deployment_address(){
+        grep -Po "(?<=$1 deployed at )0x[^ ]*"
+    }
 else
     is_linux=''
-    exclusive_perl_grep='grep -o'
+    get_deployment_address(){
+        grep "$1 deployed at 0x" | sed "s/$1 deployed at 0x/0x/"
+    }
 fi
 
 pushd "$(dirname "${BASH_SOURCE[0]}")"
@@ -34,7 +38,6 @@ cleanup() {
     # Killing the original ganache-cli process will not suffice, you need to kill it's grandson.
     # This should probably be done with session id or something, but for now this will do.
     # Will probably fail on mac as well.
-    grep linux <<<"$OSTYPE" > /dev/null || return
     if [ "$is_linux" ]; then
         echo KILLING GANACHE
         kill $(ps --ppid $(ps --ppid $ganache_pid -o pid=) -o pid=)
@@ -48,7 +51,7 @@ trap cleanup EXIT
 sleep 5
 
 echo DEPLOYING TOKEN
-bbs_token="$(npx hardhat --network localhost run ./scripts/deploy_token.js | $exclusive_perl_grep '(?<=token deployed to: )0x.*')"
+bbs_token="$(npx hardhat --network localhost run ./scripts/deploy_token.js | get_deployment_address token)"
 
 echo MODIFYING DEPLOYMENT SCRIPT
 pushd $testdir/solidity/utils/
@@ -84,8 +87,8 @@ deployment_log="$(echo 1 | node ./test_deployment.js \
      http://localhost:8545 \
      $account)"
 echo "$deployment_log"
-BANCOR_ENV_REGISTRY="$($exclusive_perl_grep '(?<=contractRegistry deployed at )0x.*' <<<"$deployment_log")"
-BANCOR_ENV_BANCOR_X="$($exclusive_perl_grep '(?<=bancorX deployed at )0x.*' <<<"$deployment_log")"
+BANCOR_ENV_REGISTRY="$(get_deployment_address contractRegistry <<<"$deployment_log")"
+BANCOR_ENV_BANCOR_X="$(get_deployment_address bancorX <<<"$deployment_log")"
 BANCOR_ENV_BBS_TOKEN="$bbs_token"
 export BANCOR_ENV_REGISTRY
 export BANCOR_ENV_BANCOR_X
