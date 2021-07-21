@@ -48,7 +48,7 @@ describe('Bridge', function() {
         // const topic = web3.utils.keccak256('XTransfer(address,bytes32,bytes32,uint256,uint256)');
         // console.log(topic);
         // console.log(await web3.eth.getPastLogs({topics: [topic]}));
-        
+
         console.log('address', signer.address);
         await bbsToken.mint(signer.address, ethers.utils.parseEther('1'));
 
@@ -64,10 +64,9 @@ describe('Bridge', function() {
         console.log('eosAddress',eosAddress);
         const amount = ethers.utils.parseEther('1');
         console.log(amount);
-        
+
         await bbsToken.connect(signer).approve(bancorX.address, amount);
         const xTransfer = await bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, amount, 5454);
         console.log(xTransfer);
-
     });
 });
