@@ -69,6 +69,7 @@ if [ ! -f BancorX.wasm ]; then
     kleos push action $bancorxaccount addreporter '["'$reporteraccount'"]' -p $bancorxaccount@active
     kleos get table $bancorxaccount $bancorxaccount settings
     kleos push action $bancorxaccount enablerpt '[true]' -p $bancorxaccount@active
+    kleos push action $bancorxaccount enablext '[true]' -p $bancorxaccount@active
     kleos get table $bancorxaccount $bancorxaccount settings
 fi
 
@@ -80,8 +81,7 @@ echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
 kleos get currency balance $account tomerbridge1 BBS
 
 echo -e "${GREEN}-----------------------X TRANSFER-----------------------${NC}"
-# kleos push action $bancorxaccount enablext '[true]' -p $bancorxaccount@active
-kleos push action $account transfer '["tomerbridge1", '"$bancorxaccount"', "1.0000 BBS", "1.1,ethereum,0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf,7123"]' -p tomerbridge1@active
+kleos push action $account transfer '["'tomerbridge1'", '"$bancorxaccount"', "1.0000 BBS", "1.1,ethereum,0x44569Aa35Ff6d97e6531880712a41D2af72a007C,8123841"]' -p tomerbridge1@active
 
 echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
 kleos get currency balance $account tomerbridge1 BBS
