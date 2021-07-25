@@ -1,3 +1,15 @@
+<!--
+    |Permit demo|
+    1. npx hardhat node
+    2. npx hardhat run scripts/deploy.js --network localhost
+    3. npx hardhat console --network localhost
+        const Token = await ethers.getContractFactory('BBSToken');
+        const bbsToken = Token.attach(BBS_TOKEN_ADDRESS_FROM_STEP_2)
+    4. npm install and run http-server module
+    5. goto http://127.0.0.1:8080
+    6. verify you have a metamask points to hardhat local network.
+-->
+
 <!DOCTYPE html>
 <html>
 
@@ -7,15 +19,15 @@
 
 <body>
     <div>
-        <h3>Sign Typed Data V3</h3>
-        <button type="button" id="eth_signTypedData_v3_Button">sign typed data v3</button>
+        <h3>Sign and permit</h3>
+        <button type="button" id="sign_and_permit_button">Sign data and send permit</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 
     <script>
         //connect meta-mask
-        eth_signTypedData_v3_Button.addEventListener('click', () => {
+        sign_and_permit_button.addEventListener('click', () => {
             //bbs token details
             const bbsTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
             const abi = [{
@@ -394,101 +406,108 @@
                     "type": "function"
                 }
             ];
+            const spender = '0x5BD060E8CDf5f3A22d8d54B098bF31Ae9A18B301';
+            const value = 100;
 
             if (typeof window.ethereum !== 'undefined') {
                 console.log('MetaMask is installed!');
+            } else {
+                console.log('Please install MetaMask');
+                return;
             }
 
             let bbsTokenInstance;
             let owner;
             let nonce;
-            const spender = '0x5BD060E8CDf5f3A22d8d54B098bF31Ae9A18B301';
-            const value = 100;
+
             window.ethereum.send('eth_requestAccounts').then(res => {
                 console.log(`connected account: ${JSON.stringify(res.result[0])}`);
                 owner = res.result[0];
                 window.web3 = new Web3(window.ethereum);
 
                 bbsTokenInstance = new window.web3.eth.Contract(abi, bbsTokenAddress);
-                bbsTokenInstance.methods.nonces(owner).call().then(
-                    nonce => {
-                        console.log(`nonce: ${res}`)
-                        const msgParams = JSON.stringify({
-                            domain: {
-                                name: 'BBS',
-                                version: '1',
-                                chainId: '31337',
-                                verifyingContract: bbsTokenAddress
-                            },
-                            message: {
-                                owner: owner,
-                                spender: spender,
-                                value: value,
-                                nonce: nonce,
-                                deadline: 10000000000
-                            },
-                            primaryType: 'Permit',
-                            types: {
-                                Permit: [{
-                                        name: 'owner',
-                                        type: 'address'
-                                    },
-                                    {
-                                        name: 'spender',
-                                        type: 'address'
-                                    },
-                                    {
-                                        name: 'value',
-                                        type: 'uint256'
-                                    },
-                                    {
-                                        name: 'nonce',
-                                        type: 'uint256'
-                                    },
-                                    {
-                                        name: 'deadline',
-                                        type: 'uint256'
-                                    }
-                                ]
-                            }
-                        });
-
-                        web3.currentProvider.sendAsync({
-                                method: 'eth_signTypedData_v4',
-                                params: [owner, msgParams],
-                                from: owner,
-                            },
-                            function (err, result) {
-                                if (err) return console.dir(err);
-                                if (result.error) {
-                                    alert(result.error.message);
+                bbsTokenInstance.methods.nonces(owner).call().then(nonce => {
+                    const msgParams = JSON.stringify({
+                        domain: {
+                            name: 'BBS',
+                            version: '1',
+                            chainId: '31337',
+                            verifyingContract: bbsTokenAddress
+                        },
+                        message: {
+                            owner: owner,
+                            spender: spender,
+                            value: value,
+                            nonce: parseInt(nonce),
+                            deadline: 10000000000
+                        },
+                        primaryType: 'Permit',
+                        types: {
+                            Permit: [{
+                                    name: 'owner',
+                                    type: 'address'
+                                },
+                                {
+                                    name: 'spender',
+                                    type: 'address'
+                                },
+                                {
+                                    name: 'value',
+                                    type: 'uint256'
+                                },
+                                {
+                                    name: 'nonce',
+                                    type: 'uint256'
+                                },
+                                {
+                                    name: 'deadline',
+                                    type: 'uint256'
                                 }
-                                if (result.error) return console.error('ERROR', result);
-                                console.log('TYPED SIGNED:' + JSON.stringify(result.result));
-
-                                //parse signature to v,r,s
-                                const signature = result.result.substring(2);
-                                const r = "0x" + signature.substring(0, 64);
-                                const s = "0x" + signature.substring(64, 128);
-                                const v = parseInt(signature.substring(128, 130), 16);
-                                console.log('r s v: ', r, s, v)
-
-                                //send permit tx to bbs token
-                                bbsTokenInstance.methods.permit(
-                                    owner, spender, value, 10000000000,
-                                    v,
-                                    web3.eth.abi.encodeParameter('bytes32', r),
-                                    web3.eth.abi.encodeParameter('bytes32', s)).send({
-                                    from: owner
-                                });
-
-                            }
-                        );
-
+                            ]
+                        }
                     });
+
+                    console.log(msgParams)
+
+                    //sign data with metamask
+                    web3.currentProvider.sendAsync({
+                            method: 'eth_signTypedData_v4',
+                            params: [owner, msgParams],
+                            from: owner,
+                        },
+                        function (err, result) {
+                            if (err) {
+                                console.error('ERROR', err);
+                                return;
+                            }
+                            if (result.error) {
+                                console.error('ERROR', result)
+                                return;
+                            }
+
+                            console.log(`Succsesfully signed: ${JSON.stringify(result.result)}`);
+
+                            //parse signature to v,r,s
+                            const signature = result.result.substring(2);
+                            const r = "0x" + signature.substring(0, 64);
+                            const s = "0x" + signature.substring(64, 128);
+                            const v = parseInt(signature.substring(128, 130), 16);
+                            console.log(`r:${r}, s:${s}, v:${v}`);
+
+                            //send permit tx to bbs token
+                            bbsTokenInstance.methods.permit(
+                                owner,
+                                spender,
+                                web3.eth.abi.encodeParameter('uint256', value),
+                                web3.eth.abi.encodeParameter('uint256', 10000000000),
+                                web3.eth.abi.encodeParameter('uint8', v),
+                                web3.eth.abi.encodeParameter('bytes32', r),
+                                web3.eth.abi.encodeParameter('bytes32', s)).send({from: owner});
+
+                        }
+                    );
+                });
             });
-
-
         });
     </script>
 </body>
