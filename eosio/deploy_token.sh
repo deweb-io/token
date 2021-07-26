@@ -6,6 +6,8 @@ CYAN='\033[1;36m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+ethereumAccount='0x44569Aa35Ff6d97e6531880712a41D2af72a007C'
+
 
 # kylin:
 # 1. create bbs token account (curl http://faucet-kylin.blockzone.net/create/$account) -> save to state.env
@@ -27,19 +29,22 @@ if [ ! -f Token.wasm ]; then
     rm -rf contracts_eos
 
     echo -e "${GREEN}-----------------------DEPLOYING BBS-----------------------${NC}"
-    kleos system buyram $account $account "10.0000 EOS" -p $account@active
-    kleos set account permission $account active --add-code
-    kleos set code $account . ./Token.wasm -p $account@active
-    kleos set contract $account . ./Token.wasm ./Token.abi -p $account@active
+    kleos system buyram $bbsaccount $bbsaccount "10.0000 EOS" -p $bbsaccount@active
+    kleos set account permission $bbsaccount active --add-code
+    kleos set code $bbsaccount . ./Token.wasm -p $bbsaccount@active
+    kleos set contract $bbsaccount . ./Token.wasm ./Token.abi -p $bbsaccount@active
+
     echo -e "${GREEN}-----------------------CREATING BBS-----------------------${NC}"
-    kleos push action $account create '[ "'$bancorxaccount'", "1000000.0000 BBS"]' -p $account@active
+    kleos push action $bbsaccount create '[ "'$bancorxaccount'", "1000000.0000 BBS"]' -p $bbsaccount@active
     
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-    kleos get currency balance $account $bancorxaccount
+    kleos get currency balance $bbsaccount $bancorxaccount
+
     echo -e "${GREEN}-----------------------ISSUING BBS-----------------------${NC}"
-    kleos push action $account issue '[ "'$bancorxaccount'", "100.0000 BBS", "memo" ]' -p $bancorxaccount@active
+    kleos push action $bbsaccount issue '[ "'$bancorxaccount'", "100.0000 BBS", "memo" ]' -p $bancorxaccount@active
+
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-    kleos get currency balance $account $bancorxaccount
+    kleos get currency balance $bbsaccount $bancorxaccount
 
 
     # TODO: bbs token account should give issue and retire permission to bancorx account
@@ -63,26 +68,25 @@ if [ ! -f BancorX.wasm ]; then
     kleos set contract $bancorxaccount . ./BancorX.wasm ./BancorX.abi -p $bancorxaccount@active
 
     echo -e "${GREEN}-----------------------INIT BANCOR X-----------------------${NC}"
-    kleos push action $bancorxaccount init '["'$account'", "1", "10000", "10000", "800000000", "400000000"]' -p $bancorxaccount@active
+    kleos push action $bancorxaccount init '["'$bbsaccount'", "1", "10000", "10000", "800000000", "400000000"]' -p $bancorxaccount@active
 
     echo -e "${GREEN}-----------------------ADD/ENABLE REPORTING-----------------------${NC}"
     kleos push action $bancorxaccount addreporter '["'$reporteraccount'"]' -p $bancorxaccount@active
-    kleos get table $bancorxaccount $bancorxaccount settings
     kleos push action $bancorxaccount enablerpt '[true]' -p $bancorxaccount@active
     kleos push action $bancorxaccount enablext '[true]' -p $bancorxaccount@active
     kleos get table $bancorxaccount $bancorxaccount settings
 fi
 
-# kleos get table $bancorxaccount $bancorxaccount settings
 # kleos push action $bancorxaccount update '["1", "10000", "10000", "800000000", "400000000"]' -p $bancorxaccount@active
 # kleos get table $bancorxaccount $bancorxaccount settings
 
+
 echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-kleos get currency balance $account tomerbridge1 BBS
+kleos get currency balance $bbsaccount $account BBS
 
 echo -e "${GREEN}-----------------------X TRANSFER-----------------------${NC}"
-kleos push action $account transfer '["'tomerbridge1'", '"$bancorxaccount"', "1.0000 BBS", "1.1,ethereum,0x44569Aa35Ff6d97e6531880712a41D2af72a007C,8123841"]' -p tomerbridge1@active
+kleos push action $bbsaccount transfer '["'$account'", "'$bancorxaccount'", "1.0000 BBS", "1.1,ethereum,'$ethereumAccount','$RANDOM'"]' -p $account@active
 
 echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-kleos get currency balance $account tomerbridge1 BBS
+kleos get currency balance $bbsaccount $account BBS
 
