@@ -22,9 +22,28 @@ describe('Bridge', function() {
     }
 
     beforeEach(async function() {
+        const Token = await ethers.getContractFactory('BBSToken');
+        bbsToken = await Token.deploy();
+        console.log(`BBS token deployed at ${bbsToken.address}`);
+
+        const BancorX = await ethers.getContractFactory('BancorX');
+        bancorX = await BancorX.deploy(
+            '40000000000000000000000',
+            '80000000000000000000000',
+            '1000000000000000000',
+            '500000000000000000000',
+            1,
+            '0x9eED1767B3c33D4A4fDB7c76070DE2dDfd37e808', // should be upgrader contract address
+            bbsToken.address);
+
+        console.log(`BancorX deployed at ${bancorX.address}`);
+
+        // const REPORTER1_PRIVATE_KEY = '0xe427e1a30d344c90f0b3884df1e58273ee7b6084c055bcc84090e2915967d8c6';
+        const reporterAddress = '0x41C87AC77a3ec4E192F0f3a0c598f8027Ec16177';
+        await bancorX['setReporter(address,bool)'](reporterAddress, true);
+        console.log(`set reporter on bancor x ${reporterAddress}`);
+
         signer = (await ethers.getSigners())[0];
-        bbsToken = await ethers.getContractAt('BBSToken', BBS_TOKEN);
-        bancorX = await ethers.getContractAt('BancorX', BANCOR_X);
         printContracts();
     });
 
