@@ -1,13 +1,10 @@
 <!--
     |Permit demo|
-    1. npx hardhat node
-    2. npx hardhat run scripts/deploy.js --network localhost
-    3. npx hardhat console --network localhost
-        const Token = await ethers.getContractFactory('BBSToken');
-        const bbsToken = Token.attach(BBS_TOKEN_ADDRESS_FROM_STEP_2)
-    4. npm install and run http-server module
+    1. Run local node: npx hardhat node
+    2. Deploy token: npx hardhat run scripts/deploy.js --network localhost
+    3. npm i -g http-server and run it (http-server)
     5. goto http://127.0.0.1:8080
-    6. verify you have a metamask points to hardhat local network.
+    5. verify you have a metamask points to hardhat local network.
 -->
 
 <!DOCTYPE html>
@@ -29,7 +26,7 @@
         //connect meta-mask
         sign_and_permit_button.addEventListener('click', () => {
             //bbs token details
-            const bbsTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+            const bbsTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; //Taken from step 2 above
             const abi = [{
                     "inputs": [],
                     "stateMutability": "nonpayable",
@@ -408,6 +405,7 @@
             ];
             const spender = '0x5BD060E8CDf5f3A22d8d54B098bF31Ae9A18B301';
             const value = 100;
+            const deadline = 10000000000;
 
             if (typeof window.ethereum !== 'undefined') {
                 console.log('MetaMask is installed!');
@@ -428,21 +426,7 @@
                 bbsTokenInstance = new window.web3.eth.Contract(abi, bbsTokenAddress);
                 bbsTokenInstance.methods.nonces(owner).call().then(nonce => {
                     const msgParams = JSON.stringify({
-                        domain: {
-                            name: 'BBS',
-                            version: '1',
-                            chainId: '31337',
-                            verifyingContract: bbsTokenAddress
-                        },
-                        message: {
-                            owner: owner,
-                            spender: spender,
-                            value: value,
-                            nonce: parseInt(nonce),
-                            deadline: 10000000000
-                        },
-                        primaryType: 'Permit',
-                        types: {
+                                             types: {
                             Permit: [{
                                     name: 'owner',
                                     type: 'address'
@@ -463,7 +447,38 @@
                                     name: 'deadline',
                                     type: 'uint256'
                                 }
+                            ],
+                            EIP712Domain: [{
+                                    name: "name",
+                                    type: "string"
+                                },
+                                {
+                                    name: "version",
+                                    type: "string"
+                                },
+                                {
+                                    name: "chainId",
+                                    type: "uint256"
+                                },
+                                {
+                                    name: "verifyingContract",
+                                    type: "address"
+                                }
                             ]
+                        },
+                        domain: {
+                            name: 'BBS',
+                            version: '1',
+                            chainId: '31337',
+                            verifyingContract: bbsTokenAddress
+                        },
+                        primaryType: 'Permit',
+                        message: {
+                            owner: owner,
+                            spender: spender,
+                            value: value,
+                            nonce: parseInt(nonce),
+                            deadline: deadline
                         }
                     });
 
@@ -471,7 +486,7 @@
 
                     //sign data with metamask
                     web3.currentProvider.sendAsync({
-                            method: 'eth_signTypedData_v4',
+                            method: 'eth_signTypedData_v3',
                             params: [owner, msgParams],
                             from: owner,
                         },
@@ -485,7 +500,8 @@
                                 return;
                             }
 
-                            console.log(`Succsesfully signed: ${JSON.stringify(result.result)}`);
+                            console.log(
+                                `Succsesfully signed: ${JSON.stringify(result.result)}`);
 
                             //parse signature to v,r,s
                             const signature = result.result.substring(2);
@@ -499,11 +515,10 @@
                                 owner,
                                 spender,
                                 web3.eth.abi.encodeParameter('uint256', value),
-                                web3.eth.abi.encodeParameter('uint256', 10000000000),
+                                web3.eth.abi.encodeParameter('uint256', deadline),
                                 web3.eth.abi.encodeParameter('uint8', v),
                                 web3.eth.abi.encodeParameter('bytes32', r),
                                 web3.eth.abi.encodeParameter('bytes32', s)).send({from: owner});
-
                         }
                     );
                 });
