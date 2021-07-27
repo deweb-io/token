@@ -1,11 +1,12 @@
 const { ethers } = require('hardhat');
-const { expectRevert } = require('./utils');
+const {expect} = require('chai');
+const {expectRevert, expectBigNum} = require('./utils');
 
 
 describe('Bridge', function() {
     const commissionAmount = ethers.utils.parseEther('12');
-    const eosBlockchain = ethers.utils.formatBytes32String('eos'); 
-    const eosAddress = ethers.utils.formatBytes32String('tomeraccount'); 
+    const eosBlockchain = ethers.utils.formatBytes32String('eos');
+    const eosAddress = ethers.utils.formatBytes32String('tomeraccount');
     const xtransferId = Math.floor(Math.random() * (100000));
 
     let bbsToken, bancorX, owner, reporter;
@@ -45,7 +46,7 @@ describe('Bridge', function() {
 
         printContracts();
     });
-    
+
     it('should revert xtransfer - not enough balance', async function() {
         const mintAmount = ethers.utils.parseEther('12');
         await bbsToken.mint(owner.address, mintAmount);
@@ -59,7 +60,7 @@ describe('Bridge', function() {
     it('should make xtransfer - balance reduce to 0', async function() {
         const mintAmount = ethers.utils.parseEther('13');
         await bbsToken.mint(owner.address, mintAmount);
-        
+
         // xtransfer
         const xtransferAmount = ethers.utils.parseEther('13');
         await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
@@ -95,8 +96,8 @@ describe('Bridge', function() {
 
         const mintAmount = ethers.utils.parseEther('13');
         await bbsToken.mint(owner.address, mintAmount);
-        
-        
+
+
         // xtransfer
         const xtransferAmount = ethers.utils.parseEther('13');
         await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
@@ -128,8 +129,8 @@ describe('Bridge', function() {
     it('should revert report tx - tx already reported(same xtransferId)', async function() {
         const mintAmount = ethers.utils.parseEther('13');
         await bbsToken.mint(owner.address, mintAmount);
-        
-        
+
+
         // xtransfer
         const xtransferAmount = ethers.utils.parseEther('13');
         await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
@@ -164,4 +165,61 @@ describe('Bridge', function() {
         }
     });
 
+    it('xTransfer with permit', async function() {
+        //const owner = signer;
+        const spender = bancorX.address;
+
+        const BBSTransferAmount = ethers.utils.parseEther('10');
+
+        const eosBlockchain = ethers.utils.formatBytes32String('eos');
+        const eosAddress = ethers.utils.formatBytes32String('tomeraccount');
+        const txId = Math.floor(Math.random() * (100000));
+
+        const tokenName = await bbsToken.name();
+        const nonce = (await bbsToken.nonces(owner.address)).toNumber();
+        const provider = owner.provider;
+        const chainId = provider._network.chainId;
+        const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber())).timestamp;
+        const deadline = latestBlockTimestamp + 10000000000;
+
+        const signature = await owner._signTypedData(
+            {name: tokenName, version: '1', chainId, verifyingContract: bbsToken.address},
+            {Permit: [
+                {name: 'owner', type: 'address'}, {name: 'spender', type: 'address'},
+                {name: 'value', type: 'uint256'}, {name: 'nonce', type: 'uint256'},
+                {name: 'deadline', type: 'uint256'}
+            ]},
+            {owner: owner.address, spender, value: BBSTransferAmount, nonce, deadline});
+
+        const {v, r, s} = ethers.utils.splitSignature(signature);
+
+        //send different data should be fail
+        await expectRevert(bancorX.connect(owner)
+            ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
+                (eosBlockchain, eosAddress, ethers.utils.parseEther('11'), txId, deadline, v, r, s),
+                'ERC20Permit: invalid signature!!!');
+
+        //test balances before xTransfer
+        await bbsToken.mint(owner.address, BBSTransferAmount);
+        expect((await bbsToken.balanceOf(owner.address)).toString()).to.equal(BBSTransferAmount.toString());
+        expectBigNum(await bbsToken.balanceOf(spender)).to.equal(0);
+
+        //xTransfer
+        await bancorX.connect(owner)
+            ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
+                (eosBlockchain, eosAddress, BBSTransferAmount, txId, deadline, v, r, s);
+
+        //test balances after xTransfer
+        expectBigNum(await bbsToken.balanceOf(owner.address)).to.equal(0);
+        expect((await bbsToken.balanceOf(spender)).toString()).to.equal(BBSTransferAmount.toString());
+
+        //verify nonce
+        expectBigNum(await bbsToken.nonces(owner.address)).to.equal(nonce + 1);
+
+        //using the same signature should fail
+        await expectRevert(bancorX.connect(owner)
+            ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
+                (eosBlockchain, eosAddress, BBSTransferAmount, txId, deadline, v, r, s),
+                'ERC20Permit: invalid signature!!!');
+    });
 });
