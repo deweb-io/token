@@ -5,9 +5,9 @@ pragma solidity 0.8.6;
 import "./interfaces/IBancorXUpgrader.sol";
 import "./interfaces/IBancorX.sol";
 
-import "../utility/TokenHolder.sol";
+import "./utility/TokenHolder.sol";
 
-import "../token/SafeERC20Ex.sol";
+import "./token/SafeERC20Ex.sol";
 
 /**
  * @dev This contract allows cross chain token transfers.

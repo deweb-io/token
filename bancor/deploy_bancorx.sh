@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# This script is used to deploy a bancorX bridge from the Bancor repo.
+# We will use it to make sure our improvements to the bridge can work in the Bancor env.
+
 testdir=bancor_test_env
 
 if grep linux <<<"$OSTYPE" > /dev/null; then
