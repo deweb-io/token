@@ -8,6 +8,8 @@ import "./utility/TokenHolder.sol";
 
 import "./token/SafeERC20Ex.sol";
 
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+
 /**
  * @dev This contract allows cross chain token transfers.
  *
@@ -331,6 +333,46 @@ contract BancorX is IBancorX, TokenHolder {
         // require that; minLimit <= _amount <= currentLockLimit
         require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
         require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+
+        lockTokens(_amount);
+
+        // set the previous lock limit and block number
+        prevLockLimit = currentLockLimit - _amount;
+        prevLockBlockNumber = block.number;
+
+        // emit XTransfer event
+        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, _id);
+    }
+
+    /**
+     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
+     *
+     * @param _toBlockchain    blockchain on which tokens will be issued
+     * @param _to              address to send the tokens to
+     * @param _amount          the amount of tokens to transfer
+     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
+     * @param _deadline        permit deadline
+     * @param _v               msg.sender ECDSA signature recovery identifier
+     * @param _r               msg.sender ECDSA signature number
+     * @param _s               msg.sender ECDSA signature number
+     */
+    function xTransfer(
+        bytes32 _toBlockchain,
+        bytes32 _to,
+        uint256 _amount,
+        uint256 _id,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) public xTransfersAllowed {
+        // get the current lock limit
+        uint256 currentLockLimit = getCurrentLockLimit();
+
+        // require that; minLimit <= _amount <= currentLockLimit
+        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+
+        ERC20Permit(address(token)).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
 
         lockTokens(_amount);
 
