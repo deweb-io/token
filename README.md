@@ -136,4 +136,10 @@ The first always takes precedence and is used for constants, the second is writt
 The scripts themselves are:
 - `./eosio/env.sh`: setup our environment, load environment variables, define helper functions, keep an unlocked wallet - note that this script is meant to be sourced (`. env.sh`)
 - `./eosio/create_account.sh`: create a test account on testnet, fund it and buy some RAM
+- `./eosio/create_accounts.sh`: create a bbs token account on testnet, fund it and buy some RAM. create bancorx account with the same key pair and fund it. create reporter account.
 - `./eosio/deploy_token.sh`: compile the token contract, deploy it, and mint some tokens
+- `./eosio/deploy_bancorx.sh`: compile the bancorX contract, deploy it, init it with setup envs, add reporter and enable it
+- `./eosio/deploy_bridge.sh`: main script to deploy and setup BBS bridge
+
+steps to deploy BBS token and bancorx:
+1. Run `./eosio/deploy_bridge.sh`
