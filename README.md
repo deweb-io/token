@@ -139,7 +139,8 @@ The scripts themselves are:
 - `./eosio/create_accounts.sh`: create a bbs token account on testnet, fund it and buy some RAM. create bancorx account with the same key pair and fund it. create reporter account.
 - `./eosio/deploy_token.sh`: compile the token contract, deploy it, and mint some tokens
 - `./eosio/deploy_bancorx.sh`: compile the bancorX contract, deploy it, init it with setup envs, add reporter and enable it
-- `./eosio/deploy_bridge.sh`: main script to deploy and setup BBS bridge
 
-steps to deploy BBS token and bancorx:
-1. Run `./eosio/deploy_bridge.sh`
+
+Steps to deploy BBS token and bancorx on both blockchains:
+1. Update network on `hardhat.config.js`
+2. Run `./deploy_bridge.sh` - create accounts and deploy contracts on eos, uses hardhat.config to deploy ethereum contracts.
