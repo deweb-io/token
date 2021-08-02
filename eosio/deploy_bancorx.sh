@@ -6,14 +6,14 @@ CYAN='\033[1;36m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# config - maybe move to state.env
 ethereum_account='0x44569Aa35Ff6d97e6531880712a41D2af72a007C'
-bancorx_min_reporters='1'
-bancorx_min_limit='10000'
-bancorx_limit_inc='10000'
-bancorx_max_issue_limit='800000000'
-bancorx_max_destroy_limit='400000000'
 xtransfer_amount='1.0000 BBS'
+
+# bancorx_min_reporters='1'
+# bancorx_min_limit='10000'
+# bancorx_limit_inc='10000'
+# bancorx_max_issue_limit='800000000'
+# bancorx_max_destroy_limit='400000000'
 
 
 if [ ! -f BancorX.wasm ]; then
@@ -32,7 +32,7 @@ if [ ! -f BancorX.wasm ]; then
     kleos set contract $bancorx_account . ./BancorX.wasm ./BancorX.abi -p $bancorx_account@active
 
     echo -e "${GREEN}-----------------------INIT BANCOR X-----------------------${NC}"
-    kleos push action $bancorx_account init '["'$bbs_account'", "'$bancorx_min_reporters'", "'$bancorx_min_limit'", "'$bancorx_limit_inc'", "'$bancorx_max_issue_limit'", "'$bancorx_max_destroy_limit'"]' -p $bancorx_account@active
+    kleos push action $bancorx_account init '["'$bbs_account'", "'$EOS_BANCORX_MIN_REPORTERS'", "'$EOS_BANCORX_MIN_LIMIT'", "'$EOS_BANCORX_LIMIT_INC'", "'$EOS_BANCORX_MAX_ISSUE_LIMIT'", "'$EOS_BANCORX_MAX_DESTROY_LIMIT'"]' -p $bancorx_account@active
 
     echo -e "${GREEN}-----------------------ADD/ENABLE REPORTING-----------------------${NC}"
     kleos push action $bancorx_account addreporter '["'$reporter_account'"]' -p $bancorx_account@active
