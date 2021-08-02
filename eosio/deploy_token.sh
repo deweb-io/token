@@ -7,9 +7,8 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 
-# config - maybe move to state.env
-bbs_token_maximum_supply='1000000.0000 BBS'
-bbs_token_issue_amount='100.0000 BBS'
+# bbs_token_maximum_supply='1000000.0000 BBS'
+# bbs_token_issue_amount='100.0000 BBS'
 
 
 if [ ! -f Token.wasm ]; then
@@ -27,13 +26,13 @@ if [ ! -f Token.wasm ]; then
     kleos set contract $bbs_account . ./Token.wasm ./Token.abi -p $bbs_account@active
 
     echo -e "${GREEN}-----------------------CREATING BBS-----------------------${NC}"
-    kleos push action $bbs_account create '[ "'$bancorx_account'", "'$bbs_token_maximum_supply'"]' -p $bbs_account@active
+    kleos push action $bbs_account create '[ "'$bancorx_account'", "'$EOS_BBS_TOKEN_MAXIMUM_SUPPLY'"]' -p $bbs_account@active
     
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
     kleos get currency balance $bbs_account $bancorx_account
 
     echo -e "${GREEN}-----------------------ISSUING BBS-----------------------${NC}"
-    kleos push action $bbs_account issue '[ "'$bancorx_account'", "'$bbs_token_issue_amount'", "memo" ]' -p $bancorx_account@active
+    kleos push action $bbs_account issue '[ "'$bancorx_account'", "'$EOS_BBS_TOKEN_ISSUE_AMOUNT'", "memo" ]' -p $bancorx_account@active
 
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
     kleos get currency balance $bbs_account $bancorx_account
