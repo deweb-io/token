@@ -2,8 +2,8 @@ const { ethers } = require('hardhat');
 
 
 // Set this environment variables to use previously deployed contracts.
-const BBS_TOKEN = '0x94F32CA9c737FFe1b9e040de4027BAB92eb1f85a';
-const BANCOR_X = '0x9db840EfaA31Be39e46E9782566D8f20ACfFE9cb';
+// const BBS_TOKEN = '0x94F32CA9c737FFe1b9e040de4027BAB92eb1f85a';
+// const BANCOR_X = '0x9db840EfaA31Be39e46E9782566D8f20ACfFE9cb';
 
 describe('Bridge', function() {
     let bbsToken;
@@ -11,7 +11,8 @@ describe('Bridge', function() {
     let accounts;
     let signer;
     let reporter;
-    let xtransferAmount = ethers.utils.parseEther('5');
+    const commission = ethers.utils.parseEther('12');
+    let xtransferAmount = ethers.utils.parseEther('13');
 
     function printContractDetails(name, addrees) {
         console.log(`${name} is deployed at ${addrees}`);
@@ -39,7 +40,7 @@ describe('Bridge', function() {
             '1000000000000000000',
             '500000000000000000000',
             1,
-            '0x9eED1767B3c33D4A4fDB7c76070DE2dDfd37e808', // should be upgrader contract address
+            commission,
             bbsToken.address);
 
 
@@ -55,7 +56,7 @@ describe('Bridge', function() {
     it('mint BBS and make x transfer', async function() {
         console.log('signer address', signer.address);
 
-        const mintAmount = ethers.utils.parseEther('5');
+        const mintAmount = ethers.utils.parseEther('13');
         await bbsToken.mint(signer.address, mintAmount);
         console.log('BBS minted', mintAmount);
 
@@ -88,8 +89,8 @@ describe('Bridge', function() {
         const endBalance = (await bbsToken.balanceOf(signer.address));
         console.log('BBS balance after reoprt tx', endBalance);
 
-        if (endBalance._hex !== mintAmount._hex) {
-            throw new Error('balance should be the same as the mint amount');
+        if (endBalance._hex - 0 !== mintAmount._hex - commission._hex) {
+            throw new Error('balance should be the same as the mint amount - commission');
         }
 
     });

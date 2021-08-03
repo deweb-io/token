@@ -2,7 +2,6 @@
 pragma solidity 0.8.6;
 
 
-import "./interfaces/IBancorXUpgrader.sol";
 import "./interfaces/IBancorX.sol";
 
 import "./utility/TokenHolder.sol";
@@ -42,8 +41,7 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
     uint8 public minRequiredReports; // minimum number of required reports to release tokens
-
-    address upgrader; // bancor x upgrader contract address
+    uint256 public commission; // The commission deducted from the release amount
 
     IERC20 public override token; // erc20 token
 
@@ -98,6 +96,7 @@ contract BancorX is IBancorX, TokenHolder {
      * @param _to              target wallet
      * @param _amount          transfer amount
      * @param _xTransferId     xtransfer id
+     * @param _commission      commission amount
      */
     event TxReport(
         address indexed _reporter,
@@ -105,7 +104,8 @@ contract BancorX is IBancorX, TokenHolder {
         uint256 _txId,
         address _to,
         uint256 _amount,
-        uint256 _xTransferId
+        uint256 _xTransferId,
+        uint256 _commission
     );
 
     /**
@@ -124,7 +124,6 @@ contract BancorX is IBancorX, TokenHolder {
      * @param _minLimit              minimum amount of tokens that can be transferred in one transaction
      * @param _limitIncPerBlock      how much the limit increases per block
      * @param _minRequiredReports    minimum number of reporters to report transaction before tokens can be released
-     * @param _upgrader              bancor x upgrader contract address
      * @param _token                 erc20 token
      */
     constructor(
@@ -133,7 +132,7 @@ contract BancorX is IBancorX, TokenHolder {
         uint256 _minLimit,
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
-        address _upgrader,
+        uint256 _commission,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -141,7 +140,6 @@ contract BancorX is IBancorX, TokenHolder {
         greaterThanZero(_minLimit)
         greaterThanZero(_limitIncPerBlock)
         greaterThanZero(_minRequiredReports)
-        validExternalAddress(_upgrader)
         validExternalAddress(address(_token))
     {
         // validate input
@@ -160,7 +158,7 @@ contract BancorX is IBancorX, TokenHolder {
         prevLockBlockNumber = block.number;
         prevReleaseBlockNumber = block.number;
 
-        upgrader = _upgrader;
+        commission = _commission; // no need to validate number as it allowed to be 0
 
         token = _token;
     }
@@ -249,10 +247,10 @@ contract BancorX is IBancorX, TokenHolder {
     /**
      * @dev setter
      *
-     * @param _upgrader    new upgrader
+     * @param _commission    new commission amount
      */
-    function setUpgrader(address _upgrader) public ownerOnly validExternalAddress(_upgrader) {
-        upgrader = _upgrader;
+    function setCommission(uint256 _commission) public ownerOnly {
+        commission = _commission;
     }
 
     /**
@@ -284,21 +282,6 @@ contract BancorX is IBancorX, TokenHolder {
     }
 
     /**
-     * @dev upgrades the contract to the latest version
-     * can only be called by the owner
-     * note that the owner needs to call acceptOwnership on the new contract after the upgrade
-     *
-     * @param _reporters    new list of reporters
-     */
-    function upgrade(address[] memory _reporters) public ownerOnly {
-        IBancorXUpgrader bancorXUpgrader = IBancorXUpgrader(upgrader);
-
-        transferOwnership(address(bancorXUpgrader));
-        bancorXUpgrader.upgrade(version, _reporters);
-        acceptOwnership();
-    }
-
-    /**
      * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
      *
      * @param _toBlockchain    blockchain on which tokens will be issued
@@ -314,7 +297,8 @@ contract BancorX is IBancorX, TokenHolder {
         uint256 currentLockLimit = getCurrentLockLimit();
 
         // verify lock limit
-        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
+        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
 
         lockTokens(_amount);
 
@@ -344,7 +328,8 @@ contract BancorX is IBancorX, TokenHolder {
         uint256 currentLockLimit = getCurrentLockLimit();
 
         // require that; minLimit <= _amount <= currentLockLimit
-        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
+        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
 
         lockTokens(_amount);
 
@@ -371,7 +356,7 @@ contract BancorX is IBancorX, TokenHolder {
         address _to,
         uint256 _amount,
         uint256 _xTransferId
-    ) public reporterOnly reportingAllowed validAddress(_to) greaterThanZero(_amount) {
+    ) public reporterOnly reportingAllowed validAddress(_to) greaterEqualThanAmount(_amount, commission) {
         // require that the transaction has not been reported yet by the reporter
         require(!reportedTxs[_txId][msg.sender], "ERR_ALREADY_REPORTED");
 
@@ -403,7 +388,7 @@ contract BancorX is IBancorX, TokenHolder {
         // increment the number of reports
         txn.numOfReports++;
 
-        emit TxReport(msg.sender, _fromBlockchain, _txId, _to, _amount, _xTransferId);
+        emit TxReport(msg.sender, _fromBlockchain, _txId, _to, _amount, _xTransferId, commission);
 
         // if theres enough reports, try to release tokens
         if (txn.numOfReports >= minRequiredReports) {
@@ -414,7 +399,7 @@ contract BancorX is IBancorX, TokenHolder {
 
             emit XTransferComplete(_to, _xTransferId);
 
-            releaseTokens(_to, _amount);
+            releaseTokens(_to, _amount - commission); // release amount minus commission
         }
     }
 
@@ -442,7 +427,6 @@ contract BancorX is IBancorX, TokenHolder {
      * @return the current maximum limit of tokens that can be locked
      */
     function getCurrentLockLimit() public view returns (uint256) {
-        // prevLockLimit + ((currBlockNumber - prevLockBlockNumber) * limitIncPerBlock)
         uint256 currentLockLimit = prevLockLimit + ((block.number - prevLockBlockNumber) * limitIncPerBlock);
         if (currentLockLimit > maxLockLimit) {
             return maxLockLimit;
@@ -457,7 +441,6 @@ contract BancorX is IBancorX, TokenHolder {
      * @return the current maximum limit of tokens that can be released
      */
     function getCurrentReleaseLimit() public view returns (uint256) {
-        // prevReleaseLimit + ((currBlockNumber - prevReleaseBlockNumber) * limitIncPerBlock)
         uint256 currentReleaseLimit = prevReleaseLimit + ((block.number - prevReleaseBlockNumber) * limitIncPerBlock);
         if (currentReleaseLimit > maxReleaseLimit) {
             return maxReleaseLimit;
@@ -487,7 +470,8 @@ contract BancorX is IBancorX, TokenHolder {
         // get the current release limit
         uint256 currentReleaseLimit = getCurrentReleaseLimit();
 
-        require(_amount >= minLimit && _amount <= currentReleaseLimit, "ERR_AMOUNT_TOO_HIGH");
+        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
+        require(_amount <= currentReleaseLimit, "ERR_AMOUNT_TOO_HIGH");
 
         // update the previous release limit and block number
         prevReleaseLimit = currentReleaseLimit - _amount;
