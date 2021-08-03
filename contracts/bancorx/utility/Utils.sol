@@ -20,6 +20,17 @@ contract Utils {
         require(_value > 0, "ERR_ZERO_VALUE");
     }
 
+    // verifies that a value is greater than some amount
+    modifier greaterEqualThanAmount(uint256 _value, uint256 _amount) {
+        _greaterEqualThanAmount(_value, _amount);
+        _;
+    }
+
+    // error message binary size optimization
+    function _greaterEqualThanAmount(uint256 _value, uint256 _amount) internal pure {
+        require(_value >= _amount, "ERR_VALUE_TOO_LOW");
+    }
+
     // validates an address - currently only checks that it isn't null
     modifier validAddress(address _address) {
         _validAddress(_address);
@@ -31,17 +42,6 @@ contract Utils {
         require(_address != address(0), "ERR_INVALID_ADDRESS");
     }
 
-    // ensures that the portion is valid
-    modifier validPortion(uint32 _portion) {
-        _validPortion(_portion);
-        _;
-    }
-
-    // error message binary size optimization
-    function _validPortion(uint32 _portion) internal pure {
-        require(_portion > 0 && _portion <= PPM_RESOLUTION, "ERR_INVALID_PORTION");
-    }
-
     // validates an external address - currently only checks that it isn't null or this
     modifier validExternalAddress(address _address) {
         _validExternalAddress(_address);
@@ -51,16 +51,5 @@ contract Utils {
     // error message binary size optimization
     function _validExternalAddress(address _address) internal view {
         require(_address != address(0) && _address != address(this), "ERR_INVALID_EXTERNAL_ADDRESS");
-    }
-
-    // ensures that the fee is valid
-    modifier validFee(uint32 fee) {
-        _validFee(fee);
-        _;
-    }
-
-    // error message binary size optimization
-    function _validFee(uint32 fee) internal pure {
-        require(fee <= PPM_RESOLUTION, "ERR_INVALID_FEE");
     }
 }
