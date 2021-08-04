@@ -41,7 +41,7 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
     uint8 public minRequiredReports; // minimum number of required reports to release tokens
-    uint256 public commission; // The commission deducted from the release amount
+    uint256 public commission; // The commission reduced from the release amount
 
     IERC20 public override token; // erc20 token
 
