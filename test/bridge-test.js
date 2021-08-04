@@ -197,7 +197,7 @@ describe('Bridge', function() {
         await expectRevert(bancorX.connect(owner)
             ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
                 (eosBlockchain, eosAddress, ethers.utils.parseEther('11'), txId, deadline, v, r, s),
-                'ERC20Permit: invalid signature!!!');
+                'ERC20Permit: invalid signature');
 
         //test balances before xTransfer
         await bbsToken.mint(owner.address, BBSTransferAmount);
@@ -220,6 +220,6 @@ describe('Bridge', function() {
         await expectRevert(bancorX.connect(owner)
             ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
                 (eosBlockchain, eosAddress, BBSTransferAmount, txId, deadline, v, r, s),
-                'ERC20Permit: invalid signature!!!');
+                'ERC20Permit: invalid signature');
     });
 });

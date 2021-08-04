@@ -9,4 +9,3 @@ eosio/*.abi
 eosio/*.wasm
 eosio/state.env
 node_modules/
-package-lock.json
