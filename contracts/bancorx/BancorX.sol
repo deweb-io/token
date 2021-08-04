@@ -41,7 +41,8 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
     uint8 public minRequiredReports; // minimum number of required reports to release tokens
-    uint256 public commission; // The commission reduced from the release amount
+    uint256 public commissionAmount; // the commission amount reduced from the release amount
+    uint256 public currentTotalCommissions; // current total commissions collected on report tx
 
     IERC20 public override token; // erc20 token
 
@@ -90,13 +91,13 @@ contract BancorX is IBancorX, TokenHolder {
     /**
      * @dev triggered when report is successfully submitted
      *
-     * @param _reporter        reporter wallet
-     * @param _fromBlockchain  source blockchain
-     * @param _txId            tx id on the source blockchain
-     * @param _to              target wallet
-     * @param _amount          transfer amount
-     * @param _xTransferId     xtransfer id
-     * @param _commission      commission amount
+     * @param _reporter         reporter wallet
+     * @param _fromBlockchain   source blockchain
+     * @param _txId             tx id on the source blockchain
+     * @param _to               target wallet
+     * @param _amount           transfer amount
+     * @param _xTransferId      xtransfer id
+     * @param _commissionAmount commission amount
      */
     event TxReport(
         address indexed _reporter,
@@ -105,7 +106,7 @@ contract BancorX is IBancorX, TokenHolder {
         address _to,
         uint256 _amount,
         uint256 _xTransferId,
-        uint256 _commission
+        uint256 _commissionAmount
     );
 
     /**
@@ -132,7 +133,7 @@ contract BancorX is IBancorX, TokenHolder {
         uint256 _minLimit,
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
-        uint256 _commission,
+        uint256 _commissionAmount,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -158,7 +159,7 @@ contract BancorX is IBancorX, TokenHolder {
         prevLockBlockNumber = block.number;
         prevReleaseBlockNumber = block.number;
 
-        commission = _commission; // no need to validate number as it allowed to be 0
+        commissionAmount = _commissionAmount; // no need to validate number as it allowed to be 0
 
         token = _token;
     }
@@ -247,10 +248,10 @@ contract BancorX is IBancorX, TokenHolder {
     /**
      * @dev setter
      *
-     * @param _commission    new commission amount
+     * @param _commissionAmount    new commission amount
      */
-    function setCommission(uint256 _commission) public ownerOnly {
-        commission = _commission;
+    function setCommissionAmount(uint256 _commissionAmount) public ownerOnly {
+        commissionAmount = _commissionAmount;
     }
 
     /**
@@ -356,7 +357,7 @@ contract BancorX is IBancorX, TokenHolder {
         address _to,
         uint256 _amount,
         uint256 _xTransferId
-    ) public reporterOnly reportingAllowed validAddress(_to) greaterEqualThanAmount(_amount, commission) {
+    ) public reporterOnly reportingAllowed validAddress(_to) greaterEqualThanAmount(_amount, commissionAmount) {
         // require that the transaction has not been reported yet by the reporter
         require(!reportedTxs[_txId][msg.sender], "ERR_ALREADY_REPORTED");
 
@@ -388,7 +389,7 @@ contract BancorX is IBancorX, TokenHolder {
         // increment the number of reports
         txn.numOfReports++;
 
-        emit TxReport(msg.sender, _fromBlockchain, _txId, _to, _amount, _xTransferId, commission);
+        emit TxReport(msg.sender, _fromBlockchain, _txId, _to, _amount, _xTransferId, commissionAmount);
 
         // if theres enough reports, try to release tokens
         if (txn.numOfReports >= minRequiredReports) {
@@ -399,7 +400,10 @@ contract BancorX is IBancorX, TokenHolder {
 
             emit XTransferComplete(_to, _xTransferId);
 
-            releaseTokens(_to, _amount - commission); // release amount minus commission
+            // update the current total commissions
+            currentTotalCommissions += commissionAmount;
+
+            releaseTokens(_to, _amount - commissionAmount); // release amount minus commission amount
         }
     }
 

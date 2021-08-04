@@ -3,15 +3,12 @@ const { expectRevert } = require('./utils');
 
 
 describe('Bridge', function() {
-    let bbsToken;
-    let bancorX;
-    let accounts;
-    let signer;
-    let reporter;
-    const commission = ethers.utils.parseEther('12');
+    const commissionAmount = ethers.utils.parseEther('12');
     const eosBlockchain = ethers.utils.formatBytes32String('eos'); 
     const eosAddress = ethers.utils.formatBytes32String('tomeraccount'); 
     const xtransferId = Math.floor(Math.random() * (100000));
+
+    let bbsToken, bancorX, owner, reporter;
 
     function printContractDetails(name, addrees) {
         console.log(`${name} is deployed at ${addrees}`);
@@ -25,10 +22,10 @@ describe('Bridge', function() {
     }
 
     beforeEach(async function() {
-        accounts = await ethers.getSigners();
-        signer = accounts[0];
+        let accounts = await ethers.getSigners();
+        owner = accounts[0];
         reporter = accounts[1];
-        console.log('signer address', signer.address);
+        console.log('owner address', owner.address);
 
         const Token = await ethers.getContractFactory('BBSToken');
         bbsToken = await Token.deploy();
@@ -40,7 +37,7 @@ describe('Bridge', function() {
             '1000000000000000000',
             '500000000000000000000',
             1,
-            commission,
+            commissionAmount,
             bbsToken.address);
 
         await bancorX['setReporter(address,bool)'](reporter.address, true);
@@ -50,100 +47,121 @@ describe('Bridge', function() {
     });
     
     it('should revert xtransfer - not enough balance', async function() {
-        const xtransferAmount = ethers.utils.parseEther('13');
-        await bbsToken.connect(signer).approve(bancorX.address, xtransferAmount);
-
         const mintAmount = ethers.utils.parseEther('12');
-        await bbsToken.mint(signer.address, mintAmount);
+        await bbsToken.mint(owner.address, mintAmount);
 
-        await expectRevert(bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: signer.address}), 'transfer amount exceeds balance');
+        const xtransferAmount = ethers.utils.parseEther('13');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+
+        await expectRevert(bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: owner.address}), 'transfer amount exceeds balance');
     });
 
     it('should make xtransfer - balance reduce to 0', async function() {
-        const xtransferAmount = ethers.utils.parseEther('13');
-        await bbsToken.connect(signer).approve(bancorX.address, xtransferAmount);
-
         const mintAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(signer.address, mintAmount);
-
+        await bbsToken.mint(owner.address, mintAmount);
+        
         // xtransfer
-        await bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, 123, {from: signer.address});
+        const xtransferAmount = ethers.utils.parseEther('13');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+        await bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, 123, {from: owner.address});
 
-        const balanceAfter = (await bbsToken.balanceOf(signer.address));
-        if (balanceAfter._hex !== '0x00') {
+        const balanceAfter = (await bbsToken.balanceOf(owner.address));
+        if (balanceAfter._hex != 0) {
             throw new Error('balance should be 0');
         }
     });
 
     it('should revert report tx - amount lower than commission', async function() {
-        const xtransferAmount = ethers.utils.parseEther('10');
-        await bbsToken.connect(signer).approve(bancorX.address, xtransferAmount);
-
         const mintAmount = ethers.utils.parseEther('10');
-        await bbsToken.mint(signer.address, mintAmount);
+        await bbsToken.mint(owner.address, mintAmount);
 
         // xtransfer
-        await bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: signer.address});
+        const xtransferAmount = ethers.utils.parseEther('10');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+        await bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: owner.address});
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
-        await expectRevert(bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, signer.address, xtransferAmount, xtransferId, {
+        await expectRevert(bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {
             from: reporter.address
         }), 'ERR_VALUE_TOO_LOW');
     });
 
-    it('should report tx - commission reduced from amount', async function() {
-        const xtransferAmount = ethers.utils.parseEther('13');
-        await bbsToken.connect(signer).approve(bancorX.address, xtransferAmount);
+    it('should report tx - commission reduced from release amount and total commissions updated', async function() {
+        let currentTotalCommissions = await bancorX.currentTotalCommissions();
+        if (currentTotalCommissions._hex != 0) {
+            throw new Error('current total commissions before first tx should be equal to 0');
+        }
 
         const mintAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(signer.address, mintAmount);
-
+        await bbsToken.mint(owner.address, mintAmount);
+        
+        
         // xtransfer
-        await bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: signer.address});
+        const xtransferAmount = ethers.utils.parseEther('13');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+        await bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: owner.address});
 
-        const balanceAfter = (await bbsToken.balanceOf(signer.address));
-        if (balanceAfter._hex !== '0x00') {
+        const balanceAfter = (await bbsToken.balanceOf(owner.address));
+        if (balanceAfter._hex != 0) {
             throw new Error('balance should be 0');
         }
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
-        await bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, signer.address, xtransferAmount, xtransferId, {
+        await bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {
             from: reporter.address
         });
 
-        const endBalance = (await bbsToken.balanceOf(signer.address));
+        const endBalance = (await bbsToken.balanceOf(owner.address));
 
-        if (endBalance._hex - 0 !== mintAmount._hex - commission._hex) {
-            throw new Error('balance should be the same as mint amount - commission');
+        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
+            throw new Error('balance should be the same as mint amount - commission amount');
+        }
+
+        currentTotalCommissions = await bancorX.currentTotalCommissions();
+        if (currentTotalCommissions._hex !== commissionAmount._hex) {
+            throw new Error('current total commissions after first tx should be equal to commission amount');
         }
     });
 
     it('should revert report tx - tx already reported(same xtransferId)', async function() {
-        const xtransferAmount = ethers.utils.parseEther('13');
-        await bbsToken.connect(signer).approve(bancorX.address, xtransferAmount);
-
         const mintAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(signer.address, mintAmount);
-
+        await bbsToken.mint(owner.address, mintAmount);
+        
+        
         // xtransfer
-        await bancorX.connect(signer)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, 1234, {from: signer.address});
+        const xtransferAmount = ethers.utils.parseEther('13');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+        await bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, 1234, {from: owner.address});
 
-        const balanceAfter = (await bbsToken.balanceOf(signer.address));
-        if (balanceAfter._hex !== '0x00') {
+        const balanceAfter = (await bbsToken.balanceOf(owner.address));
+        if (balanceAfter._hex != 0) {
             throw new Error('balance should be 0');
         }
 
         // reportTx
+        const xtransferId = 1234;
         const txId = Math.floor(Math.random() * (100000));
-        await bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, signer.address, xtransferAmount, 1234, {
+        await bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {
             from: reporter.address
         });
 
-        await expectRevert(bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, signer.address, xtransferAmount, 1234, {
+        await expectRevert(bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {
             from: reporter.address
         }), 'ERR_ALREADY_REPORTED');
+    });
+
+    it('test set commission amount', async function() {
+        // caller is not the owner - revert
+        await expectRevert(bancorX.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')), 'ERR_ACCESS_DENIED');
+
+        const oldCommissions = await bancorX.commissionAmount();
+        await bancorX.connect(owner).setCommissionAmount(ethers.utils.parseEther('16'));
+        const newCommissions = await bancorX.commissionAmount();
+        if (newCommissions._hex == oldCommissions) {
+            throw new Error('commission amount should be changed');
+        }
     });
 
 });
