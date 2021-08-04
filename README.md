@@ -142,5 +142,7 @@ The scripts themselves are:
 
 
 Steps to deploy BBS token and bancorx on both blockchains:
-1. Update network on `hardhat.config.js`
-2. Run `./deploy_bridge.sh` - create accounts and deploy contracts on eos, uses hardhat.config to deploy ethereum contracts.
+1. Create account on mainnet and fund it with Ether.
+2. Update network on `hardhat.config.js` - node url and private key from step 1.
+3. Run `./deploy_bridge.sh` - create accounts(alternatively, manually import keys to wallet and store account names in state.env) and deploy contracts on eos, uses hardhat.config to       deploy ethereum contracts.
+4. Update contracts addresses and keys on the oracle config (on production, probably should create secret on kubernetes to store private keys).
