@@ -155,7 +155,7 @@ describe('Bridge', function() {
 
     it('test set commission amount', async function() {
         // caller is not the owner - revert
-        await expectRevert(bancorX.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')), 'ERR_ACCESS_DENIED');
+        await expectRevert(bancorX.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')), 'Ownable: caller is not the owner');
 
         const oldCommissions = await bancorX.commissionAmount();
         await bancorX.connect(owner).setCommissionAmount(ethers.utils.parseEther('16'));
@@ -166,7 +166,6 @@ describe('Bridge', function() {
     });
 
     it('xTransfer with permit', async function() {
-        //const owner = signer;
         const spender = bancorX.address;
 
         const BBSTransferAmount = ethers.utils.parseEther('10');

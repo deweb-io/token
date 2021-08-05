@@ -2,13 +2,12 @@
 pragma solidity 0.8.6;
 
 
-import "./interfaces/IBancorX.sol";
+import "./Utils.sol";
 
-import "./utility/TokenHolder.sol";
-
-import "./token/SafeERC20Ex.sol";
-
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @dev This contract allows cross chain token transfers.
@@ -20,7 +19,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
  * Reporting cross chain transfers works similar to standard multisig contracts, meaning that multiple
  * callers are required to report a transfer before tokens are released to the target account.
  */
-contract BancorX is IBancorX, TokenHolder {
+contract BancorX is Utils, Ownable {
     using SafeERC20 for IERC20;
 
     // represents a transaction on another blockchain where tokens were destroyed/locked
@@ -46,7 +45,7 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public commissionAmount; // the commission amount reduced from the release amount
     uint256 public currentTotalCommissions; // current total commissions accumulated on report tx
 
-    IERC20 public override token; // erc20 token
+    IERC20 public token; // erc20 token
 
     bool public xTransfersEnabled = true; // true if x transfers are enabled, false if not
     bool public reportingEnabled = true; // true if reporting is enabled, false if not
@@ -212,7 +211,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _maxLockLimit    new maxLockLimit
      */
-    function setMaxLockLimit(uint256 _maxLockLimit) public ownerOnly greaterThanZero(_maxLockLimit) {
+    function setMaxLockLimit(uint256 _maxLockLimit) public onlyOwner greaterThanZero(_maxLockLimit) {
         maxLockLimit = _maxLockLimit;
     }
 
@@ -221,7 +220,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _maxReleaseLimit    new maxReleaseLimit
      */
-    function setMaxReleaseLimit(uint256 _maxReleaseLimit) public ownerOnly greaterThanZero(_maxReleaseLimit) {
+    function setMaxReleaseLimit(uint256 _maxReleaseLimit) public onlyOwner greaterThanZero(_maxReleaseLimit) {
         maxReleaseLimit = _maxReleaseLimit;
     }
 
@@ -230,7 +229,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _minLimit    new minLimit
      */
-    function setMinLimit(uint256 _minLimit) public ownerOnly greaterThanZero(_minLimit) {
+    function setMinLimit(uint256 _minLimit) public onlyOwner greaterThanZero(_minLimit) {
         // validate input
         require(_minLimit <= maxLockLimit && _minLimit <= maxReleaseLimit, "ERR_INVALID_MIN_LIMIT");
 
@@ -242,7 +241,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _limitIncPerBlock    new limitIncPerBlock
      */
-    function setLimitIncPerBlock(uint256 _limitIncPerBlock) public ownerOnly greaterThanZero(_limitIncPerBlock) {
+    function setLimitIncPerBlock(uint256 _limitIncPerBlock) public onlyOwner greaterThanZero(_limitIncPerBlock) {
         limitIncPerBlock = _limitIncPerBlock;
     }
 
@@ -251,7 +250,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _minRequiredReports    new minRequiredReports
      */
-    function setMinRequiredReports(uint8 _minRequiredReports) public ownerOnly greaterThanZero(_minRequiredReports) {
+    function setMinRequiredReports(uint8 _minRequiredReports) public onlyOwner greaterThanZero(_minRequiredReports) {
         minRequiredReports = _minRequiredReports;
     }
 
@@ -260,7 +259,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _commissionAmount    new commission amount
      */
-    function setCommissionAmount(uint256 _commissionAmount) public ownerOnly {
+    function setCommissionAmount(uint256 _commissionAmount) public onlyOwner {
         commissionAmount = _commissionAmount;
     }
 
@@ -270,7 +269,7 @@ contract BancorX is IBancorX, TokenHolder {
      * @param _reporter    reporter whos status is to be set
      * @param _active      true if the reporter is approved, false otherwise
      */
-    function setReporter(address _reporter, bool _active) public ownerOnly {
+    function setReporter(address _reporter, bool _active) public onlyOwner {
         reporters[_reporter] = _active;
     }
 
@@ -279,7 +278,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _enable     true to enable, false to disable
      */
-    function enableXTransfers(bool _enable) public ownerOnly {
+    function enableXTransfers(bool _enable) public onlyOwner {
         xTransfersEnabled = _enable;
     }
 
@@ -288,7 +287,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _enable     true to enable, false to disable
      */
-    function enableReporting(bool _enable) public ownerOnly {
+    function enableReporting(bool _enable) public onlyOwner {
         reportingEnabled = _enable;
     }
 
@@ -334,7 +333,7 @@ contract BancorX is IBancorX, TokenHolder {
         bytes32 _to,
         uint256 _amount,
         uint256 _id
-    ) public override xTransfersAllowed {
+    ) public xTransfersAllowed {
         // get the current lock limit
         uint256 currentLockLimit = getCurrentLockLimit();
 
@@ -465,7 +464,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @return amount that was sent in xTransfer corresponding to _xTransferId
      */
-    function getXTransferAmount(uint256 _xTransferId, address _for) public view override returns (uint256) {
+    function getXTransferAmount(uint256 _xTransferId, address _for) public view returns (uint256) {
         // xTransferId -> txId -> Transaction
         Transaction memory transaction = transactions[transactionIds[_xTransferId]];
 
