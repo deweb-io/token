@@ -171,9 +171,7 @@ describe('Bridge', function() {
 
         const BBSTransferAmount = ethers.utils.parseEther('10');
 
-        const eosBlockchain = ethers.utils.formatBytes32String('eos');
-        const eosAddress = ethers.utils.formatBytes32String('tomeraccount');
-        const txId = Math.floor(Math.random() * (100000));
+
 
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(owner.address)).toNumber();
@@ -193,6 +191,8 @@ describe('Bridge', function() {
 
         const {v, r, s} = ethers.utils.splitSignature(signature);
 
+        
+        const txId = Math.floor(Math.random() * (100000));
         //send different data should be fail
         await expectRevert(bancorX.connect(owner)
             ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
@@ -221,5 +221,53 @@ describe('Bridge', function() {
             ['xTransfer(bytes32,bytes32,uint256,uint256,uint256,uint8,bytes32,bytes32)']
                 (eosBlockchain, eosAddress, BBSTransferAmount, txId, deadline, v, r, s),
                 'ERC20Permit: invalid signature');
+    });
+
+    it('should withdraw commissions', async function() {
+        let currentTotalCommissions = await bancorX.currentTotalCommissions();
+        if (currentTotalCommissions._hex != 0) {
+            throw new Error('current total commissions before first tx should be equal to 0');
+        }
+
+        const mintAmount = ethers.utils.parseEther('13');
+        await bbsToken.mint(owner.address, mintAmount);
+
+
+        // xtransfer
+        const xtransferAmount = ethers.utils.parseEther('13');
+        await bbsToken.connect(owner).approve(bancorX.address, xtransferAmount);
+        await bancorX.connect(owner)['xTransfer(bytes32,bytes32,uint256,uint256)'](eosBlockchain, eosAddress, xtransferAmount, xtransferId, {from: owner.address});
+
+        const balanceAfter = (await bbsToken.balanceOf(owner.address));
+        if (balanceAfter._hex != 0) {
+            throw new Error('balance should be 0');
+        }
+
+        // reportTx
+        const txId = Math.floor(Math.random() * (100000));
+        await bancorX.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {
+            from: reporter.address
+        });
+
+        const endBalance = (await bbsToken.balanceOf(owner.address));
+
+        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
+            throw new Error('balance should be the same as mint amount - commission amount');
+        }
+
+        currentTotalCommissions = await bancorX.currentTotalCommissions();
+        if (currentTotalCommissions._hex !== commissionAmount._hex) {
+            throw new Error('current total commissions after first tx should be equal to commission amount');
+        }
+
+
+        await bancorX.connect(owner)['withdrawCommissions(address)'](owner.address, {
+            from: owner.address
+        });
+
+        currentTotalCommissions = await bancorX.currentTotalCommissions();
+        if (currentTotalCommissions._hex != 0) {
+            throw new Error('current total commissions should be 0 after withdraw');
+        }
     });
 });
