@@ -44,7 +44,7 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
     uint8 public minRequiredReports; // minimum number of required reports to release tokens
     uint256 public commissionAmount; // the commission amount reduced from the release amount
-    uint256 public currentTotalCommissions; // current total commissions collected on report tx
+    uint256 public currentTotalCommissions; // current total commissions accumulated on report tx
 
     IERC20 public override token; // erc20 token
 
@@ -78,6 +78,14 @@ contract BancorX is IBancorX, TokenHolder {
      * @param _amount  amount released
      */
     event TokensRelease(address indexed _to, uint256 _amount);
+
+    /**
+     * @dev triggered when commissions are withdrawn by the smart contract
+     *
+     * @param _to      wallet address that the tokens are withdrawn to
+     * @param _amount  amount withdrawn
+     */
+    event commissionsWithdraw(address indexed _to, uint256 _amount);
 
     /**
      * @dev triggered when xTransfer is successfully called
@@ -527,5 +535,22 @@ contract BancorX is IBancorX, TokenHolder {
         token.safeTransfer(_to, _amount);
 
         emit TokensRelease(_to, _amount);
+    }
+
+    /**
+     * @dev allows the owner to withdraw all commissions accumulated
+     *
+     * @param _to      the address to withdraw commissions to
+     */
+    function withdrawCommissions(address _to) public ownerOnly validAddress(_to) {
+        // TODO: should we check minimum amount allowed to withdraw?
+
+        // reset total commissions
+        currentTotalCommissions = 0;
+
+        // no need to require, reverts on failure
+        token.safeTransfer(_to, currentTotalCommissions);
+        
+        emit commissionsWithdraw(_to, currentTotalCommissions);
     }
 }
