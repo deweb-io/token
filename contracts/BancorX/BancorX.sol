@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.6;
 
-
-import "./Utils.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @dev This contract allows cross chain token transfers.
@@ -19,8 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * Reporting cross chain transfers works similar to standard multisig contracts, meaning that multiple
  * callers are required to report a transfer before tokens are released to the target account.
  */
-contract BancorX is Utils, Ownable {
-    using SafeERC20 for IERC20;
+contract BancorX is Ownable {
 
     // represents a transaction on another blockchain where tokens were destroyed/locked
     struct Transaction {
@@ -204,6 +199,49 @@ contract BancorX is Utils, Ownable {
     // error message binary size optimization
     function _reportingAllowed() internal view {
         require(reportingEnabled, "ERR_DISABLED");
+    }
+    // verifies that a value is greater than zero
+    modifier greaterThanZero(uint256 _value) {
+        _greaterThanZero(_value);
+        _;
+    }
+
+    // error message binary size optimization
+    function _greaterThanZero(uint256 _value) internal pure {
+        require(_value > 0, "ERR_ZERO_VALUE");
+    }
+
+    // verifies that a value is greater than some amount
+    modifier greaterEqualThanAmount(uint256 _value, uint256 _amount) {
+        _greaterEqualThanAmount(_value, _amount);
+        _;
+    }
+
+    // error message binary size optimization
+    function _greaterEqualThanAmount(uint256 _value, uint256 _amount) internal pure {
+        require(_value >= _amount, "ERR_VALUE_TOO_LOW");
+    }
+
+    // validates an address - currently only checks that it isn't null
+    modifier validAddress(address _address) {
+        _validAddress(_address);
+        _;
+    }
+
+    // error message binary size optimization
+    function _validAddress(address _address) internal pure {
+        require(_address != address(0), "ERR_INVALID_ADDRESS");
+    }
+
+    // validates an external address - currently only checks that it isn't null or this
+    modifier validExternalAddress(address _address) {
+        _validExternalAddress(_address);
+        _;
+    }
+
+    // error message binary size optimization
+    function _validExternalAddress(address _address) internal view {
+        require(_address != address(0) && _address != address(this), "ERR_INVALID_EXTERNAL_ADDRESS");
     }
 
     /**
@@ -508,7 +546,7 @@ contract BancorX is Utils, Ownable {
      * @param _amount  the amount of tokens to lock
      */
     function lockTokens(uint256 _amount) private {
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+        token.transferFrom(msg.sender, address(this), _amount);
 
         emit TokensLock(msg.sender, _amount);
     }
@@ -531,7 +569,7 @@ contract BancorX is Utils, Ownable {
         prevReleaseBlockNumber = block.number;
 
         // no need to require, reverts on failure
-        token.safeTransfer(_to, _amount);
+        token.transfer(_to, _amount);
 
         emit TokensRelease(_to, _amount);
     }
