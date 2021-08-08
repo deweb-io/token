@@ -4,6 +4,10 @@
 
 . env.sh
 
+CYAN='\033[1;36m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 name_maker() {
     shuf -zern12 {1..5} {a..z} {a..z} {a..z} | tr -d '\0'
 }
@@ -13,7 +17,8 @@ store_env() {
 }
 
 account_maker() {
-    echo creating account $1
+    # echo creating account $1
+    echo -e "${GREEN}-----------------------creating account $1-----------------------${NC}"
     creation_response="$(curl -s "$faucet/create/$1")"
     if [ "$(from_json .success "$creation_response")" = false ]; then
         echo "failed creation: $creation_response" 1>&2
@@ -28,18 +33,21 @@ account_maker() {
     store_env active_public_key $active_public_key
     kleos wallet import --private-key "$owner_private_key"
     kleos wallet import --private-key "$active_private_key"
-    echo account created $1
+    echo -e "${GREEN}-----------------------account created $1-----------------------${NC}"
+    # echo account created $1
 }
 
 account_funder() {
     echo funding account $1
+    echo -e "${GREEN}-----------------------funding account $1-----------------------${NC}"
     funding_response="$(curl -s "$faucet/get_token/$1")"
     if [ "$(from_json .success "$funding_response")" = false ]; then
         echo "failed funding: $funding_response" 1>&2
         exit 1
     fi
     kleos system buyram $1 $1 "10.0000 EOS" -p $1@active
-    echo account funded $1
+    echo -e "${GREEN}-----------------------account funded $1-----------------------${NC}"
+    # echo account funded $1
 }
 
 # create bbs account if not exist and fund it.
@@ -57,9 +65,11 @@ if [ ! "$bancorx_account" ]; then
     bancorx_account="$(name_maker)"
     store_env bancorx_account $bancorx_account
 
-    echo creating bancorx_account $bancorx_account
+    # echo creating bancorx_account $bancorx_account
+    echo -e "${GREEN}-----------------------creating bancorx_account $bancorx_account-----------------------${NC}"
     kleos system newaccount $bbs_account $bancorx_account $bbs_active_public_key --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
-    echo account created $bancorx_account
+    echo -e "${GREEN}-----------------------account created $bancorx_account-----------------------${NC}"
+    # echo account created $bancorx_account
 fi
 
 # create reporter account if not exist
