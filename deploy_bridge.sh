@@ -22,6 +22,9 @@ echo DONE EOS
 
 # deploy ethereum contracts
 echo DEPLOYING ETHEREUM...
+
+. gas_price.sh
+
 ethereum_network='ropsten'
 npx hardhat run --network $ethereum_network ./scripts/deploy_bancorx.js
 echo DONE ETHEREUM
