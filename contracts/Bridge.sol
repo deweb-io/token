@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * Reporting cross chain transfers works similar to standard multisig contracts, meaning that multiple
  * callers are required to report a transfer before tokens are released to the target account.
  */
-contract BancorX is Ownable {
+contract Bridge is Ownable {
 
     // represents a transaction on another blockchain where tokens were destroyed/locked
     struct Transaction {
@@ -122,7 +122,7 @@ contract BancorX is Ownable {
     event XTransferComplete(address _to, uint256 _id);
 
     /**
-     * @dev initializes a new BancorX instance
+     * @dev initializes a new Bridge instance
      *
      * @param _maxLockLimit          maximum amount of tokens that can be locked in one transaction
      * @param _maxReleaseLimit       maximum amount of tokens that can be released in one transaction
