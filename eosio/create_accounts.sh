@@ -60,16 +60,14 @@ if [ ! "$bbs_account" ]; then
     [ "$(kleos get currency balance eosio.token $bbs_account)" ] || account_funder $bbs_account
 fi
 
-# create bancorX account if not exist with the same key pair of bbs account
-if [ ! "$bancorx_account" ]; then
-    bancorx_account="$(name_maker)"
-    store_env bancorx_account $bancorx_account
+# create bridge account if not exist with the same key pair of bbs account
+if [ ! "$bridge_account" ]; then
+    bridge_account="$(name_maker)"
+    store_env bridge_account $bridge_account
 
-    # echo creating bancorx_account $bancorx_account
-    echo -e "${GREEN}-----------------------creating bancorx_account $bancorx_account-----------------------${NC}"
-    kleos system newaccount $bbs_account $bancorx_account $bbs_active_public_key --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
-    echo -e "${GREEN}-----------------------account created $bancorx_account-----------------------${NC}"
-    # echo account created $bancorx_account
+    echo creating bridge_account $bridge_account
+    kleos system newaccount $bbs_account $bridge_account $bbs_active_public_key --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
+    echo account created $bridge_account
 fi
 
 # create reporter account if not exist
