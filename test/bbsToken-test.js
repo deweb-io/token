@@ -40,7 +40,7 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
 
         const owner = accounts[0];
         const spender = accounts[1].address;
-        const permitSigner = accounts[2]; //any account can sign on the permit transaction
+        const permitSigner = accounts[2];
         const value = 100;
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(owner.address)).toNumber();
