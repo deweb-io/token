@@ -582,15 +582,15 @@ contract Bridge is Ownable {
      *
      * @param _to      the address to withdraw commissions to
      */
-    function withdrawCommissions(address _to) public ownerOnly validAddress(_to) {
+    function withdrawCommissions(address _to) public onlyOwner validAddress(_to) {
         // TODO: should we check minimum amount allowed to withdraw?
 
         // reset total commissions
         currentTotalCommissions = 0;
 
         // no need to require, reverts on failure
-        token.safeTransfer(_to, currentTotalCommissions);
-        
+        token.transfer(_to, currentTotalCommissions);
+
         emit commissionsWithdraw(_to, currentTotalCommissions);
     }
 }
