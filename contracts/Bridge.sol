@@ -163,7 +163,8 @@ contract Bridge is Ownable {
         prevLockBlockNumber = block.number;
         prevReleaseBlockNumber = block.number;
 
-        commissionAmount = _commissionAmount; // no need to validate number as it allowed to be 0
+        // no need to validate number as it allowed to be 0
+        commissionAmount = _commissionAmount;
 
         token = _token;
     }
