@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 /**
  * @dev This contract allows cross chain token transfers.
@@ -26,8 +26,6 @@ contract Bridge is Ownable {
         bool completed;
     }
 
-    uint16 public constant version = 4;
-
     uint256 public maxLockLimit; // the maximum amount of tokens that can be locked in one transaction
     uint256 public maxReleaseLimit; // the maximum amount of tokens that can be released in one transaction
     uint256 public minLimit; // the minimum amount of tokens that can be transferred in one transaction
@@ -36,9 +34,9 @@ contract Bridge is Ownable {
     uint256 public limitIncPerBlock; // how much the limit increases per block
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
-    uint8 public minRequiredReports; // minimum number of required reports to release tokens
     uint256 public commissionAmount; // the commission amount reduced from the release amount
     uint256 public currentTotalCommissions; // current total commissions accumulated on report tx
+    uint8 public minRequiredReports; // minimum number of required reports to release tokens
 
     IERC20 public token; // erc20 token
 
@@ -391,7 +389,7 @@ contract Bridge is Ownable {
     }
 
     /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
+     * @dev claims tokens from a signer (calculated from provided signature) to be converted to tokens on another blockchain
      *
      * @param _toBlockchain    blockchain on which tokens will be issued
      * @param _to              address to send the tokens to
