@@ -329,66 +329,6 @@ contract Bridge is Ownable {
     }
 
     /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
-     *
-     * @param _toBlockchain    blockchain on which tokens will be issued
-     * @param _to              address to send the tokens to
-     * @param _amount          the amount of tokens to transfer
-     */
-    function xTransfer(
-        bytes32 _toBlockchain,
-        bytes32 _to,
-        uint256 _amount
-    ) public xTransfersAllowed {
-        // get the current lock limit
-        uint256 currentLockLimit = getCurrentLockLimit();
-
-        // verify lock limit
-        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
-        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
-
-        lockTokens(_amount);
-
-        // set the previous lock limit and block number
-        prevLockLimit = currentLockLimit - _amount;
-        prevLockBlockNumber = block.number;
-
-        // emit XTransfer event with id of 0
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, 0);
-    }
-
-    /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
-     *
-     * @param _toBlockchain    blockchain on which tokens will be issued
-     * @param _to              address to send the tokens to
-     * @param _amount          the amount of tokens to transfer
-     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
-     */
-    function xTransfer(
-        bytes32 _toBlockchain,
-        bytes32 _to,
-        uint256 _amount,
-        uint256 _id
-    ) public xTransfersAllowed {
-        // get the current lock limit
-        uint256 currentLockLimit = getCurrentLockLimit();
-
-        // require that; minLimit <= _amount <= currentLockLimit
-        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
-        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
-
-        lockTokens(_amount);
-
-        // set the previous lock limit and block number
-        prevLockLimit = currentLockLimit - _amount;
-        prevLockBlockNumber = block.number;
-
-        // emit XTransfer event
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, _id);
-    }
-
-    /**
      * @dev claims tokens from a signer (calculated from provided signature) to be converted to tokens on another blockchain
      *
      * @param _toBlockchain    blockchain on which tokens will be issued
@@ -416,7 +356,7 @@ contract Bridge is Ownable {
         uint256 currentLockLimit = getCurrentLockLimit();
 
         // require that; minLimit <= _amount <= currentLockLimit
-        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
 
         // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
         // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).
@@ -542,17 +482,6 @@ contract Bridge is Ownable {
         }
 
         return currentReleaseLimit;
-    }
-
-    /**
-     * @dev claims and locks tokens from msg.sender to be converted to tokens on another blockchain
-     *
-     * @param _amount  the amount of tokens to lock
-     */
-    function lockTokens(uint256 _amount) private {
-        token.transferFrom(msg.sender, address(this), _amount);
-
-        emit TokensLock(msg.sender, _amount);
     }
 
     /**
