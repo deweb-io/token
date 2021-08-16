@@ -394,21 +394,23 @@ contract Bridge is Ownable {
      * @param _toBlockchain    blockchain on which tokens will be issued
      * @param _to              address to send the tokens to
      * @param _amount          the amount of tokens to transfer
-     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
      * @param _deadline        permit deadline
-     * @param _v               msg.sender ECDSA signature recovery identifier
-     * @param _r               msg.sender ECDSA signature number
-     * @param _s               msg.sender ECDSA signature number
+     * @param _signer          address to claim tokens from
+     * @param _v               ECDSA signature recovery identifier
+     * @param _r               ECDSA signature number
+     * @param _s               ECDSA signature number
+     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
      */
     function xTransfer(
         bytes32 _toBlockchain,
         bytes32 _to,
         uint256 _amount,
-        uint256 _id,
         uint256 _deadline,
+        address _signer,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        uint256 _id
     ) public xTransfersAllowed {
         // get the current lock limit
         uint256 currentLockLimit = getCurrentLockLimit();
@@ -416,19 +418,19 @@ contract Bridge is Ownable {
         // require that; minLimit <= _amount <= currentLockLimit
         require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
 
-        // Permit function enables to give allowance to a spender, without a payment of the owner, due to the fact
-        // that any account can call permit, provided that it has the owner's signature (_v, _r, _s parameters).
+        // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
+        // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).
         // Example: https://deweb-io.github.io/token/permit_demo.html
-        ERC20Permit(address(token)).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
+        ERC20Permit(address(token)).permit(_signer, address(this), _amount, _deadline, _v, _r, _s);
 
-        lockTokens(_amount);
+        lockTokens(_signer, _amount);
 
         // set the previous lock limit and block number
         prevLockLimit = currentLockLimit - _amount;
         prevLockBlockNumber = block.number;
 
         // emit XTransfer event
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, _id);
+        emit XTransfer(_signer, _toBlockchain, _to, _amount, _id);
     }
 
     /**
@@ -551,6 +553,18 @@ contract Bridge is Ownable {
         token.transferFrom(msg.sender, address(this), _amount);
 
         emit TokensLock(msg.sender, _amount);
+    }
+
+    /**
+     * @dev claims and locks tokens from signer to be converted to tokens on another blockchain
+     *
+     * @param _signer  the address to lock tokens from
+     * @param _amount  the amount of tokens to lock
+     */
+    function lockTokens(address _signer, uint256 _amount) private {
+        token.transferFrom(_signer, address(this), _amount);
+
+        emit TokensLock(_signer, _amount);
     }
 
     /**
