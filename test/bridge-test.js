@@ -4,19 +4,26 @@ const {expectRevert, expectBigNum} = require('./utils');
 
 
 describe('Bridge', function() {
-    const commissionAmount = ethers.utils.parseEther('12');
+    const BBS_COMMISSION_AMOUNT = 12;
+    const BBS_MINT_AMOUNT = BBS_COMMISSION_AMOUNT + 1;
+
+    const commissionAmount = ethers.utils.parseEther(`${BBS_COMMISSION_AMOUNT}`);
+    const mintAmount = ethers.utils.parseEther(`${BBS_MINT_AMOUNT}`);
+
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
-    const xtransferId = Math.floor(Math.random() * (100000));
+    const id = Math.floor(Math.random() * (100000));
 
-    let accounts, bbsToken, bridge, owner, reporter, chainId, deadline, tokenName;
+    let accounts, bbsToken, bridge, bbsContractOwner, reporter, chainId, deadline, tokenName,
+        tokenOwner, tokenSpender;
 
     beforeEach(async function() {
         accounts = await ethers.getSigners();
-        owner = accounts[0];
+        bbsContractOwner = accounts[0];
         reporter = accounts[1];
+        tokenOwner = accounts[2];
 
-        const provider = owner.provider;
+        const provider = bbsContractOwner.provider;
         chainId = provider._network.chainId;
         deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
 
@@ -33,8 +40,9 @@ describe('Bridge', function() {
             1,
             commissionAmount,
             bbsToken.address);
+        tokenSpender = bridge.address;
 
-        await bridge['setReporter(address,bool)'](reporter.address, true);
+        await bridge.setReporter(reporter.address, true);
     });
 
     async function signPremitData(signer, spender, value, nonce) {
@@ -53,124 +61,24 @@ describe('Bridge', function() {
         return (await bbsToken.nonces(account.address)).toNumber();
     }
 
-    it('should revert report tx - amount to release is lower than commission', async function() {
-        const xtransferAmount = ethers.utils.parseEther('10');
-        // reportTx
-        const txId = Math.floor(Math.random() * (100000));
-        await expectRevert(bridge.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](
-            eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {from: reporter.address}
-        ), 'ERR_VALUE_TOO_LOW');
-    });
-
-    it('should report tx - commission reduced from release amount and total commissions updated', async function() {
-        let currentTotalCommissions = await bridge.currentTotalCommissions();
-        if (currentTotalCommissions._hex != 0) {
-            throw new Error('current total commissions before first tx should be equal to 0');
-        }
-
-        const mintAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(owner.address, mintAmount);
-
-        // xtransfer
-        const xtransferAmount = ethers.utils.parseEther('13');
-        const nonce = await getNonce(owner);
-        const {v, r, s} = await signPremitData(owner, bridge.address, xtransferAmount, nonce);
-
-        await bridge.connect(owner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](eosBlockchain, eosAddress, xtransferAmount, deadline, owner.address, v, r, s, xtransferId);
-
-        const balanceAfter = (await bbsToken.balanceOf(owner.address));
-        if (balanceAfter._hex != 0) {
-            throw new Error('balance should be 0');
-        }
-
-        // reportTx
-        const txId = Math.floor(Math.random() * (100000));
-        await bridge.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](
-            eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {from: reporter.address});
-
-        const endBalance = (await bbsToken.balanceOf(owner.address));
-
-        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
-            throw new Error('balance should be the same as mint amount - commission amount');
-        }
-
-        currentTotalCommissions = await bridge.currentTotalCommissions();
-        if (currentTotalCommissions._hex !== commissionAmount._hex) {
-            throw new Error('current total commissions after first tx should be equal to commission amount');
-        }
-    });
-
-    it('should revert report tx - tx already reported(same xtransferId)', async function() {
-        const xtransferAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(owner.address, xtransferAmount);
-
-        const nonce = await getNonce(owner);
-        const {v, r, s} = await signPremitData(owner, bridge.address, xtransferAmount, nonce);
-
-        await bridge.connect(owner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](eosBlockchain, eosAddress, xtransferAmount, deadline, owner.address, v, r, s, xtransferId);
-
-        const balanceAfter = (await bbsToken.balanceOf(owner.address));
-        if (balanceAfter._hex != 0) {
-            throw new Error('balance should be 0');
-        }
-
-        // reportTx
-        const txId = Math.floor(Math.random() * (100000));
-        await bridge.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](
-            eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {from: reporter.address});
-
-        await expectRevert(bridge.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](
-            eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {from: reporter.address}
-        ), 'ERR_ALREADY_REPORTED');
-    });
-
-    it('test set commission amount', async function() {
-        // caller is not the owner - revert
-        await expectRevert(
-            bridge.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')),
-            'Ownable: caller is not the owner');
-
-        const oldCommissions = await bridge.commissionAmount();
-        await bridge.connect(owner).setCommissionAmount(ethers.utils.parseEther('16'));
-        const newCommissions = await bridge.commissionAmount();
-        if (newCommissions._hex == oldCommissions) {
-            throw new Error('commission amount should be changed');
-        }
-    });
-
-
     it('xTransfer', async function() {
-        const tokenOwner = accounts[2];
-        const tokenSpender = bridge.address;
-
         const BBSTransferAmount = ethers.utils.parseEther('10');
-
         const nonce = await getNonce(tokenOwner);
         const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, BBSTransferAmount, nonce);
 
         // params do not match signed data - should fail
-        await expectRevert(bridge.connect(tokenOwner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](
-            eosBlockchain, eosAddress, ethers.utils.parseEther('11'), deadline, tokenOwner.address, v, r, s, xtransferId
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, ethers.utils.parseEther('11'), deadline, tokenOwner.address, v, r, s, id
         ), 'ERC20Permit: invalid signature');
 
         // wrong signer address - should fail
-        await expectRevert(bridge.connect(tokenOwner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenSpender, v, r, s, xtransferId
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenSpender, v, r, s, id
         ), 'ERC20Permit: invalid signature');
 
         // not enough bbs balance - should fail
-        await expectRevert(bridge.connect(tokenOwner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, xtransferId
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id
         ), 'ERC20: transfer amount exceeds balance');
 
         await bbsToken.mint(tokenOwner.address, BBSTransferAmount);
@@ -180,9 +88,8 @@ describe('Bridge', function() {
         expectBigNum(await bbsToken.balanceOf(tokenSpender)).to.equal(0);
 
         // xTransfer
-        await bridge.connect(tokenOwner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, xtransferId);
+        await bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
@@ -192,18 +99,13 @@ describe('Bridge', function() {
         expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonce + 1);
 
         // using the same signature - should fail
-        await expectRevert(bridge.connect(tokenOwner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, xtransferId
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id
         ), 'ERC20Permit: invalid signature');
     });
 
     it('xTransfer can be transmitted by any account', async function() {
-        const tokenOwner = accounts[2];
-        const tokenSpender = bridge.address;
         const transmitter = accounts[3];
-
         const BBSTransferAmount = ethers.utils.parseEther('10');
         const TransmitterBBSbalance = ethers.utils.parseEther('5');
 
@@ -219,9 +121,8 @@ describe('Bridge', function() {
         expect((await bbsToken.balanceOf(transmitter.address)).toString()).to.equal(TransmitterBBSbalance.toString());
 
         // xTransfer
-        await bridge.connect(transmitter)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, xtransferId);
+        await bridge.connect(transmitter).xTransfer(
+            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
@@ -232,35 +133,101 @@ describe('Bridge', function() {
         expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonce + 1);
     });
 
-    it('should withdraw commissions', async function() {
-        let currentTotalCommissions = await bridge.currentTotalCommissions();
-        if (currentTotalCommissions._hex != 0) {
-            throw new Error('current total commissions before first tx should be equal to 0');
-        }
+    it('should revert report tx - amount to release is lower than commission', async function() {
+        await expectRevert(bridge.connect(reporter).reportTx(
+            eosBlockchain, id, tokenOwner.address, ethers.utils.parseEther('10'), id
+        ), 'ERR_VALUE_TOO_LOW');
+    });
 
-        const mintAmount = ethers.utils.parseEther('13');
-        await bbsToken.mint(owner.address, mintAmount);
+    it('should report tx - commission is reduced from release amount and total commissions updated', async function() {
+        let currentTotalCommissions = await bridge.currentTotalCommissions();
+        expectBigNum(currentTotalCommissions).to.equal(0);
+
+        await bbsToken.mint(tokenOwner.address, mintAmount);
 
         // xtransfer
-        const xtransferAmount = ethers.utils.parseEther('13');
-        const nonce = await getNonce(owner);
-        const {v, r, s} = await signPremitData(owner, bridge.address, xtransferAmount, nonce);
+        const xtransferAmount = mintAmount;
+        const nonce = await getNonce(tokenOwner);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
 
-        await bridge.connect(owner)[
-            'xTransfer(bytes32,bytes32,uint256,uint256,address,uint8,bytes32,bytes32,uint256)'
-        ](eosBlockchain, eosAddress, xtransferAmount, deadline, owner.address, v, r, s, xtransferId);
+        await bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
-        const balanceAfter = (await bbsToken.balanceOf(owner.address));
-        if (balanceAfter._hex != 0) {
-            throw new Error('balance should be 0');
-        }
+        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
+        expectBigNum(balanceAfter).to.equal(0);
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
-        await bridge.connect(reporter)['reportTx(bytes32,uint256,address,uint256,uint256)'](
-            eosBlockchain, txId, owner.address, xtransferAmount, xtransferId, {from: reporter.address});
+        await bridge.connect(reporter).reportTx(
+            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
 
-        const endBalance = (await bbsToken.balanceOf(owner.address));
+        const endBalance = (await bbsToken.balanceOf(tokenOwner.address));
+        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
+            throw new Error('balance should be the same as mint amount - commission amount');
+        }
+
+        currentTotalCommissions = await bridge.currentTotalCommissions();
+        // current total commissions after first tx should be equal to commission amount
+        expect(currentTotalCommissions._hex).to.equal(commissionAmount._hex);
+    });
+
+    it('should revert report tx - tx already reported(same id)', async function() {
+        const xtransferAmount = mintAmount;
+        await bbsToken.mint(tokenOwner.address, xtransferAmount);
+
+        const nonce = await getNonce(tokenOwner);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
+
+        await bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
+
+        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
+        expectBigNum(balanceAfter).to.equal(0);
+
+        // reportTx
+        const txId = Math.floor(Math.random() * (100000));
+        await bridge.connect(reporter).reportTx(eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+
+        await expectRevert(bridge.connect(reporter).reportTx(
+            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id
+        ), 'ERR_ALREADY_REPORTED');
+    });
+
+    it('test set commission amount', async function() {
+        await expectRevert(
+            bridge.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')),
+            'Ownable: caller is not the owner');
+
+        const oldCommissions = await bridge.commissionAmount();
+        await bridge.connect(bbsContractOwner).setCommissionAmount(ethers.utils.parseEther('16'));
+        const newCommissions = await bridge.commissionAmount();
+        expect(newCommissions._hex).to.not.equal(oldCommissions._hex);
+    });
+
+    it('should withdraw commissions', async function() {
+        let currentTotalCommissions = await bridge.currentTotalCommissions();
+        // current total commissions before first tx should be equal to 0
+        expectBigNum(currentTotalCommissions).to.equal(0);
+
+        await bbsToken.mint(tokenOwner.address, mintAmount);
+
+        // xtransfer
+        const xtransferAmount = mintAmount;
+        const nonce = await getNonce(tokenOwner);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
+
+        await bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
+
+        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
+        expectBigNum(balanceAfter).to.equal(0);
+
+        // reportTx
+        const txId = Math.floor(Math.random() * (100000));
+        await bridge.connect(reporter).reportTx(
+            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+
+        const endBalance = (await bbsToken.balanceOf(tokenOwner.address));
 
         if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
             throw new Error('balance should be the same as mint amount - commission amount');
@@ -271,13 +238,13 @@ describe('Bridge', function() {
             throw new Error('current total commissions after first tx should be equal to commission amount');
         }
 
-        await bridge.connect(owner)['withdrawCommissions(address)'](owner.address, {
-            from: owner.address
-        });
+        await expectRevert(
+            bridge.connect(tokenOwner).withdrawCommissions(tokenOwner.address)
+            , 'Ownable: caller is not the owner'
+        );
 
+        await bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address);
         currentTotalCommissions = await bridge.currentTotalCommissions();
-        if (currentTotalCommissions._hex != 0) {
-            throw new Error('current total commissions should be 0 after withdraw');
-        }
+        expectBigNum(currentTotalCommissions).to.equal(0);
     });
 });
