@@ -26,18 +26,18 @@ if [ ! -f Token.wasm ]; then
     kleos set contract $bbs_account . ./Token.wasm ./Token.abi -p $bbs_account@active
 
     echo -e "${GREEN}-----------------------CREATING BBS-----------------------${NC}"
-    kleos push action $bbs_account create '[ "'$bancorx_account'", "'$EOS_BBS_TOKEN_MAXIMUM_SUPPLY'"]' -p $bbs_account@active
-    
+    kleos push action $bbs_account create '[ "'$bridge_account'", "'$EOS_BBS_TOKEN_MAXIMUM_SUPPLY'"]' -p $bbs_account@active
+
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-    kleos get currency balance $bbs_account $bancorx_account
+    kleos get currency balance $bbs_account $bridge_account
 
     echo -e "${GREEN}-----------------------ISSUING BBS-----------------------${NC}"
-    kleos push action $bbs_account issue '[ "'$bancorx_account'", "'$EOS_BBS_TOKEN_ISSUE_AMOUNT'", "memo" ]' -p $bancorx_account@active
+    kleos push action $bbs_account issue '[ "'$bridge_account'", "'$EOS_BBS_TOKEN_ISSUE_AMOUNT'", "memo" ]' -p $bridge_account@active
 
     echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-    kleos get currency balance $bbs_account $bancorx_account
+    kleos get currency balance $bbs_account $bridge_account
 
 
-    # TODO: bbs token account should give issue and retire permission to bancorx account
-    # kleos set account permission $bancorx_account issuer '{ "threshold": 1, "keys": [{ "key": "EOS8HuvjfQeUS7tMdHPPrkTFMnEP7nr6oivvuJyNcvW9Sx5MxJSkZ", "weight": 1 }], "accounts": [{ "permission": { "actor":"bbsbbsbbsbbs","permission":"eosio.code" }, "weight":1 }] }' owner -p bbsbbsbbsbbs
+    # TODO: bbs token account should give issue and retire permission to bridge account
+    # kleos set account permission $bridge_account issuer '{ "threshold": 1, "keys": [{ "key": "EOS8HuvjfQeUS7tMdHPPrkTFMnEP7nr6oivvuJyNcvW9Sx5MxJSkZ", "weight": 1 }], "accounts": [{ "permission": { "actor":"bbsbbsbbsbbs","permission":"eosio.code" }, "weight":1 }] }' owner -p bbsbbsbbsbbs
 fi

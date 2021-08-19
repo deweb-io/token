@@ -1,13 +1,8 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.6;
 
-
-import "./interfaces/IBancorX.sol";
-
-import "./utility/TokenHolder.sol";
-
-import "./token/SafeERC20Ex.sol";
-
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 /**
@@ -20,8 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
  * Reporting cross chain transfers works similar to standard multisig contracts, meaning that multiple
  * callers are required to report a transfer before tokens are released to the target account.
  */
-contract BancorX is IBancorX, TokenHolder {
-    using SafeERC20 for IERC20;
+contract Bridge is Ownable {
 
     // represents a transaction on another blockchain where tokens were destroyed/locked
     struct Transaction {
@@ -32,8 +26,6 @@ contract BancorX is IBancorX, TokenHolder {
         bool completed;
     }
 
-    uint16 public constant version = 4;
-
     uint256 public maxLockLimit; // the maximum amount of tokens that can be locked in one transaction
     uint256 public maxReleaseLimit; // the maximum amount of tokens that can be released in one transaction
     uint256 public minLimit; // the minimum amount of tokens that can be transferred in one transaction
@@ -42,11 +34,11 @@ contract BancorX is IBancorX, TokenHolder {
     uint256 public limitIncPerBlock; // how much the limit increases per block
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
-    uint8 public minRequiredReports; // minimum number of required reports to release tokens
     uint256 public commissionAmount; // the commission amount reduced from the release amount
     uint256 public currentTotalCommissions; // current total commissions accumulated on report tx
+    uint8 public minRequiredReports; // minimum number of required reports to release tokens
 
-    IERC20 public override token; // erc20 token
+    IERC20 public token; // erc20 token
 
     bool public xTransfersEnabled = true; // true if x transfers are enabled, false if not
     bool public reportingEnabled = true; // true if reporting is enabled, false if not
@@ -128,7 +120,7 @@ contract BancorX is IBancorX, TokenHolder {
     event XTransferComplete(address _to, uint256 _id);
 
     /**
-     * @dev initializes a new BancorX instance
+     * @dev initializes a new Bridge instance
      *
      * @param _maxLockLimit          maximum amount of tokens that can be locked in one transaction
      * @param _maxReleaseLimit       maximum amount of tokens that can be released in one transaction
@@ -169,7 +161,8 @@ contract BancorX is IBancorX, TokenHolder {
         prevLockBlockNumber = block.number;
         prevReleaseBlockNumber = block.number;
 
-        commissionAmount = _commissionAmount; // no need to validate number as it allowed to be 0
+        // no need to validate number as it allowed to be 0
+        commissionAmount = _commissionAmount;
 
         token = _token;
     }
@@ -206,13 +199,56 @@ contract BancorX is IBancorX, TokenHolder {
     function _reportingAllowed() internal view {
         require(reportingEnabled, "ERR_DISABLED");
     }
+    // verifies that a value is greater than zero
+    modifier greaterThanZero(uint256 _value) {
+        _greaterThanZero(_value);
+        _;
+    }
+
+    // error message binary size optimization
+    function _greaterThanZero(uint256 _value) internal pure {
+        require(_value > 0, "ERR_ZERO_VALUE");
+    }
+
+    // verifies that a value is greater than some amount
+    modifier greaterEqualThanAmount(uint256 _value, uint256 _amount) {
+        _greaterEqualThanAmount(_value, _amount);
+        _;
+    }
+
+    // error message binary size optimization
+    function _greaterEqualThanAmount(uint256 _value, uint256 _amount) internal pure {
+        require(_value >= _amount, "ERR_VALUE_TOO_LOW");
+    }
+
+    // validates an address - currently only checks that it isn't null
+    modifier validAddress(address _address) {
+        _validAddress(_address);
+        _;
+    }
+
+    // error message binary size optimization
+    function _validAddress(address _address) internal pure {
+        require(_address != address(0), "ERR_INVALID_ADDRESS");
+    }
+
+    // validates an external address - currently only checks that it isn't null or this
+    modifier validExternalAddress(address _address) {
+        _validExternalAddress(_address);
+        _;
+    }
+
+    // error message binary size optimization
+    function _validExternalAddress(address _address) internal view {
+        require(_address != address(0) && _address != address(this), "ERR_INVALID_EXTERNAL_ADDRESS");
+    }
 
     /**
      * @dev setter
      *
      * @param _maxLockLimit    new maxLockLimit
      */
-    function setMaxLockLimit(uint256 _maxLockLimit) public ownerOnly greaterThanZero(_maxLockLimit) {
+    function setMaxLockLimit(uint256 _maxLockLimit) public onlyOwner greaterThanZero(_maxLockLimit) {
         maxLockLimit = _maxLockLimit;
     }
 
@@ -221,7 +257,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _maxReleaseLimit    new maxReleaseLimit
      */
-    function setMaxReleaseLimit(uint256 _maxReleaseLimit) public ownerOnly greaterThanZero(_maxReleaseLimit) {
+    function setMaxReleaseLimit(uint256 _maxReleaseLimit) public onlyOwner greaterThanZero(_maxReleaseLimit) {
         maxReleaseLimit = _maxReleaseLimit;
     }
 
@@ -230,7 +266,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _minLimit    new minLimit
      */
-    function setMinLimit(uint256 _minLimit) public ownerOnly greaterThanZero(_minLimit) {
+    function setMinLimit(uint256 _minLimit) public onlyOwner greaterThanZero(_minLimit) {
         // validate input
         require(_minLimit <= maxLockLimit && _minLimit <= maxReleaseLimit, "ERR_INVALID_MIN_LIMIT");
 
@@ -242,7 +278,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _limitIncPerBlock    new limitIncPerBlock
      */
-    function setLimitIncPerBlock(uint256 _limitIncPerBlock) public ownerOnly greaterThanZero(_limitIncPerBlock) {
+    function setLimitIncPerBlock(uint256 _limitIncPerBlock) public onlyOwner greaterThanZero(_limitIncPerBlock) {
         limitIncPerBlock = _limitIncPerBlock;
     }
 
@@ -251,7 +287,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _minRequiredReports    new minRequiredReports
      */
-    function setMinRequiredReports(uint8 _minRequiredReports) public ownerOnly greaterThanZero(_minRequiredReports) {
+    function setMinRequiredReports(uint8 _minRequiredReports) public onlyOwner greaterThanZero(_minRequiredReports) {
         minRequiredReports = _minRequiredReports;
     }
 
@@ -260,7 +296,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _commissionAmount    new commission amount
      */
-    function setCommissionAmount(uint256 _commissionAmount) public ownerOnly {
+    function setCommissionAmount(uint256 _commissionAmount) public onlyOwner {
         commissionAmount = _commissionAmount;
     }
 
@@ -270,7 +306,7 @@ contract BancorX is IBancorX, TokenHolder {
      * @param _reporter    reporter whos status is to be set
      * @param _active      true if the reporter is approved, false otherwise
      */
-    function setReporter(address _reporter, bool _active) public ownerOnly {
+    function setReporter(address _reporter, bool _active) public onlyOwner {
         reporters[_reporter] = _active;
     }
 
@@ -279,7 +315,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _enable     true to enable, false to disable
      */
-    function enableXTransfers(bool _enable) public ownerOnly {
+    function enableXTransfers(bool _enable) public onlyOwner {
         xTransfersEnabled = _enable;
     }
 
@@ -288,108 +324,53 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _enable     true to enable, false to disable
      */
-    function enableReporting(bool _enable) public ownerOnly {
+    function enableReporting(bool _enable) public onlyOwner {
         reportingEnabled = _enable;
     }
 
     /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
+     * @dev claims tokens from a signer (calculated from provided signature) to be converted to tokens on another blockchain
      *
      * @param _toBlockchain    blockchain on which tokens will be issued
      * @param _to              address to send the tokens to
      * @param _amount          the amount of tokens to transfer
-     */
-    function xTransfer(
-        bytes32 _toBlockchain,
-        bytes32 _to,
-        uint256 _amount
-    ) public xTransfersAllowed {
-        // get the current lock limit
-        uint256 currentLockLimit = getCurrentLockLimit();
-
-        // verify lock limit
-        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
-        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
-
-        lockTokens(_amount);
-
-        // set the previous lock limit and block number
-        prevLockLimit = currentLockLimit - _amount;
-        prevLockBlockNumber = block.number;
-
-        // emit XTransfer event with id of 0
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, 0);
-    }
-
-    /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
-     *
-     * @param _toBlockchain    blockchain on which tokens will be issued
-     * @param _to              address to send the tokens to
-     * @param _amount          the amount of tokens to transfer
-     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
-     */
-    function xTransfer(
-        bytes32 _toBlockchain,
-        bytes32 _to,
-        uint256 _amount,
-        uint256 _id
-    ) public override xTransfersAllowed {
-        // get the current lock limit
-        uint256 currentLockLimit = getCurrentLockLimit();
-
-        // require that; minLimit <= _amount <= currentLockLimit
-        require(_amount >= minLimit, "ERR_AMOUNT_TOO_LOW");
-        require(_amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
-
-        lockTokens(_amount);
-
-        // set the previous lock limit and block number
-        prevLockLimit = currentLockLimit - _amount;
-        prevLockBlockNumber = block.number;
-
-        // emit XTransfer event
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, _id);
-    }
-
-    /**
-     * @dev claims tokens from msg.sender to be converted to tokens on another blockchain
-     *
-     * @param _toBlockchain    blockchain on which tokens will be issued
-     * @param _to              address to send the tokens to
-     * @param _amount          the amount of tokens to transfer
-     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
      * @param _deadline        permit deadline
-     * @param _v               msg.sender ECDSA signature recovery identifier
-     * @param _r               msg.sender ECDSA signature number
-     * @param _s               msg.sender ECDSA signature number
+     * @param _signer          address to claim tokens from
+     * @param _v               ECDSA signature recovery identifier
+     * @param _r               ECDSA signature number
+     * @param _s               ECDSA signature number
+     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
      */
     function xTransfer(
         bytes32 _toBlockchain,
         bytes32 _to,
         uint256 _amount,
-        uint256 _id,
         uint256 _deadline,
+        address _signer,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s
+        bytes32 _s,
+        uint256 _id
     ) public xTransfersAllowed {
         // get the current lock limit
         uint256 currentLockLimit = getCurrentLockLimit();
 
         // require that; minLimit <= _amount <= currentLockLimit
-        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_TOO_HIGH");
+        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
 
-        ERC20Permit(address(token)).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
+        // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
+        // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).
+        // Example: https://deweb-io.github.io/token/permit_demo.html
+        ERC20Permit(address(token)).permit(_signer, address(this), _amount, _deadline, _v, _r, _s);
 
-        lockTokens(_amount);
+        lockTokens(_signer, _amount);
 
         // set the previous lock limit and block number
         prevLockLimit = currentLockLimit - _amount;
         prevLockBlockNumber = block.number;
 
         // emit XTransfer event
-        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, _id);
+        emit XTransfer(_signer, _toBlockchain, _to, _amount, _id);
     }
 
     /**
@@ -465,7 +446,7 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @return amount that was sent in xTransfer corresponding to _xTransferId
      */
-    function getXTransferAmount(uint256 _xTransferId, address _for) public view override returns (uint256) {
+    function getXTransferAmount(uint256 _xTransferId, address _for) public view returns (uint256) {
         // xTransferId -> txId -> Transaction
         Transaction memory transaction = transactions[transactionIds[_xTransferId]];
 
@@ -504,14 +485,15 @@ contract BancorX is IBancorX, TokenHolder {
     }
 
     /**
-     * @dev claims and locks tokens from msg.sender to be converted to tokens on another blockchain
+     * @dev claims and locks tokens from signer to be converted to tokens on another blockchain
      *
+     * @param _signer  the address to lock tokens from
      * @param _amount  the amount of tokens to lock
      */
-    function lockTokens(uint256 _amount) private {
-        token.safeTransferFrom(msg.sender, address(this), _amount);
+    function lockTokens(address _signer, uint256 _amount) private {
+        token.transferFrom(_signer, address(this), _amount);
 
-        emit TokensLock(msg.sender, _amount);
+        emit TokensLock(_signer, _amount);
     }
 
     /**
@@ -532,7 +514,7 @@ contract BancorX is IBancorX, TokenHolder {
         prevReleaseBlockNumber = block.number;
 
         // no need to require, reverts on failure
-        token.safeTransfer(_to, _amount);
+        token.transfer(_to, _amount);
 
         emit TokensRelease(_to, _amount);
     }
@@ -542,15 +524,15 @@ contract BancorX is IBancorX, TokenHolder {
      *
      * @param _to      the address to withdraw commissions to
      */
-    function withdrawCommissions(address _to) public ownerOnly validAddress(_to) {
+    function withdrawCommissions(address _to) public onlyOwner validAddress(_to) {
         // TODO: should we check minimum amount allowed to withdraw?
 
         // reset total commissions
         currentTotalCommissions = 0;
 
         // no need to require, reverts on failure
-        token.safeTransfer(_to, currentTotalCommissions);
-        
+        token.transfer(_to, currentTotalCommissions);
+
         emit commissionsWithdraw(_to, currentTotalCommissions);
     }
 }
