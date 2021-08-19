@@ -5,7 +5,7 @@ const {expectRevert, expectBigNum} = require('./utils');
 
 describe('Bridge', function() {
     const COMMISSION_AMOUNT = 12;
-    const MINT_AMOUNT = COMMISSION_AMOUNT + 1;
+    const XTRANSFER_AMOUNT = COMMISSION_AMOUNT + 1;
     const MIN_WITHDRAW_AMOUNT = COMMISSION_AMOUNT - 2;
 
     const MAX_LOCK_LIMIT = '40000000000000000000000';
@@ -15,7 +15,7 @@ describe('Bridge', function() {
     const MIN_REQUIRED_REPORTS = 1;
 
     const commissionAmount = ethers.utils.parseEther(`${COMMISSION_AMOUNT}`);
-    const mintAmount = ethers.utils.parseEther(`${MINT_AMOUNT}`);
+    const xTransferAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`);
     const minWithdrawlAmount = ethers.utils.parseEther(`${MIN_WITHDRAW_AMOUNT}`);
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
@@ -70,10 +70,22 @@ describe('Bridge', function() {
         return (await bbsToken.nonces(account.address)).toNumber();
     }
 
-    it('xTransfer', async function() {
-        const BBSTransferAmount = ethers.utils.parseEther('10');
+    /**
+     * Used in tests where we do not test the xTransfer itself.
+     * @param {} amount
+     * @param {*} transmitter
+     */
+    async function xTransfer(amount, transmitter) {
         const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, BBSTransferAmount, nonce);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, amount, nonce);
+
+        await bridge.connect(transmitter).xTransfer(
+            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s, id);
+    }
+
+    it('xTransfer', async function() {
+        const nonce = await getNonce(tokenOwner);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xTransferAmount, nonce);
 
         // params do not match signed data - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
@@ -82,60 +94,56 @@ describe('Bridge', function() {
 
         // wrong signer address - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenSpender, v, r, s, id
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenSpender, v, r, s, id
         ), 'ERC20Permit: invalid signature');
 
         // not enough bbs balance - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id
         ), 'ERC20: transfer amount exceeds balance');
 
-        await bbsToken.mint(tokenOwner.address, BBSTransferAmount);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
 
         // test balances before xTransfer
-        expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(BBSTransferAmount.toString());
+        expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(xTransferAmount.toString());
         expectBigNum(await bbsToken.balanceOf(tokenSpender)).to.equal(0);
 
         // xTransfer
         await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id);
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
-        expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(BBSTransferAmount.toString());
+        expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(xTransferAmount.toString());
 
         // verify nonce
         expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonce + 1);
 
         // using the same signature - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id
         ), 'ERC20Permit: invalid signature');
     });
 
     it('xTransfer can be transmitted by any account', async function() {
         const transmitter = accounts[3];
-        const BBSTransferAmount = ethers.utils.parseEther('10');
         const TransmitterBBSbalance = ethers.utils.parseEther('5');
 
         const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, BBSTransferAmount, nonce);
 
-        await bbsToken.mint(tokenOwner.address, BBSTransferAmount);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
         await bbsToken.mint(transmitter.address, TransmitterBBSbalance);
 
         // test balances before xTransfer
-        expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(BBSTransferAmount.toString());
+        expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(xTransferAmount.toString());
         expectBigNum(await bbsToken.balanceOf(tokenSpender)).to.equal(0);
         expect((await bbsToken.balanceOf(transmitter.address)).toString()).to.equal(TransmitterBBSbalance.toString());
 
-        // xTransfer
-        await bridge.connect(transmitter).xTransfer(
-            eosBlockchain, eosAddress, BBSTransferAmount, deadline, tokenOwner.address, v, r, s, id);
+        await xTransfer(xTransferAmount, transmitter);
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
-        expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(BBSTransferAmount.toString());
+        expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(xTransferAmount.toString());
         expect((await bbsToken.balanceOf(transmitter.address)).toString()).to.equal(TransmitterBBSbalance.toString());
 
         // verify nonce
@@ -152,26 +160,18 @@ describe('Bridge', function() {
         let currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
 
-        await bbsToken.mint(tokenOwner.address, mintAmount);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
 
         // xtransfer
-        const xtransferAmount = mintAmount;
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
-
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
-
-        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
-        expectBigNum(balanceAfter).to.equal(0);
+        await xTransfer(xTransferAmount, tokenOwner);
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
         await bridge.connect(reporter).reportTx(
-            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+            eosBlockchain, txId, tokenOwner.address, xTransferAmount, id);
 
         const endBalance = (await bbsToken.balanceOf(tokenOwner.address));
-        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
+        if (endBalance._hex != xTransferAmount._hex - commissionAmount._hex) {
             throw new Error('balance should be the same as mint amount - commission amount');
         }
 
@@ -181,24 +181,16 @@ describe('Bridge', function() {
     });
 
     it('should revert report tx - tx already reported(same id)', async function() {
-        const xtransferAmount = mintAmount;
-        await bbsToken.mint(tokenOwner.address, xtransferAmount);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
 
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
-
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
-
-        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
-        expectBigNum(balanceAfter).to.equal(0);
+        await xTransfer(xTransferAmount, tokenOwner);
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
-        await bridge.connect(reporter).reportTx(eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+        await bridge.connect(reporter).reportTx(eosBlockchain, txId, tokenOwner.address, xTransferAmount, id);
 
         await expectRevert(bridge.connect(reporter).reportTx(
-            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id
+            eosBlockchain, txId, tokenOwner.address, xTransferAmount, id
         ), 'ERR_ALREADY_REPORTED');
     });
 
@@ -218,27 +210,18 @@ describe('Bridge', function() {
         // current total commissions before first tx should be equal to 0
         expectBigNum(currentTotalCommissions).to.equal(0);
 
-        await bbsToken.mint(tokenOwner.address, mintAmount);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
 
-        // xtransfer
-        const xtransferAmount = mintAmount;
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
-
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
-
-        const balanceAfter = (await bbsToken.balanceOf(tokenOwner.address));
-        expectBigNum(balanceAfter).to.equal(0);
+        await xTransfer(xTransferAmount, tokenOwner);
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
         await bridge.connect(reporter).reportTx(
-            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+            eosBlockchain, txId, tokenOwner.address, xTransferAmount, id);
 
         const endBalance = (await bbsToken.balanceOf(tokenOwner.address));
 
-        if (endBalance._hex != mintAmount._hex - commissionAmount._hex) {
+        if (endBalance._hex != xTransferAmount._hex - commissionAmount._hex) {
             throw new Error('balance should be the same as mint amount - commission amount');
         }
 
@@ -271,18 +254,13 @@ describe('Bridge', function() {
         expect(curMinWithdrawl.toString()).to.equal(newMinWithdrawlValue.toString());
 
         // xtransfer
-        await bbsToken.mint(tokenOwner.address, mintAmount);
-        const xtransferAmount = mintAmount;
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
-
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
+        await bbsToken.mint(tokenOwner.address, xTransferAmount);
+        await xTransfer(xTransferAmount, tokenOwner);
 
         // reportTx
         const txId = Math.floor(Math.random() * (100000));
         await bridge.connect(reporter).reportTx(
-            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+            eosBlockchain, txId, tokenOwner.address, xTransferAmount, id);
 
         await expectRevert(
             bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)
