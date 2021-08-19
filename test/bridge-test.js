@@ -4,11 +4,19 @@ const {expectRevert, expectBigNum} = require('./utils');
 
 
 describe('Bridge', function() {
-    const BBS_COMMISSION_AMOUNT = 12;
-    const BBS_MINT_AMOUNT = BBS_COMMISSION_AMOUNT + 1;
+    const COMMISSION_AMOUNT = 12;
+    const MINT_AMOUNT = COMMISSION_AMOUNT + 1;
+    const MIN_WITHDRAW_AMOUNT = COMMISSION_AMOUNT - 2;
 
-    const commissionAmount = ethers.utils.parseEther(`${BBS_COMMISSION_AMOUNT}`);
-    const mintAmount = ethers.utils.parseEther(`${BBS_MINT_AMOUNT}`);
+    const MAX_LOCK_LIMIT = '40000000000000000000000';
+    const MAX_RELEASE_LIMIT = '80000000000000000000000';
+    const MIN_LIMIT = '1000000000000000000';
+    const LIMIT_INC_PER_BLOCK = '500000000000000000000';
+    const MIN_REQUIRED_REPORTS = 1;
+
+    const commissionAmount = ethers.utils.parseEther(`${COMMISSION_AMOUNT}`);
+    const mintAmount = ethers.utils.parseEther(`${MINT_AMOUNT}`);
+    const minWithdrawlAmount = ethers.utils.parseEther(`${MIN_WITHDRAW_AMOUNT}`);
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
@@ -33,12 +41,13 @@ describe('Bridge', function() {
 
         const Bridge = await ethers.getContractFactory('Bridge');
         bridge = await Bridge.deploy(
-            '40000000000000000000000',
-            '80000000000000000000000',
-            '1000000000000000000',
-            '500000000000000000000',
-            1,
+            MAX_LOCK_LIMIT,
+            MAX_RELEASE_LIMIT,
+            MIN_LIMIT,
+            LIMIT_INC_PER_BLOCK,
+            MIN_REQUIRED_REPORTS,
             commissionAmount,
+            minWithdrawlAmount,
             bbsToken.address);
         tokenSpender = bridge.address;
 
@@ -140,7 +149,7 @@ describe('Bridge', function() {
     });
 
     it('should report tx - commission is reduced from release amount and total commissions updated', async function() {
-        let currentTotalCommissions = await bridge.currentTotalCommissions();
+        let currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
 
         await bbsToken.mint(tokenOwner.address, mintAmount);
@@ -166,7 +175,7 @@ describe('Bridge', function() {
             throw new Error('balance should be the same as mint amount - commission amount');
         }
 
-        currentTotalCommissions = await bridge.currentTotalCommissions();
+        currentTotalCommissions = await bridge.totalCommissions();
         // current total commissions after first tx should be equal to commission amount
         expect(currentTotalCommissions._hex).to.equal(commissionAmount._hex);
     });
@@ -193,7 +202,7 @@ describe('Bridge', function() {
         ), 'ERR_ALREADY_REPORTED');
     });
 
-    it('test set commission amount', async function() {
+    it('set commission amount', async function() {
         await expectRevert(
             bridge.connect(reporter).setCommissionAmount(ethers.utils.parseEther('16')),
             'Ownable: caller is not the owner');
@@ -204,8 +213,8 @@ describe('Bridge', function() {
         expect(newCommissions._hex).to.not.equal(oldCommissions._hex);
     });
 
-    it('should withdraw commissions', async function() {
-        let currentTotalCommissions = await bridge.currentTotalCommissions();
+    it('withdraw commissions', async function() {
+        let currentTotalCommissions = await bridge.totalCommissions();
         // current total commissions before first tx should be equal to 0
         expectBigNum(currentTotalCommissions).to.equal(0);
 
@@ -233,7 +242,7 @@ describe('Bridge', function() {
             throw new Error('balance should be the same as mint amount - commission amount');
         }
 
-        currentTotalCommissions = await bridge.currentTotalCommissions();
+        currentTotalCommissions = await bridge.totalCommissions();
         if (currentTotalCommissions._hex !== commissionAmount._hex) {
             throw new Error('current total commissions after first tx should be equal to commission amount');
         }
@@ -244,7 +253,41 @@ describe('Bridge', function() {
         );
 
         await bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address);
-        currentTotalCommissions = await bridge.currentTotalCommissions();
+        currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
+    });
+
+    it('minimum withdraw amount', async function() {
+        const newMinWithdrawlValue = ethers.utils.parseEther(`${MIN_WITHDRAW_AMOUNT + 10}`);
+        await expectRevert(
+            bridge.connect(reporter).setMinWithdrawAmount(newMinWithdrawlValue),
+            'Ownable: caller is not the owner');
+
+        // set min withdraw amount
+        const prevMinWithdrawl = await bridge.commissionAmount();
+        await bridge.connect(bbsContractOwner).setMinWithdrawAmount(newMinWithdrawlValue);
+        const curMinWithdrawl = await bridge.minWithdrawAmount();
+        expect(curMinWithdrawl.toString()).to.not.equal(prevMinWithdrawl.toString());
+        expect(curMinWithdrawl.toString()).to.equal(newMinWithdrawlValue.toString());
+
+        // xtransfer
+        await bbsToken.mint(tokenOwner.address, mintAmount);
+        const xtransferAmount = mintAmount;
+        const nonce = await getNonce(tokenOwner);
+        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xtransferAmount, nonce);
+
+        await bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xtransferAmount, deadline, tokenOwner.address, v, r, s, id);
+
+        // reportTx
+        const txId = Math.floor(Math.random() * (100000));
+        await bridge.connect(reporter).reportTx(
+            eosBlockchain, txId, tokenOwner.address, xtransferAmount, id);
+
+        await expectRevert(
+            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)
+            , 'ERR_VALUE_TOO_LOW'
+        );
+
     });
 });
