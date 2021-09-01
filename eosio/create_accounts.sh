@@ -18,7 +18,7 @@ store_env() {
 
 account_maker() {
     # echo creating account $1
-    echo -e "${GREEN}-----------------------creating account $1-----------------------${NC}"
+    echo "${GREEN}-----------------------creating account $1-----------------------${NC}"
     creation_response="$(curl -s "$faucet/create/$1")"
     if [ "$(from_json .success "$creation_response")" = false ]; then
         echo "failed creation: $creation_response" 1>&2
@@ -26,28 +26,28 @@ account_maker() {
     fi
     # import keys and store them just in case something went wrong
     owner_private_key="$(from_json .data.account.owner.privateKey "$creation_response")"
-    store_env owner_private_key $owner_private_key
+    store_env $1_owner_private_key $owner_private_key
     active_private_key="$(from_json .data.account.active.privateKey "$creation_response")"
-    store_env active_private_key $active_private_key
+    store_env $1_active_private_key $active_private_key
     active_public_key="$(from_json .data.account.active.publicKey "$creation_response")"
-    store_env active_public_key $active_public_key
-    kleos wallet import --private-key "$owner_private_key"
+    store_env $1_active_public_key $active_public_key
+    kleos wallet import --private-key "$owner_private_key" #qs: to where the key is imported? to default wallet of keosd on the remote keosd
     kleos wallet import --private-key "$active_private_key"
-    echo -e "${GREEN}-----------------------account created $1-----------------------${NC}"
+    echo "${GREEN}-----------------------account created $1-----------------------${NC}"
     # echo account created $1
 }
 
 account_funder() {
     echo funding account $1
-    echo -e "${GREEN}-----------------------funding account $1-----------------------${NC}"
+    echo "${GREEN}-----------------------funding account $1-----------------------${NC}"
     funding_response="$(curl -s "$faucet/get_token/$1")"
     if [ "$(from_json .success "$funding_response")" = false ]; then
         echo "failed funding: $funding_response" 1>&2
         exit 1
     fi
     kleos system buyram $1 $1 "10.0000 EOS" -p $1@active
-    echo -e "${GREEN}-----------------------account funded $1-----------------------${NC}"
-    # echo account funded $1
+    echo "${GREEN}-----------------------account funded $1-----------------------${NC}"
+    echo account funded $1
 }
 
 # create bbs account if not exist and fund it.
@@ -66,6 +66,7 @@ if [ ! "$bridge_account" ]; then
     store_env bridge_account $bridge_account
 
     echo creating bridge_account $bridge_account
+    bbs_active_public_key="$(cat state.env | grep "${bbs_account}_active_public_key" | sed 's/.*=//' | sed 's/^.//;s/.$//')"
     kleos system newaccount $bbs_account $bridge_account $bbs_active_public_key --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
     echo account created $bridge_account
 fi
