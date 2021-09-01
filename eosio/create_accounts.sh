@@ -18,7 +18,7 @@ store_env() {
 
 account_maker() {
     # echo creating account $1
-    echo -e "${GREEN}-----------------------creating account $1-----------------------${NC}"
+    echo "${GREEN}-----------------------creating account $1-----------------------${NC}"
     creation_response="$(curl -s "$faucet/create/$1")"
     if [ "$(from_json .success "$creation_response")" = false ]; then
         echo "failed creation: $creation_response" 1>&2
@@ -31,22 +31,22 @@ account_maker() {
     store_env active_private_key $active_private_key
     active_public_key="$(from_json .data.account.active.publicKey "$creation_response")"
     store_env active_public_key $active_public_key
-    kleos wallet import --private-key "$owner_private_key"
+    kleos wallet import --private-key "$owner_private_key" #qs: to where the key is imported? to default wallet of keosd on the remote keosd
     kleos wallet import --private-key "$active_private_key"
-    echo -e "${GREEN}-----------------------account created $1-----------------------${NC}"
+    echo "${GREEN}-----------------------account created $1-----------------------${NC}"
     # echo account created $1
 }
 
 account_funder() {
     echo funding account $1
-    echo -e "${GREEN}-----------------------funding account $1-----------------------${NC}"
+    echo "${GREEN}-----------------------funding account $1-----------------------${NC}"
     funding_response="$(curl -s "$faucet/get_token/$1")"
     if [ "$(from_json .success "$funding_response")" = false ]; then
         echo "failed funding: $funding_response" 1>&2
         exit 1
     fi
     kleos system buyram $1 $1 "10.0000 EOS" -p $1@active
-    echo -e "${GREEN}-----------------------account funded $1-----------------------${NC}"
+    echo "${GREEN}-----------------------account funded $1-----------------------${NC}"
     # echo account funded $1
 }
 
