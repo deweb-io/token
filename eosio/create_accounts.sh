@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 name_maker() {
-    shuf -zern12 {1..5} {a..z} {a..z} {a..z} | tr -d '\0'
+    shuf -zern12 {a..z} {1..5} {a..z} {a..z} | tr -d '\0'
 }
 
 store_env() {

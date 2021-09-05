@@ -15,6 +15,10 @@ if [ ! -f Token.wasm ]; then
     mv contracts_eos/contracts/eos/Token/Token.{wasm,abi} .
     rm -rf contracts_eos
 
+    # ensure bbs_account have enough eos. TODO: JUST FOR TESTING!!!!
+    kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
+    # ensure bbs_account have enough eos. TODO: JUST FOR TESTING!!!!
+
     echo "${GREEN}-----------------------DEPLOYING BBS CONTRACT -----------------------${NC}"
     kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active
     # kleos set account permission $bbs_account active --add-code

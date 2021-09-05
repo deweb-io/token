@@ -20,9 +20,9 @@ echo DEPLOYING EOS...
 . create_accounts.sh
 
 # deploy BBS token
-#. deploy_token.sh
+. deploy_token.sh
 
 # deploy bridge
-# . deploy_bridge.sh
+. deploy_bridge.sh
 popd
 echo DONE EOS!

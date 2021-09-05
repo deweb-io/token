@@ -15,9 +15,8 @@ if [ ! -f BancorX.wasm ]; then
     mv contracts_eos/contracts/eos/BancorX/BancorX.{wasm,abi} .
     rm -rf contracts_eos
 
-
     echo "${GREEN}-----------------------DEPLOYING BRIDGE----------------------${NC}"
-    kleos system buyram $bridge_account $bridge_account "10.0000 EOS" -p $bridge_account@active
+    kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bridge_account@active
     kleos set account permission $bridge_account active --add-code
     kleos set code $bridge_account . ./BancorX.wasm -p $bridge_account@active
     kleos set contract $bridge_account . ./BancorX.wasm ./BancorX.abi -p $bridge_account@active

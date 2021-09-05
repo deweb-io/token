@@ -22,6 +22,9 @@ module.exports = {
         apiKey: 'ETHERSCAN_API_KEY'
     },
     networks: {
+         hardhat: {
+            chainId: 1337
+        },
         ropsten: {
             url: 'https://ropsten.infura.io/v3/b481942a6a15462988f7ab9000ca51ab',
             accounts : ['0xa54eb7f94dae3fdf83bdb0036eea1c673e824fc8109a70bdb6748adddffe3538']
