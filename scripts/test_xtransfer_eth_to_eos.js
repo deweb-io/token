@@ -44,22 +44,22 @@ async function main() {
     bridge = Bridge.attach(BRIDGE_ADDRESS);
     console.log(`xTransfersEnabled: ${await bridge.xTransfersEnabled()}`);
 
-    // mint some tokens so we have what to transfer
-    await bbsToken.connect(bbsOwner).mint(bbsOwner.address, 10);
-
     const tokenOwner = bbsOwner;
     const tokenSpender = bridge.address;
-    const xTransferAmount = ethers.utils.parseEther('1.0');
+    const xTransferAmount = ethers.utils.parseEther('1');
     const nonce = await getNonce(tokenOwner);
     const id = 0;
+
+    // mint some tokens so we have what to transfer
+    await bbsToken.connect(bbsOwner).mint(bbsOwner.address, xTransferAmount);
 
     // EOS data
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String(RECEIVER_EOS_ACCOUNT);
 
-    console.log(`BBS locked in bridge: ${await bbsToken.balanceOf(bridge.address)}`);
+    console.log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
 
-    console.log(`BBS balance of token owner: ${await bbsToken.balanceOf(tokenOwner.address)}`);
+    console.log(`BBS balance of token owner (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
 
     const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xTransferAmount, nonce, deadline);
 
@@ -67,7 +67,9 @@ async function main() {
     await bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
-    console.log(`BBS locked in bridge: ${await bbsToken.balanceOf(bridge.address)}`);
+    console.log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
+
+    console.log(`BBS balance of token owner (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
