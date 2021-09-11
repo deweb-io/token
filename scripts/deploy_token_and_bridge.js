@@ -7,7 +7,10 @@ const limitIncPerBlock = process.env.ETHEREUM_BRIDGE_LIMIT_INC_PER_BLOCK || '500
 const minRequiredReports = process.env.ETHEREUM_BRIDGE_MIN_REQUIRED_REPORTS || 1;
 const commissionAmount = process.env.ETHEREUM_BRIDGE_COMMISSION_AMOUNT || '12000000000000000000';
 const minWithdrawAmount = process.env.ETHEREUM_MIN_WITHDRAW_AMOUNT || 0;
-const reporterAddress = process.env.ETHEREUM_BRIDGE_REPORTER_ADDRESS || '0x41C87AC77a3ec4E192F0f3a0c598f8027Ec16177';
+const reporterAddress = process.env.ETHEREUM_BRIDGE_REPORTER_ADDRESS || '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'
+
+// Ropsten addresses
+// '0x41C87AC77a3ec4E192F0f3a0c598f8027Ec16177';
 // const REPORTER1_PRIVATE_KEY = '0xe427e1a30d344c90f0b3884df1e58273ee7b6084c055bcc84090e2915967d8c6';
 
 
