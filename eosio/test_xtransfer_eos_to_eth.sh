@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . env.sh
 
-ethereum_account='0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc'
+ethereum_account='0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 xtransfer_amount='1.0000 BBS'
 
 # bridge_min_reporters='1'
@@ -20,7 +20,7 @@ echo "${GREEN}-----------------------BALANCE-----------------------${NC}"
 
 # kleos push action $bbs_account transfer '["'$bridge_account'","'$account'","10.0000 BBS",""]' -p $bridge_account@active
 
-kleos get currency balance $bbs_account $bridge_account
+# kleos get currency balance $bbs_account $bridge_account
 
 kleos get currency balance $bbs_account $account
 
@@ -28,6 +28,6 @@ echo "${GREEN}-----------------------X TRANSFER-----------------------${NC}"
 kleos push action $bbs_account transfer '["'$account'", "'$bridge_account'", "1.0000 BBS", "1.1,ethereum,'$ethereum_account',"0""]' -p $account@active
 
 # echo -e "${GREEN}-----------------------BALANCE-----------------------${NC}"
-kleos get currency balance $bbs_account $bridge_account
+# kleos get currency balance $bbs_account $bridge_account
 
 kleos get currency balance $bbs_account $account
