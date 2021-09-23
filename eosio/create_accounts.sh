@@ -5,7 +5,7 @@
 . env.sh
 
 name_maker() {
-    echo "$(shuf -zern1 {a..z} | tr -d '\0')""$(shuf -zern11 {1..5} {a..z} {a..z} | tr -d '\0')"
+    echo "$(shuf -zern1 {a..z} | tr -d '\0')$(shuf -zern11 {1..5} {a..z} {a..z} | tr -d '\0')"
 }
 
 store_env() {
@@ -15,28 +15,27 @@ store_env() {
 account_maker() {
     # echo creating account $1
     echo -e "${GREEN}----creating account $1----${NC}"
-    creation_response="$(curl -s "$faucet/create/$1")"
+    creation_response="$(curl -s "$FAUCET/create/$1")"
     if [ "$(from_json .success "$creation_response")" = false ]; then
         echo "failed creation: $creation_response" 1>&2
         exit 1
     fi
     # import keys and store them just in case something went wrong
     owner_private_key="$(from_json .data.account.owner.privateKey "$creation_response")"
-    store_env $1_owner_private_key $owner_private_key
+    store_env $1_owner_private_key "$owner_private_key"
     active_private_key="$(from_json .data.account.active.privateKey "$creation_response")"
-    store_env $1_active_private_key $active_private_key
+    store_env $1_active_private_key "$active_private_key"
     active_public_key="$(from_json .data.account.active.publicKey "$creation_response")"
-    store_env $1_active_public_key $active_public_key
-    kleos wallet import --private-key "$owner_private_key" #qs: to where the key is imported? to default wallet of keosd on the remote keosd
+    store_env $1_active_public_key "$active_public_key"
+    kleos wallet import --private-key "$owner_private_key"
     kleos wallet import --private-key "$active_private_key"
     echo -e "${GREEN}----account created $1----${NC}"
-    # echo account created $1
 }
 
 account_funder() {
     echo funding account $1
     echo -e "${GREEN}----funding account $1----${NC}"
-    funding_response="$(curl -s "$faucet/get_token/$1")"
+    funding_response="$(curl -s "$FAUCET/get_token/$1")"
     if [ "$(from_json .success "$funding_response")" = false ]; then
         echo "failed funding: $funding_response" 1>&2
         exit 1
@@ -49,34 +48,32 @@ account_funder() {
 # create bbs account if not exist and fund it.
 if [ ! "$bbs_account" ]; then
     read -p "No bbs_account was configured. Do you want to create a new one (yes/no)?" ans
-    if [[ "yes" == $ans ]]; then
+    if [[ "yes" == "$ans" ]]; then
         bbs_account="$(name_maker)"
         store_env bbs_account $bbs_account
 
         kleos get account $bbs_account > /dev/null || account_maker $bbs_account
 
         [ "$(kleos get currency balance eosio.token $bbs_account)" ] || account_funder $bbs_account
-
-        kleos set account permission $bbs_account active --add-code
     fi
 fi
 
 # create bridge account if not exist with the same key pair of bbs account
 if [ ! "$bridge_account" ]; then
     read -p "No bridge_account was configured. Do you want to create a new one (yes/no)?" ans
-    if [[ "yes" == $ans ]]; then
+    if [[ "yes" == "$ans" ]]; then
         bridge_account="$(name_maker)"
         store_env bridge_account $bridge_account
 
         bbs_active_public_key="$(cat state.env | grep "${bbs_account}_active_public_key" | sed 's/.*=//' | sed 's/^.//;s/.$//')"
-        kleos system newaccount $bbs_account $bridge_account $bbs_active_public_key --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
+        kleos system newaccount $bbs_account $bridge_account "$bbs_active_public_key" --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
     fi
 fi
 
 # create reporter account if not exist
 if [ ! "$reporter_account" ]; then
     read -p "No reporter_account was configured. Do you want to create a new one (yes/no)?" ans
-    if [[ "yes" == $ans ]]; then
+    if [[ "yes" == "$ans" ]]; then
         reporter_account="$(name_maker)"
         store_env reporter_account $reporter_account
 
@@ -86,10 +83,12 @@ if [ ! "$reporter_account" ]; then
     fi
 fi
 
+# JUST FOR TESTING!!!!
+
 # create user account if not exist
 if [ ! "$account" ]; then
     read -p "No user account was configured. Do you want to create a new one (yes/no)?" ans
-    if [[ "yes" == $ans ]]; then
+    if [[ "yes" == "$ans" ]]; then
         account="$(name_maker)"
         store_env account $account
 
@@ -98,3 +97,8 @@ if [ ! "$account" ]; then
         [ "$(kleos get currency balance eosio.token $account)" ] || account_funder $account
     fi
 fi
+
+# ensure bbs_account have enough eos
+kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
+
+# JUST FOR TESTING!!!!

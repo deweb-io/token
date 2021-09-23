@@ -15,8 +15,8 @@ store() {
 }
 
 kleos() {
-    if [ "$nodeos" ]; then
-        cleos -u "$nodeos" "$@"
+    if [ "$NODEOS" ]; then
+        cleos -u "$NODEOS" "$@"
     else
         cleos "$@"
     fi

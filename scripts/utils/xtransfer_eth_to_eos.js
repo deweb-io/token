@@ -4,7 +4,7 @@ const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS || '0x5FbDB2315678afecb3
 const BBS_CONTRACT_OWNER = process.env.BBS_CONTRACT_OWNER;
 const BBS_TOKEN_OWNER = process.env.BBS_TOKEN_OWNER;
 const BRIDGE_ADDRESS = process.env.BRIDGE_ADDRESS || '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
-const RECEIVER_EOS_ACCOUNT = process.env.RECEIVER_EOS_ACCOUNT || 'mjfmnnzvsuqr';
+const RECEIVER_EOS_ACCOUNT = process.env.RECEIVER_EOS_ACCOUNT || 'rjyqmacwqxbc';
 const NODE_URL = process.env.NODE_URL || 'http://localhost:8545';
 
 let bbsToken = null;

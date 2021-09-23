@@ -12,7 +12,7 @@ fi
 
 account_maker() {
     echo creating account $1
-    creation_response="$(curl -s "$faucet/create/$1")"
+    creation_response="$(curl -s "$FAUCET/create/$1")"
     if [ "$(from_json .success "$creation_response")" = false ]; then
         echo "failed creation: $creation_response" 1>&2
         exit 1
@@ -28,7 +28,7 @@ kleos get account $account > /dev/null || account_maker $account
 
 account_funder() {
     echo funding account $1
-    funding_response="$(curl -s "$faucet/get_token/$account")"
+    funding_response="$(curl -s "$FAUCET/get_token/$account")"
     if [ "$(from_json .success "$funding_response")" = false ]; then
         echo "failed funding: $funding_response" 1>&2
         exit 1
