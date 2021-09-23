@@ -10,17 +10,14 @@ if [ ! -f Token.wasm ]; then
     mv contracts_eos/contracts/eos/Token/Token.{wasm,abi} .
     rm -rf contracts_eos
 
-    # ensure bbs_account have enough eos. TODO: JUST FOR TESTING!!!!
-    kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
-    # ensure bbs_account have enough eos. TODO: JUST FOR TESTING!!!!
-
     echo -e "${GREEN}----DEPLOYING BBS CONTRACT----${NC}"
-    kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active
-    kleos set code $bbs_account ./Token.wasm -p $bbs_account@active # bbs_account should have 'eosio.code' permission
+    kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active # qs: should we do of it here?
+    kleos set account permission $bbs_account active --add-code # ensure bbs_account have 'eosio.code' permission
+    kleos set code $bbs_account ./Token.wasm -p $bbs_account@active
     kleos set contract $bbs_account . ./Token.wasm ./Token.abi -p $bbs_account@active
     echo -e "${GREEN}----DEPLOYING BBS CONTRACT DONE!----${NC}"
 
     echo -e "${GREEN}----CREATING BBS TOKEN----${NC}"
-    kleos push action $bbs_account create '[ "'$bridge_account'", "1000000.0000 BBS"]' -p $bbs_account@active
+    kleos push action $bbs_account create '[ "'$bridge_account'", "'$EOS_BBS_TOKEN_MAXIMUM_SUPPLY' '$EOS_BBS_ASSET'" ]' -p $bbs_account@active
     echo -e "${GREEN}----CREATING BBS TOKEN DONE!----${NC}"
 fi

@@ -11,8 +11,8 @@ if [ ! -f BancorX.wasm ]; then
     rm -rf contracts_eos
 
     echo -e "${GREEN}----DEPLOYING BRIDGE----${NC}"
-    kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bridge_account@active
-    kleos set account permission $bridge_account active --add-code
+    kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bbs_account@active # qs: should we do it here?
+    kleos set account permission $bridge_account active --add-code # ensure bridge_account have 'eosio.code' permission
     kleos set code $bridge_account . ./BancorX.wasm -p $bridge_account@active
     kleos set contract $bridge_account . ./BancorX.wasm ./BancorX.abi -p $bridge_account@active
 
