@@ -11,7 +11,6 @@ if [ ! -f Token.wasm ]; then
     rm -rf contracts_eos
 
     echo -e "${GREEN}----DEPLOYING BBS CONTRACT----${NC}"
-    kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active # qs: should we do of it here?
     kleos set account permission $bbs_account active --add-code # ensure bbs_account have 'eosio.code' permission
     kleos set code $bbs_account ./Token.wasm -p $bbs_account@active
     kleos set contract $bbs_account . ./Token.wasm ./Token.abi -p $bbs_account@active

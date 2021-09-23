@@ -83,7 +83,6 @@ if [ ! "$reporter_account" ]; then
     fi
 fi
 
-# JUST FOR TESTING!!!!
 
 # create user account if not exist
 if [ ! "$account" ]; then
@@ -101,4 +100,6 @@ fi
 # ensure bbs_account have enough eos
 kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
 
-# JUST FOR TESTING!!!!
+# buy ram for bbs and bridge accounts
+kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active
+kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bbs_account@active
