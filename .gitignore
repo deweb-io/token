@@ -4,7 +4,7 @@ build/
 cache/
 coverage.json
 coverage/
-eosio/*.abi
-eosio/*.wasm
+eosio/deployments/*.abi
+eosio/deployments/*.wasm
 eosio/state.env
 node_modules/

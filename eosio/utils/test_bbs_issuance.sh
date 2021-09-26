@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-. env.sh
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../env.sh
+popd
 
 echo -e "${GREEN}----BALANCE BEFORE ISSUE----${NC}"
 kleos get currency balance $bbs_account $bridge_account
