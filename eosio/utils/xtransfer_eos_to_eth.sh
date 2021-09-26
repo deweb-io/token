@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-. env.sh
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../env.sh
+popd
 
 ethereum_account='0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
 xtransfer_amount='1.0000 BBS'

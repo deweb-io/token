@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # This script is USED ONLY FOR TESTING. accounts for production are being created maunally.
 # Create and fund a test accounts if needed.
-
-. env.sh
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../env.sh
+popd
 
 name_maker() {
     echo "$(shuf -zern1 {a..z} | tr -d '\0')$(shuf -zern11 {1..5} {a..z} {a..z} | tr -d '\0')"
@@ -94,12 +95,16 @@ if [ ! "$account" ]; then
         kleos get account $account > /dev/null || account_maker $account
 
         [ "$(kleos get currency balance eosio.token $account)" ] || account_funder $account
+
+        # ensure bbs_account has enough eos
+        kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
     fi
 fi
 
-# ensure bbs_account have enough eos
-kleos push action eosio.token transfer '["'$account'","'$bbs_account'","70.0000 EOS",""]' -p $account@active
 
 # buy ram for bbs and bridge accounts
-kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active
-kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bbs_account@active
+read -p "Buy Ram to bbs and bridge accounts?" ans
+if [[ "yes" == "$ans" ]]; then
+    kleos system buyram $bbs_account $bbs_account "10.0000 EOS" -p $bbs_account@active
+    kleos system buyram $bbs_account $bridge_account "10.0000 EOS" -p $bbs_account@active
+fi

@@ -1,4 +1,6 @@
 # This file is meant to be sourced to get our environment going.
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+
 set -a
 . state.env
 . bbs.env

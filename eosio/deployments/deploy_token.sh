@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Deploy a token if none is deployed.
-. env.sh
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../env.sh
+popd
 
 if [ ! -f Token.wasm ]; then
     git clone https://github.com/bancorprotocol/contracts_eos --branch master --single-branch --depth 1
