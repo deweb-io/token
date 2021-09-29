@@ -36,7 +36,6 @@ contract Bridge is Ownable {
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
     uint256 public commissionAmount; // the commission amount reduced from the release amount
     uint256 public totalCommissions; // current total commissions accumulated on report tx
-    uint256 public minWithdrawAmount; // minimum amount of bbs tokens that can be withdraw
     uint8 public minRequiredReports; // minimum number of required reports to release tokens
 
     IERC20 public token; // erc20 token
@@ -137,7 +136,6 @@ contract Bridge is Ownable {
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
         uint256 _commissionAmount,
-        uint256 _minWithdrawAmount,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -165,7 +163,6 @@ contract Bridge is Ownable {
 
         // no need to validate number as it allowed to be 0
         commissionAmount = _commissionAmount;
-        minWithdrawAmount = _minWithdrawAmount;
 
         token = _token;
     }
@@ -302,16 +299,6 @@ contract Bridge is Ownable {
     function setCommissionAmount(uint256 _commissionAmount) public onlyOwner {
         commissionAmount = _commissionAmount;
     }
-
-    /**
-     * @dev setter
-     *
-     * @param _minWithdrawAmount    minimum withdrawl amount
-     */
-    function setMinWithdrawAmount(uint256 _minWithdrawAmount) public onlyOwner {
-        minWithdrawAmount = _minWithdrawAmount;
-    }
-
 
     /**
      * @dev allows the owner to set/remove reporters
@@ -537,7 +524,7 @@ contract Bridge is Ownable {
      *
      * @param _to      the address to withdraw commissions to
      */
-    function withdrawCommissions(address _to) public onlyOwner validAddress(_to) greaterEqualThanAmount(totalCommissions, minWithdrawAmount) {
+    function withdrawCommissions(address _to) public onlyOwner validAddress(_to) {
         // reset total commissions
         totalCommissions = 0;
 

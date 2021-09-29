@@ -6,7 +6,6 @@ const {expectRevert, expectBigNum} = require('./utils');
 describe('Bridge', function() {
     const COMMISSION_AMOUNT = 12;
     const XTRANSFER_AMOUNT = COMMISSION_AMOUNT + 1;
-    const MIN_WITHDRAW_AMOUNT = COMMISSION_AMOUNT - 2;
 
     const MAX_LOCK_LIMIT = '40000000000000000000000';
     const MAX_RELEASE_LIMIT = '80000000000000000000000';
@@ -16,7 +15,6 @@ describe('Bridge', function() {
 
     const commissionAmount = ethers.utils.parseEther(`${COMMISSION_AMOUNT}`);
     const xTransferAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`);
-    const minWithdrawlAmount = ethers.utils.parseEther(`${MIN_WITHDRAW_AMOUNT}`);
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
@@ -47,7 +45,6 @@ describe('Bridge', function() {
             LIMIT_INC_PER_BLOCK,
             MIN_REQUIRED_REPORTS,
             commissionAmount,
-            minWithdrawlAmount,
             bbsToken.address);
         tokenSpender = bridge.address;
 
@@ -240,32 +237,4 @@ describe('Bridge', function() {
         expectBigNum(currentTotalCommissions).to.equal(0);
     });
 
-    it('minimum withdraw amount', async function() {
-        const newMinWithdrawlValue = ethers.utils.parseEther(`${MIN_WITHDRAW_AMOUNT + 10}`);
-        await expectRevert(
-            bridge.connect(reporter).setMinWithdrawAmount(newMinWithdrawlValue),
-            'Ownable: caller is not the owner');
-
-        // set min withdraw amount
-        const prevMinWithdrawl = await bridge.commissionAmount();
-        await bridge.connect(bbsContractOwner).setMinWithdrawAmount(newMinWithdrawlValue);
-        const curMinWithdrawl = await bridge.minWithdrawAmount();
-        expect(curMinWithdrawl.toString()).to.not.equal(prevMinWithdrawl.toString());
-        expect(curMinWithdrawl.toString()).to.equal(newMinWithdrawlValue.toString());
-
-        // xtransfer
-        await bbsToken.mint(tokenOwner.address, xTransferAmount);
-        await xTransfer(xTransferAmount, tokenOwner);
-
-        // reportTx
-        const txId = Math.floor(Math.random() * (100000));
-        await bridge.connect(reporter).reportTx(
-            eosBlockchain, txId, tokenOwner.address, xTransferAmount, id);
-
-        await expectRevert(
-            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)
-            , 'ERR_VALUE_TOO_LOW'
-        );
-
-    });
 });
