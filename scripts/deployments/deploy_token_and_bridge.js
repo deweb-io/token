@@ -6,7 +6,6 @@ const minLimit = process.env.ETHEREUM_BRIDGE_MIN_LIMIT || '1000000000000000000';
 const limitIncPerBlock = process.env.ETHEREUM_BRIDGE_LIMIT_INC_PER_BLOCK || '500000000000000000000';
 const minRequiredReports = process.env.ETHEREUM_BRIDGE_MIN_REQUIRED_REPORTS || 1;
 const commissionAmount = process.env.ETHEREUM_BRIDGE_COMMISSION_AMOUNT || '12000000000000000000';
-const minWithdrawAmount = process.env.ETHEREUM_MIN_WITHDRAW_AMOUNT || 0;
 const reporterAddress = process.env.ETHEREUM_BRIDGE_REPORTER_ADDRESS || '0x70997970c51812dc3a010c7d01b50e0d17dc79c8'
 
 // Ropsten addresses
@@ -30,7 +29,6 @@ async function main() {
         limitIncPerBlock,
         minRequiredReports,
         commissionAmount,
-        minWithdrawAmount,
         token.address);
 
     console.log(`Bridge deployed at ${bridge.address}`);
