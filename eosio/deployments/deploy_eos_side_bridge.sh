@@ -5,7 +5,8 @@ pushd "$(dirname "${BASH_SOURCE[0]}")"
 
 echo DEPLOYING EOS...
 
-# import accounts to cleos
+# import keys to cleos
+. import_keys.sh
 
 # deploy BBS token
 . deploy_token.sh
