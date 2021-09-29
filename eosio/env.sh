@@ -34,3 +34,4 @@ if cleos wallet list | grep '\[\]' > /dev/null; then
         store cleos_password "$(cleos wallet create --to-console | tail -1 | cut -d'"' -f2)"
 fi
 cleos wallet list | grep ' \*"$' || cleos wallet unlock --password "$cleos_password"
+popd

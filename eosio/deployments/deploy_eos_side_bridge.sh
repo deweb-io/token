@@ -2,7 +2,6 @@
 # This script is used to deploy our BBS bridge on the eos side
 pushd "$(dirname "${BASH_SOURCE[0]}")"
 . ../env.sh
-popd
 
 echo DEPLOYING EOS...
 
@@ -15,3 +14,4 @@ echo DEPLOYING EOS...
 . deploy_bridge.sh
 
 echo DONE!
+popd
