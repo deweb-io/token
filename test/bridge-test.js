@@ -48,7 +48,7 @@ describe('Bridge', function() {
             bbsToken.address);
         tokenSpender = bridge.address;
 
-        await bridge.setReporter(reporter.address, true);
+        await bridge.setReporters([reporter.address], [true]);
     });
 
     async function signPremitData(signer, spender, value, nonce) {

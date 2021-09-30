@@ -303,11 +303,13 @@ contract Bridge is Ownable {
     /**
      * @dev allows the owner to set/remove reporters
      *
-     * @param _reporter    reporter whos status is to be set
-     * @param _active      true if the reporter is approved, false otherwise
+     * @param _reporters   array of reporters which their status is to be set
+     * @param _active      array of booleans. true if the reporter is approved, false otherwise
      */
-    function setReporter(address _reporter, bool _active) public onlyOwner {
-        reporters[_reporter] = _active;
+    function setReporters(address[] calldata _reporters, bool[] calldata _active) public onlyOwner {
+        require(_reporters.length == _active.length, "missing active status to set for all reporters");
+        for (uint16 reporterIndex = 0; reporterIndex < _reporters.length; reporterIndex++)
+            reporters[_reporters[reporterIndex]] = _active[reporterIndex];
     }
 
     /**
