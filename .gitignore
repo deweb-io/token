@@ -8,3 +8,4 @@ eosio/deployments/*.abi
 eosio/deployments/*.wasm
 eosio/state.env
 node_modules/
+scripts/deployments/log.txt
