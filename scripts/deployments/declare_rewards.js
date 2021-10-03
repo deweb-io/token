@@ -2,8 +2,8 @@ const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
 
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/addresses/bbsToken.txt`, 'utf8').toString();
-const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/addresses/staking.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
+const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/staking.txt`, 'utf8').toString();
 
 async function main() {
     if (!BBS_TOKEN_ADDRESS) {
