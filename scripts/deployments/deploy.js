@@ -2,7 +2,8 @@ const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
 
-const LOGFILE = __dirname + '/log.txt';
+const LOGFILE = `${__dirname}/log.txt`;
+const ARTIFCATS_ADRESSES = `${__dirname}/artifacts/addresses`;
 
 // BBS TOKEN
 const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS;
@@ -17,6 +18,7 @@ async function main() {
         const Token = await hardhat.ethers.getContractFactory('BBSToken');
         const token = await Token.deploy();
         log(`BBS token deployed at ${token.address}`);
+        fs.writeFileSync(`${ARTIFCATS_ADRESSES}/bbsToken.txt`, token.address);
         bbsTokenAddress = token.address;
     } else {
         bbsTokenAddress = BBS_TOKEN_ADDRESS;
@@ -28,6 +30,7 @@ async function main() {
     const staking = await upgrades.deployProxy(Staking, [bbsTokenAddress]);
     await staking.deployed();
     log(`Staking deployed at ${staking.address}`);
+    fs.writeFileSync(`${ARTIFCATS_ADRESSES}/staking.txt`, staking.address);
 
     // Bridge deploy
     log(`Deploying Bridge...`);
@@ -41,11 +44,12 @@ async function main() {
         config.bridge.commissionAmount,
         bbsTokenAddress);
     log(`Bridge deployed at ${bridge.address}`);
+    fs.writeFileSync(`${ARTIFCATS_ADRESSES}/bridge.txt`, bridge.address);
 
     log(`Set Reporters...`);
     await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
 
-    log(`---Deployment completed!---`);
+    log(`---Deployment completed---`);
 }
 
 function log(data) {

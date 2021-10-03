@@ -1,12 +1,13 @@
+const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
 
-const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS || "";
+const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/addresses/bbsToken.txt`, 'utf8').toString();
 
 
 async function main() {
     if (!BBS_TOKEN_ADDRESS) {
-        throw new Error("No BBS token address. aborting");
+        throw new Error("BBS token address is missing. aborting");
     }
 
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
