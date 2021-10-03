@@ -2,7 +2,7 @@ const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
 
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/addresses/bbsToken.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
 
 
 async function main() {
