@@ -1,6 +1,6 @@
 const fs = require('fs');
 const hardhat = require('hardhat');
-const bridgeConfig = require('./bridge_config.js');
+const config = require('./config.js');
 
 const LOGFILE = __dirname + '/log.txt';
 
@@ -33,17 +33,17 @@ async function main() {
     log(`Deploying Bridge...`);
     const Bridge = await hardhat.ethers.getContractFactory('Bridge');
     const bridge = await Bridge.deploy(
-        bridgeConfig.maxLockLimit,
-        bridgeConfig.maxReleaseLimit,
-        bridgeConfig.minLimit,
-        bridgeConfig.limitIncPerBlock,
-        bridgeConfig.minRequiredReports,
-        bridgeConfig.commissionAmount,
+        config.bridge.maxLockLimit,
+        config.bridge.maxReleaseLimit,
+        config.bridge.minLimit,
+        config.bridge.limitIncPerBlock,
+        config.bridge.minRequiredReports,
+        config.bridge.commissionAmount,
         bbsTokenAddress);
     log(`Bridge deployed at ${bridge.address}`);
 
     log(`Set Reporters...`);
-    await bridge.setReporters(bridgeConfig.reporters.addresses, bridgeConfig.reporters.active);
+    await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
 
     log(`---Deployment completed!---`);
 }
