@@ -4,12 +4,13 @@ const config = require('./config.js');
 
 const LOGFILE = `${__dirname}/log.txt`;
 const ARTIFCATS_DIR = `${__dirname}/artifacts`;
+const BBS_TOKEN_PATH = `${__dirname}/artifacts/bbsToken.txt`;
 
 if (!fs.existsSync(ARTIFCATS_DIR)){
     fs.mkdirSync(ARTIFCATS_DIR);
 }
 
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = fs.existsSync(BBS_TOKEN_PATH) ? fs.readFileSync(BBS_TOKEN_PATH, 'utf8').toString() : null;
 
 async function main() {
     log(`---Deplyoment | ${new Date()}---`);

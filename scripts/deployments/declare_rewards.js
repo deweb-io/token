@@ -29,8 +29,8 @@ async function main() {
     // If allowance was not alreay given, do it
     const accounts = await ethers.getSigners();
     const deployer = accounts[0].address;
-    const allowence = await bbsToken.allowance(deployer, STACKING_ADDRESS);
-    if (!allowence.eq(totalApproveAmountWei)) {
+    const currentAllowence = await bbsToken.allowance(deployer, STACKING_ADDRESS);
+    if (currentAllowence.lt(totalApproveAmountWei)) {
         log('Approving Stacking...');
         await bbsToken.approve(STACKING_ADDRESS, totalApproveAmountWei);
     }
