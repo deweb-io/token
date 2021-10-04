@@ -9,11 +9,10 @@ if (!fs.existsSync(ARTIFCATS_DIR)){
     fs.mkdirSync(ARTIFCATS_DIR);
 }
 
-// BBS TOKEN
-const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS;
+const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
 
 async function main() {
-    log(`---Deplyoment time: ${new Date()}---`);
+    log(`---Deplyoment | ${new Date()}---`);
     let bbsTokenAddress;
 
     // BBS token deploy
@@ -25,7 +24,6 @@ async function main() {
         fs.writeFileSync(`${ARTIFCATS_DIR}/bbsToken.txt`, token.address);
         bbsTokenAddress = token.address;
     } else {
-        fs.writeFileSync(`${ARTIFCATS_DIR}/bbsToken.txt`, token.address);
         bbsTokenAddress = BBS_TOKEN_ADDRESS;
     }
 
@@ -54,14 +52,13 @@ async function main() {
     log(`Set Reporters...`);
     await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
 
-    log(`---Deployment completed---`);
+    log(`---Deployment Done | ${new Date()}---`);
 }
 
 function log(data) {
     console.log(data);
     fs.appendFileSync(LOGFILE, data + '\n');
 }
-
 
 main().then(() => process.exit(0)).catch(error => {
     console.error(error);
