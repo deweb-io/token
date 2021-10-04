@@ -10,11 +10,10 @@ const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/staking.txt`, '
 async function main() {
     log(`---Declare rewards | ${new Date()}---`);
     if (!BBS_TOKEN_ADDRESS)
-        throw new Error('BBS token address is missing. aborting');
+        throw new Error('BBS token address is missing. aborting.');
 
     if (!STACKING_ADDRESS)
-        throw new Error('No Stacking address is missing. aborting');
-
+        throw new Error('No Stacking address is missing. aborting.');
 
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
@@ -37,8 +36,23 @@ async function main() {
     }
 
     for (const quarterIndex of config.rewards.quartes) {
-        log(`Decalring rewards for quarter ${quarterIndex}, amount: ${config.rewards.amount}`);
-        await staking.declareReward(quarterIndex, rewardAmountWei);
+        const quarter = await staking.quarters(quarterIndex);
+        const currentRewardWei = quarter.reward;
+
+        if (currentRewardWei.gt(rewardAmountWei)) {
+            log(`Quarter ${quarterIndex} already has a BIGGER reward (${currentRewardWei}) then configured ${rewardAmountWei}. skipping.`);
+            continue;
+        }
+
+        if (currentRewardWei.eq(rewardAmountWei)) {
+            log(`Quarter ${quarterIndex} already has a reward: ${currentRewardWei}. skipping.`);
+            continue;
+        }
+
+        // calculate reward to be added to quarter
+        const rewardToAddWei = rewardAmountWei.sub(currentRewardWei);
+        log(`Decalring rewards for quarter ${quarterIndex}, amount (wei): ${rewardToAddWei}`);
+        await staking.declareReward(quarterIndex, rewardToAddWei);
     }
 
     log(`--- Declare rewards Done | ${new Date()}---`);

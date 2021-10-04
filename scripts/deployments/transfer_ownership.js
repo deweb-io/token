@@ -23,10 +23,21 @@ async function main() {
     const Staking = await ethers.getContractFactory('Staking');
     const staking = Staking.attach(STACKING_ADDRESS);
 
-    log(`Transfering ownership of BBS token to ${NEW_OWNER}`);
-    await bbsToken.transferOwnership(NEW_OWNER)
-    log(`Transfering ownership of Stacking to ${NEW_OWNER}`);
-    await staking.transferOwnership(STACKING_ADDRESS);
+    const currentOwnerBBSToken = await bbsToken.owner();
+    if (currentOwnerBBSToken != NEW_OWNER) {
+        log(`Transfering ownership of BBS token to ${NEW_OWNER}`);
+        await bbsToken.transferOwnership(NEW_OWNER);
+    } else {
+        log(`BBS token owner is already ${NEW_OWNER}`);
+    }
+
+    const currentOwnerStaking = await staking.owner();
+    if (currentOwnerStaking != NEW_OWNER) {
+        log(`Transfering ownership of Stacking to ${NEW_OWNER}`);
+        await staking.transferOwnership(STACKING_ADDRESS);
+    } else {
+        log(`Staking owner is already ${NEW_OWNER}`);
+    }
 
     log(`---Transfer ownership Done | ${new Date()}---`);
 }
