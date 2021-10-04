@@ -6,9 +6,8 @@ const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`,
 
 
 async function main() {
-    if (!BBS_TOKEN_ADDRESS) {
+    if (!BBS_TOKEN_ADDRESS)
         throw new Error("BBS token address is missing. aborting");
-    }
 
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
