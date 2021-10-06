@@ -5,7 +5,6 @@ const { network } = require("./config.js");
 
 const LOGFILE = `${__dirname}/log.txt`;
 const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
-const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/staking.txt`, 'utf8').toString();
 const BRIDGE_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bridge.txt`, 'utf8').toString();
 
 function log(data) {
