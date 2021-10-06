@@ -41,21 +41,3 @@ exec(`npx hardhat verify --network ${network} ${BRIDGE_ADDRESS} '${config.bridge
     log(`---Verify BRIDGE contract Done | ${new Date()}---`);
 });
 
-
-/**
-    This will throw an error: Error in plugin @nomiclabs/hardhat-etherscan: The contract you want to verify was compiled with solidity 0.8.2, but your configured compiler version is: 0.8.6.
-    But this is ok since we are going to verify the imp contract manually on etherscan, and this used to only verify the proxy contract.
- */
-log(`---Verify Stacking contract | ${new Date()}---`);
-exec(`npx hardhat verify --network ${network} ${STACKING_ADDRESS}`, (error, stdout, stderr) => {
-    if (error) {
-        log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        log(`stderr: ${stderr}`);
-        return;
-    }
-    log(`stdout: ${stdout}`);
-    log(`---Verify Stacking contract Done | ${new Date()}---`);
-});
