@@ -14,41 +14,17 @@ const BBS_TOKEN_ADDRESS = fs.existsSync(BBS_TOKEN_PATH) ? fs.readFileSync(BBS_TO
 
 async function main() {
     log(`---Deplyoment of BBS token| ${new Date()}---`);
-    let bbsTokenAddress;
 
-    // BBS token deploy
     if (!BBS_TOKEN_ADDRESS) {
         log(`Deploying BBS token...`);
         const Token = await hardhat.ethers.getContractFactory('BBSToken');
         const token = await Token.deploy();
         log(`BBS token deployed at ${token.address}`);
         fs.writeFileSync(`${ARTIFCATS_DIR}/bbsToken.txt`, token.address);
-        bbsTokenAddress = token.address;
-    } else {
+    } else
         log(`BBS token already deployed at ${BBS_TOKEN_ADDRESS}`)
-        bbsTokenAddress = BBS_TOKEN_ADDRESS;
-    }
+
     log(`---Deplyoment of BBS token Done| ${new Date()}---`);
-
-    // Bridge deploy
-    log(`---Deplyoment of Bridge | ${new Date()}---`);
-    log(`Deploying Bridge...`);
-    const Bridge = await hardhat.ethers.getContractFactory('Bridge');
-    const bridge = await Bridge.deploy(
-        config.bridge.maxLockLimit,
-        config.bridge.maxReleaseLimit,
-        config.bridge.minLimit,
-        config.bridge.limitIncPerBlock,
-        config.bridge.minRequiredReports,
-        config.bridge.commissionAmount,
-        bbsTokenAddress);
-    log(`Bridge deployed at ${bridge.address}`);
-    fs.writeFileSync(`${ARTIFCATS_DIR}/bridge.txt`, bridge.address);
-
-    log(`Set Reporters...`);
-    await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
-
-    log(`---Deployment of Bridge Done | ${new Date()}---`);
 }
 
 function log(data) {
