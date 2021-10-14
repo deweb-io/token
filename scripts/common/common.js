@@ -23,7 +23,7 @@ module.exports = {
 
     onError: function(err) {
         console.error(err);
-        this.log(err);
+        fs.appendFileSync(LOGFILE, `${new Date()} | ` + err + '\n');
         process.exit(1);
     },
 
