@@ -1,22 +1,21 @@
 const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
+const common = require('../common/common');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const ARTIFCATS_DIR = `${__dirname}/artifacts`;
-const BBS_TOKEN_PATH = `${__dirname}/artifacts/bbsToken.txt`;
+const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
-if (!fs.existsSync(ARTIFCATS_DIR)){
-    fs.mkdirSync(ARTIFCATS_DIR);
-}
-
-const BBS_TOKEN_ADDRESS = fs.existsSync(BBS_TOKEN_PATH) ? fs.readFileSync(BBS_TOKEN_PATH, 'utf8').toString() : null;
 
 async function main() {
+    log(`---Deployment of Bridge---`);
+
     if (!BBS_TOKEN_ADDRESS)
         throw new Error('BBS token address is missing. aborting.');
 
-    log(`---Deplyoment of Bridge | ${new Date()}---`);
+    if (common.getBridgeAddress() && !process.env.ENFORCE_BRIDGE_DEPLOY)
+        throw new Error('Bridge already deployed. aborting.');
+
     log(`Deploying Bridge...`);
     const Bridge = await hardhat.ethers.getContractFactory('Bridge');
     const bridge = await Bridge.deploy(
@@ -28,22 +27,15 @@ async function main() {
         config.bridge.commissionAmount,
         BBS_TOKEN_ADDRESS);
     log(`Bridge deployed at ${bridge.address}`);
-    fs.writeFileSync(`${ARTIFCATS_DIR}/bridge.txt`, bridge.address);
+    fs.writeFileSync(common.bridgePath, bridge.address);
 
     log(`Set Reporters...`);
     await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
     log(`Set Reporters Done`);
 
-    log(`---Deployment of Bridge Done | ${new Date()}---`);
-}
-
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
+    log(`---Deployment of Bridge Done---`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
-    console.error(error);
-    log(error);
-    process.exit(1);
+    common.onError(error);
 });

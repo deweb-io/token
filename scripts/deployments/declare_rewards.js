@@ -1,40 +1,19 @@
-const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
+const common = require('../common/common');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
-const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/staking.txt`, 'utf8').toString();
-
+const STACKING_ADDRESS = common.getStakingAddress();
 
 async function main() {
-    log(`---Declare rewards | ${new Date()}---`);
-    if (!BBS_TOKEN_ADDRESS)
-        throw new Error('BBS token address is missing. aborting.');
-
+    log(`---Declare rewards---`);
     if (!STACKING_ADDRESS)
         throw new Error('No Stacking address is missing. aborting.');
 
-    const Token = await hardhat.ethers.getContractFactory('BBSToken');
-    const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
-
-    const Staking = await ethers.getContractFactory('Staking');
+    const Staking = await hardhat.ethers.getContractFactory('Staking');
     const staking = Staking.attach(STACKING_ADDRESS);
 
-    // approve
-    const numberOfQuarters = config.rewards.quartes.length;
     const rewardAmountWei = hardhat.ethers.BigNumber.from(hardhat.ethers.utils.parseEther(config.rewards.amount));
-    const totalApproveAmountWei = rewardAmountWei.mul(numberOfQuarters);
-
-    // If allowance was not alreay given, do it
-    const accounts = await ethers.getSigners();
-    const deployer = accounts[0].address;
-    const currentAllowence = await bbsToken.allowance(deployer, STACKING_ADDRESS);
-    if (currentAllowence.lt(totalApproveAmountWei)) {
-        log('Approving Stacking...');
-        await bbsToken.approve(STACKING_ADDRESS, totalApproveAmountWei);
-    }
-
     for (const quarterIndex of config.rewards.quartes) {
         const quarter = await staking.quarters(quarterIndex);
         const currentRewardWei = quarter.reward;
@@ -55,17 +34,9 @@ async function main() {
         await staking.declareReward(quarterIndex, rewardToAddWei);
     }
 
-    log(`--- Declare rewards Done | ${new Date()}---`);
+    log(`---Declare rewards Done---`);
 }
-
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
-}
-
 
 main().then(() => process.exit(0)).catch(error => {
-    console.error(error);
-    log(error)
-    process.exit(1);
+    common.onError(error);
 });

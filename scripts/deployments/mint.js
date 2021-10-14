@@ -1,13 +1,13 @@
-const fs = require('fs');
 const hardhat = require('hardhat');
 const config = require('./config.js');
+const common = require('../common/common');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
 
 async function main() {
-    log(`---Mint BBS tokens | ${new Date()}---`);
+    log(`---Mint BBS tokens---`);
     if (!BBS_TOKEN_ADDRESS)
         throw new Error("BBS token address is missing. aborting");
 
@@ -17,23 +17,16 @@ async function main() {
 
     const bbsTokenTotalSupply = await bbsToken.totalSupply();
     if (amountWei.eq(bbsTokenTotalSupply)) {
-        log(`BBS token supply is ${bbsTokenTotalSupply}. tokens werte already minted. aborting.`);
+        log(`BBS token supply is ${bbsTokenTotalSupply}. tokens were already minted. aborting.`);
         return;
     }
 
-    log(`---Minting ${config.mint.amount} tokens... | ${new Date()}---`);
+    log(`Minting ${config.mint.amount} tokens...`);
     await bbsToken.mint(config.mint.to, amountWei);
 
-    log(`---Mint BBS tokens Done | ${new Date()}---`);
-}
-
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
+    log(`---Mint BBS tokens Done---`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
-    console.error(error);
-    log(error);
-    process.exit(1);
+    common.onError(error);
 });
