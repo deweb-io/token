@@ -1,19 +1,14 @@
-const fs = require('fs');
-const { exec } = require("child_process");
+const { exec } = require('child_process');
 const config = require('./config.js');
-const { network } = require("./config.js");
+const common = require('../common/common');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
-const BRIDGE_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bridge.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
+const BRIDGE_ADDRESS = common.getBridgeAddress();
 
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
-}
 
-log(`---Verify BBS contract | ${new Date()}---`);
-exec(`npx hardhat verify --network ${network} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
+log(`---Verify BBS contract---`);
+exec(`npx hardhat verify --network ${config.network} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
         return;
@@ -23,11 +18,11 @@ exec(`npx hardhat verify --network ${network} ${BBS_TOKEN_ADDRESS}`, (error, std
         return;
     }
     log(`stdout: ${stdout}`);
-    log(`---Verify BBS contract Done| ${new Date()}---`);
+    log(`---Verify BBS contract Done---`);
 });
 
-log(`---Verify BRIDGE contract | ${new Date()}---`);
-exec(`npx hardhat verify --network ${network} ${BRIDGE_ADDRESS} '${config.bridge.maxLockLimit}' '${config.bridge.maxReleaseLimit}' '${config.bridge.minLimit}' '${config.bridge.limitIncPerBlock}' ${config.bridge.minRequiredReports} ${config.bridge.commissionAmount} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
+log(`---Verify BRIDGE contract---`);
+exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} '${config.bridge.maxLockLimit}' '${config.bridge.maxReleaseLimit}' '${config.bridge.minLimit}' '${config.bridge.limitIncPerBlock}' ${config.bridge.minRequiredReports} ${config.bridge.commissionAmount} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
         return;
@@ -37,6 +32,6 @@ exec(`npx hardhat verify --network ${network} ${BRIDGE_ADDRESS} '${config.bridge
         return;
     }
     log(`stdout: ${stdout}`);
-    log(`---Verify BRIDGE contract Done | ${new Date()}---`);
+    log(`---Verify BRIDGE contract Done---`);
 });
 

@@ -1,41 +1,30 @@
 const fs = require('fs');
 const hardhat = require('hardhat');
-const config = require('./config.js');
+const common = require('../common/common');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const ARTIFCATS_DIR = `${__dirname}/artifacts`;
-const BBS_TOKEN_PATH = `${__dirname}/artifacts/bbsToken.txt`;
+const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
-if (!fs.existsSync(ARTIFCATS_DIR))
-    fs.mkdirSync(ARTIFCATS_DIR);
-
-const BBS_TOKEN_ADDRESS = fs.existsSync(BBS_TOKEN_PATH) ? fs.readFileSync(BBS_TOKEN_PATH, 'utf8').toString() : null;
 
 async function main() {
-    log(`---Deplyoment of Staking | ${new Date()}---`);
+    log(`---Deployment of Staking---`);
 
-    // BBS token deploy
     if (!BBS_TOKEN_ADDRESS)
         throw new Error('BBS token address is missing. aborting.');
 
-    // Stacking deploy
+    if (common.getStakingAddress() && !process.env.ENFORCE_STACKING_DEPLOY)
+        throw new Error('Staking already deployed. aborting.');
+
     log(`Deploying Staking...`);
     const Staking = await hardhat.ethers.getContractFactory('Staking');
     const staking = await upgrades.deployProxy(Staking, [BBS_TOKEN_ADDRESS]);
     await staking.deployed();
     log(`Staking deployed at ${staking.address}`);
-    fs.writeFileSync(`${ARTIFCATS_DIR}/staking.txt`, staking.address);
+    fs.writeFileSync(common.stakingPath, staking.address);
 
-    log(`---Deployment of Staking Done | ${new Date()}---`);
-}
-
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
+    log(`---Deployment of Staking Done---`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
-    console.error(error);
-    log(error);
-    process.exit(1);
+    common.onError(error);
 });

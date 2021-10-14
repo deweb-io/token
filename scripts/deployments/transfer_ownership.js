@@ -1,13 +1,14 @@
-const fs = require('fs');
 const hardhat = require('hardhat');
+const common = require('../common/common.js');
+const log = common.log;
 
-const LOGFILE = `${__dirname}/log.txt`;
-const BBS_TOKEN_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/bbsToken.txt`, 'utf8').toString();
-const STACKING_ADDRESS = fs.readFileSync(`${__dirname}/artifacts/staking.txt`, 'utf8').toString();
+const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
+const STACKING_ADDRESS = common.getStakingAddress();
 const NEW_OWNER = process.env.NEW_OWNER;
 
+
 async function main() {
-    log(`---Transfer ownership | ${new Date()}---`);
+    log(`---Transfer ownership---`);
     if (!BBS_TOKEN_ADDRESS)
         throw new Error("BBS token address is missing. aborting");
 
@@ -15,7 +16,7 @@ async function main() {
         throw new Error('No Stacking address is missing. aborting');
 
     if (!NEW_OWNER)
-        throw new Error("new owner address is missing. aborting");
+        throw new Error("New owner address is missing. aborting");
 
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
@@ -39,15 +40,9 @@ async function main() {
         log(`Staking owner is already ${NEW_OWNER}`);
     }
 
-    log(`---Transfer ownership Done | ${new Date()}---`);
-}
-
-function log(data) {
-    console.log(data);
-    fs.appendFileSync(LOGFILE, data + '\n');
+    log(`---Transfer ownership Done---`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
-    console.error(error);
-    process.exit(1);
+    common.onError(error);
 });
