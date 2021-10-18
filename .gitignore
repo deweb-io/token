@@ -10,3 +10,4 @@ eosio/deployments/*.wasm
 eosio/state.env
 node_modules/
 scripts/common/log.txt
+scripts/deployment/config.js
