@@ -84,5 +84,8 @@ accumulateFee '46274'  # Multisend approve (https://ropsten.etherscan.io/tx/0xcb
 echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
 accumulateFee '110484' # Multisend transfer (https://ropsten.etherscan.io/tx/0xb71446904c619006bf5ca9f06472a45bf573b68911e7530e22d2e17dcbefec26)
 
+echo -e "${CYAN}{Gnosis-safe: createProxyWithNonce} expected function call gas price${NC}"
+accumulateFee '258606' # Gnosis-safe create (https://rinkeby.etherscan.io/tx/0xbbb8e8df0cb56711e701f5df901752ed2c8cada49607337d70ecfcd02915163d)
+
 echo -e "${GREEN}0"$totalFeeETH" ETH${NC}"
 echo -e "${GREEN}"$totalFeeUSD" USD${NC}"
