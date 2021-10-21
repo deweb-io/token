@@ -5,24 +5,35 @@ const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
+async function mint(to, amount, bbsToken) {
+    log(`Minting ${amount} undividable units to ${to}`);
+    await bbsToken.mint(to, amount);
+}
 
 async function main() {
     log(`---Mint BBS tokens---`);
     if (!BBS_TOKEN_ADDRESS)
-        throw new Error("BBS token address is missing. aborting");
+        throw new Error("BBS token address is missing. aborting.");
 
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
-    const amountWei = hardhat.ethers.utils.parseEther(config.mint.amount);
-
     const bbsTokenTotalSupply = await bbsToken.totalSupply();
-    if (amountWei.eq(bbsTokenTotalSupply)) {
-        log(`BBS token supply is ${bbsTokenTotalSupply}. tokens were already minted. aborting.`);
-        return;
-    }
 
-    log(`Minting ${config.mint.amount} tokens...`);
-    await bbsToken.mint(config.mint.to, amountWei);
+    const day1AmountWei = hardhat.ethers.utils.parseEther(config.mint.day1.amount);
+    const day3AmountWei = hardhat.ethers.utils.parseEther(config.mint.day3.amount);
+    const totalSupplyWei = hardhat.ethers.utils.parseEther(config.mint.totalSupply);
+
+    if (bbsTokenTotalSupply.eq(0))
+        await mint(config.mint.day1.to, day1AmountWei, bbsToken);
+    else if (bbsTokenTotalSupply.eq(day1AmountWei))
+        await mint(config.mint.day3.to, day3AmountWei, bbsToken);
+    else if (bbsTokenTotalSupply.eq(day1AmountWei.add(day3AmountWei)))
+        await mint(config.mint.safeAddress, totalSupplyWei.sub(day1AmountWei.add(day3AmountWei)), bbsToken);
+    else if (bbsTokenTotalSupply.eq(totalSupplyWei)) {
+        log(`Total supply is already ${config.mint.totalSupply}. aborting.`);
+    } else {
+       throw new error(`Total supply is unexpected: ${config.mint.totalSupply}`);
+    }
 
     log(`---Mint BBS tokens Done---`);
 }
