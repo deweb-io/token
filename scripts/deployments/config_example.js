@@ -20,7 +20,7 @@ module.exports = {
         to: '0x44569Aa35Ff6d97e6531880712a41D2af72a007C' // BBS TOKEN deployer address
     },
     rewards: {
-        quartes: [0, 1, 2, 3, 4],
+        quartes: [0],
         amount: '10000'
     }
 }
