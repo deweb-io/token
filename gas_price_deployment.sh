@@ -63,7 +63,9 @@ getFunctionCallFee() {
 
 # Own contracts #
 getDeploymentFee "$gas_report_bbs_token" "BBSToken"             # BBS token deploy
-getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting
+getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for day1
+getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for day3
+getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for gnosis
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer BBS ownership to Gnosis
 
 getDeploymentFee "$gas_report_bridge" "Bridge"                  # Bridge deploy
@@ -86,6 +88,10 @@ accumulateFee '110484' # Multisend transfer (https://ropsten.etherscan.io/tx/0xb
 
 echo -e "${CYAN}{Gnosis-safe: createProxyWithNonce} expected function call gas price${NC}"
 accumulateFee '258606' # Gnosis-safe create (https://rinkeby.etherscan.io/tx/0xbbb8e8df0cb56711e701f5df901752ed2c8cada49607337d70ecfcd02915163d)
+
+# 10 transfers
+echo -e "${CYAN}{ERC20 - transfer} expected 10 function calls gas price${NC}"
+accumulateFee '515650' # https://ropsten.etherscan.io/tx/0x5562a94946699af3b5eb521d31c1dac75faee1f88019ce615fba8a6b6b03eeba transfer of bbs
 
 echo -e "${GREEN}0"$totalFeeETH" ETH${NC}"
 echo -e "${GREEN}"$totalFeeUSD" USD${NC}"
