@@ -1,9 +1,9 @@
 const hardhat = require('hardhat');
+const common = require('../common/common.js');
+const log = common.log;
 
-const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-const BBS_CONTRACT_OWNER = process.env.BBS_CONTRACT_OWNER;
-const BBS_TOKEN_OWNER = process.env.BBS_TOKEN_OWNER;
-const BRIDGE_ADDRESS = process.env.BRIDGE_ADDRESS || '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
+const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS || common.getBBStokenAddress();
+const BRIDGE_ADDRESS = process.env.BRIDGE_ADDRESS || common.getBridgeAddress();
 const RECEIVER_EOS_ACCOUNT = process.env.RECEIVER_EOS_ACCOUNT || 'rjyqmacwqxbc';
 const NODE_URL = process.env.NODE_URL || 'http://localhost:8545';
 
@@ -33,7 +33,7 @@ async function getNonce(account) {
 }
 
 async function main() {
-    const bbsContractOwner = BBS_CONTRACT_OWNER || (await hardhat.ethers.getSigners())[0];
+    const bbsContractOwner = process.env.BBS_CONTRACT_OWNER || (await hardhat.ethers.getSigners())[0];
     const provider = await (ethers.getDefaultProvider(NODE_URL));
     const deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
 
@@ -42,9 +42,9 @@ async function main() {
 
     const Bridge = await ethers.getContractFactory('Bridge');
     bridge = Bridge.attach(BRIDGE_ADDRESS);
-    console.log(`xTransfersEnabled: ${await bridge.xTransfersEnabled()}`);
+    log(`xTransfersEnabled: ${await bridge.xTransfersEnabled()}`);
 
-    const tokenOwner = BBS_TOKEN_OWNER || bbsContractOwner;
+    const tokenOwner = process.env.BBS_TOKEN_OWNER || bbsContractOwner;
     const tokenSpender = bridge.address;
     const xTransferAmount = ethers.utils.parseEther('1');
     const nonce = await getNonce(tokenOwner);
@@ -59,8 +59,8 @@ async function main() {
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String(RECEIVER_EOS_ACCOUNT);
 
-    console.log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
-    console.log(`BBS balance of token owner (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
+    log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
+    log(`BBS balance of token owner (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
 
     const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xTransferAmount, nonce, deadline);
 
@@ -69,8 +69,8 @@ async function main() {
     await bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id);
 
-    console.log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
-    console.log(`BBS balance of ${tokenOwner.address} (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
+    log(`BBS locked in bridge (wei): ${await bbsToken.balanceOf(bridge.address)}`);
+    log(`BBS balance of ${tokenOwner.address} (wei): ${await bbsToken.balanceOf(tokenOwner.address)}`);
 }
 
 main().then(() => process.exit(0)).catch(error => {
