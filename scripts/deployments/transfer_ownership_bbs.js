@@ -1,17 +1,17 @@
+const config = require('./config.js');
 const common = require('../common/common.js');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
-const NEW_OWNER = process.env.NEW_OWNER;
 
 async function main() {
     log(`---Transfer ownership---`);
     if (!BBS_TOKEN_ADDRESS)
         throw new Error("BBS token address is missing. aborting");
-    if (!NEW_OWNER)
+    if (!config.mint.safeAddress)
         throw new Error("New owner address is missing. aborting");
 
-    await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, NEW_OWNER);
+    await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, config.mint.safeAddress);
     log(`---Transfer ownership Done---`);
 }
 
