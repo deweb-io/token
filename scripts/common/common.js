@@ -1,4 +1,5 @@
 const fs = require('fs');
+const hardhat = require('hardhat');
 
 const LOGFILE = `${__dirname}/log.txt`;
 const ARTIFCATS_DIR = `${__dirname}/artifacts`;
@@ -37,5 +38,18 @@ module.exports = {
 
     getBridgeAddress : function () {
         return getAddress(BRIDGE_PATH);
+    },
+
+    transferOwnership : async function (contractName, address, newOwner) {
+        const Contract = await hardhat.ethers.getContractFactory(`${contractName}`);
+        const instance = Contract.attach(address);
+
+        const currentOwner = await instance.owner();
+        if (currentOwner != newOwner) {
+            this.log(`Transfering ownership of ${contractName} to ${newOwner}`);
+            await instance.transferOwnership(newOwner);
+        } else {
+            this.log(`BBS token owner is already ${newOwner}`);
+        }
     }
 }
