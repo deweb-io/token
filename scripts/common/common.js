@@ -41,6 +41,11 @@ module.exports = {
     },
 
     transferOwnership: async function (contractName, address, newOwner) {
+        if (!address)
+            throw new Error('Address is missing. aborting');
+        if (!newOwner)
+            throw new Error("New owner address is missing. aborting");
+
         const Contract = await hardhat.ethers.getContractFactory(`${contractName}`);
         const instance = Contract.attach(address);
 

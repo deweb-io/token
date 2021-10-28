@@ -6,12 +6,7 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
 async function main() {
     log(`---Transfer ownership---`);
-    if (!BBS_TOKEN_ADDRESS)
-        throw new Error("BBS token address is missing. aborting");
-    if (!config.mint.safeAddress)
-        throw new Error("New owner address is missing. aborting");
-
-    await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, config.mint.safeAddress);
+    await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, config.safe.address);
     log(`---Transfer ownership Done---`);
 }
 
