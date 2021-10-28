@@ -28,19 +28,19 @@ module.exports = {
         process.exit(1);
     },
 
-    getBBStokenAddress : function () {
+    getBBStokenAddress: function () {
         return getAddress(BBS_TOKEN_PATH);
     },
 
-    getStakingAddress : function () {
+    getStakingAddress: function () {
         return getAddress(STAKING_PATH);
     },
 
-    getBridgeAddress : function () {
+    getBridgeAddress: function () {
         return getAddress(BRIDGE_PATH);
     },
 
-    transferOwnership : async function (contractName, address, newOwner) {
+    transferOwnership: async function (contractName, address, newOwner) {
         const Contract = await hardhat.ethers.getContractFactory(`${contractName}`);
         const instance = Contract.attach(address);
 
@@ -49,7 +49,15 @@ module.exports = {
             this.log(`Transfering ownership of ${contractName} to ${newOwner}`);
             await instance.transferOwnership(newOwner);
         } else {
-            this.log(`BBS token owner is already ${newOwner}`);
+            this.log(`${contractName} owner is already ${newOwner}`);
         }
+    },
+
+    writeArtifact: function (fileName, data) {
+        fs.appendFileSync(`${ARTIFCATS_DIR}/${fileName}`, data);
+    },
+
+    artifactExists: function (fileName) {
+        return fs.existsSync(`${ARTIFCATS_DIR}/${fileName}`);
     }
 }
