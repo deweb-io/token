@@ -6,10 +6,10 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 const BRIDGE_ADDRESS = common.getBridgeAddress();
 const RECEIVER_EOS_ACCOUNT = process.env.RECEIVER_EOS_ACCOUNT;
 const BBS_AMOUNT = `${process.env.BBS_AMOUNT}`;
-let networkChainId; // will be resolved during run.
 
-let bbsToken = null;
-let bridge = null;
+let bbsToken;
+let bridge;
+let networkChainId;
 
 async function signPremitData(signer, spender, value, nonce, deadline) {
     const signature = await signer._signTypedData(
