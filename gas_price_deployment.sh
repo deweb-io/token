@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Calculates estimation of total deployment fee on ethereum
 CYAN='\033[1;36m'
 GREEN='\033[0;32m'
@@ -61,16 +62,29 @@ getFunctionCallFee() {
     accumulateFee $function_call_gas_unit
 }
 
-# Own contracts #
+multiSendApproveFee() {
+    # Multisend approve (https://ropsten.etherscan.io/tx/0xcb813d20378d25e6bf9a3924a5bccaaa4fd7cd60781c25d61751ff1ca09a62f2)
+    echo -e "${CYAN}{Multisend-approve} expected function call gas price${NC}"
+    accumulateFee '46274'
+}
+
+# deployer #
+echo "----deployer-----"
+echo -e "${CYAN}{Gnosis-safe: createProxyWithNonce} expected function call gas price${NC}"
+accumulateFee '258606' # Gnosis-safe create (https://rinkeby.etherscan.io/tx/0xbbb8e8df0cb56711e701f5df901752ed2c8cada49607337d70ecfcd02915163d)
 getDeploymentFee "$gas_report_bbs_token" "BBSToken"             # BBS token deploy
-getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for day1
-getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for day3
-getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting for gnosis
+getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer BBS ownership to Gnosis
+multiSendApproveFee
+echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
+accumulateFee '91233' # https://ropsten.etherscan.io/tx/0x65057d50a5ef6cabee993d9f72143fda244704471cb555ed112ec6c7c87c6ae3
+echo "-----------------"
 
-getDeploymentFee "$gas_report_bridge" "Bridge"                  # Bridge deploy
-getFunctionCallFee "$gas_report_bridge" "setReporters"          # set bridge reporters
-
+# cold 1 #
+echo "----cold1-----"
+multiSendApproveFee
+echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
+accumulateFee '1990679' # https://ropsten.etherscan.io/tx/0x3d7552b17f1db7dd3b416cc31a7550d3b678bace54ee63c6a69e3e3f51ebf71b
 getDeploymentFee "$gas_report_staking" "Staking"                # Staking deploy
 getFunctionCallFee "$gas_report_staking" "approve"              # approve Staking spending of BBS
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q1
@@ -78,20 +92,20 @@ getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre reward
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q3
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q4
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer Staking ownership to Gnosis
+echo "----cold1-----"
 
-# Third parties #
-echo -e "${CYAN}{Multisend-approve} expected function call gas price${NC}"
-accumulateFee '46274'  # Multisend approve (https://ropsten.etherscan.io/tx/0xcb813d20378d25e6bf9a3924a5bccaaa4fd7cd60781c25d61751ff1ca09a62f2)
-
-echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
-accumulateFee '110484' # Multisend transfer (https://ropsten.etherscan.io/tx/0xb71446904c619006bf5ca9f06472a45bf573b68911e7530e22d2e17dcbefec26)
-
-echo -e "${CYAN}{Gnosis-safe: createProxyWithNonce} expected function call gas price${NC}"
-accumulateFee '258606' # Gnosis-safe create (https://rinkeby.etherscan.io/tx/0xbbb8e8df0cb56711e701f5df901752ed2c8cada49607337d70ecfcd02915163d)
+# cold 2 #
+echo "----cold2-----"
+getDeploymentFee "$gas_report_bridge" "Bridge"                  # Bridge deploy
+getFunctionCallFee "$gas_report_bridge" "setReporters"          # set bridge reporters
+getFunctionCallFee "$gas_report_bridge" "xTransfer"             # set bridge reporters
+getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer Bridge ownership
+echo "----cold2-----"
 
 # 10 transfers
 echo -e "${CYAN}{ERC20 - transfer} expected 10 function calls gas price${NC}"
 accumulateFee '515650' # https://ropsten.etherscan.io/tx/0x5562a94946699af3b5eb521d31c1dac75faee1f88019ce615fba8a6b6b03eeba transfer of bbs
 
-echo -e "${GREEN}0"$totalFeeETH" ETH${NC}"
+
+echo -e "${GREEN}"$totalFeeETH" ETH${NC}"
 echo -e "${GREEN}"$totalFeeUSD" USD${NC}"
