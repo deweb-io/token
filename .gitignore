@@ -5,6 +5,7 @@ build/
 cache/
 coverage.json
 coverage/
+eosio/bbs.env
 eosio/state.env
 node_modules/
 scripts/common/log.txt
