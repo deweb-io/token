@@ -29,10 +29,6 @@ async function main() {
     log(`Bridge deployed at ${bridge.address}`);
     fs.writeFileSync(common.bridgePath, bridge.address);
 
-    log(`Set Reporters...`);
-    await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
-    log(`Set Reporters Done`);
-
     log(`---Deployment of Bridge Done---`);
 }
 
