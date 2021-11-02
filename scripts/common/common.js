@@ -19,7 +19,7 @@ module.exports = {
 
     log: function (data) {
         console.log(data);
-        fs.appendFileSync(LOGFILE, `${new Date()} | ` + data + '\n');
+        fs.appendFileSync(LOGFILE, `${new Date().toString().slice(0, 24)} | ${data} \n`);
     },
 
     onError: function(err) {
