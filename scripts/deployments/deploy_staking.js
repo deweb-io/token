@@ -19,7 +19,7 @@ async function main() {
     const Staking = await hardhat.ethers.getContractFactory('Staking');
     const staking = await upgrades.deployProxy(Staking, [BBS_TOKEN_ADDRESS]);
     await staking.deployed();
-    log(`Staking deployed at ${staking.address}`);
+    common.etherscanLogContract(staking.address, staking.deployTransaction.chainId);
     fs.writeFileSync(common.stakingPath, staking.address);
 
     log(`---Deployment of Staking Done---`);

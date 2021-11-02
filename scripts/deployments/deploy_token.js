@@ -16,7 +16,7 @@ async function main() {
         log(`Deploying BBS token...`);
         const Token = await hardhat.ethers.getContractFactory('BBSToken');
         const token = await Token.deploy();
-        log(`BBS token deployed at ${token.address}`);
+        common.etherscanLogContract(token.address, token.deployTransaction.chainId);
         fs.writeFileSync(common.bbsTokenPath, token.address);
     } else
         log(`BBS token already deployed at ${BBS_TOKEN_ADDRESS}`);

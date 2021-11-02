@@ -52,7 +52,8 @@ module.exports = {
         const currentOwner = await instance.owner();
         if (currentOwner != newOwner) {
             this.log(`Transfering ownership of ${contractName} to ${newOwner}`);
-            await instance.transferOwnership(newOwner);
+            const tx = await instance.transferOwnership(newOwner);
+            this.etherscanLogTx(tx.hash, tx.chainId);
         } else {
             this.log(`${contractName} owner is already ${newOwner}`);
         }
@@ -64,5 +65,39 @@ module.exports = {
 
     artifactExists: function (fileName) {
         return fs.existsSync(`${ARTIFCATS_DIR}/${fileName}`);
-    }
+    },
+
+    getPrefix: function (chainId) {
+        let network;
+        switch (chainId) {
+            case(1): {
+                network = ''; //mainnet
+                break;
+            }
+            case(3): {
+                network = 'ropsten.';
+                break;
+            }
+            case(4): {
+                network = 'rinkeby.';
+                break;
+            }
+            default: {
+                return;
+            }
+        }
+        return `https://${network}etherscan.io`;
+    },
+
+    etherscanLogContract: function(address, chainId) {
+        const prefix = this.getPrefix(chainId);
+        if (prefix)
+            this.log(`${prefix}/address/${address}`);
+    },
+
+    etherscanLogTx: function(hash, chainId) {
+        const prefix = this.getPrefix(chainId);
+        if (prefix)
+            this.log(`${prefix}/tx/${hash}`);
+    },
 }

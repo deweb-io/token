@@ -16,7 +16,8 @@ async function main() {
     const bridge = Bridge.attach(BRIDGE_ADDRESS);
 
     log(`Set Reporters...`);
-    await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
+    const tx = await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
+    common.etherscanLogTx(tx.hash, tx.chainId);
     log(`Set Reporters Done`);
 
     log(`---Deployment of Bridge Done---`);

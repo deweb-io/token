@@ -23,7 +23,8 @@ async function main() {
 
     const totalSupplyWei = hardhat.ethers.utils.parseEther(config.mint.totalSupply);
     const tx = await bbsToken.mint(deployer, totalSupplyWei);
-    log(`tx hash: ${tx.hash}`);
+    common.etherscanLogTx(tx.hash, tx.chainId);
+
     common.writeArtifact(MINT_ARTIFACT_FILE, JSON.stringify(tx));
 
     log(`---Mint BBS tokens Done---`);

@@ -26,7 +26,7 @@ async function main() {
         config.bridge.minRequiredReports,
         config.bridge.commissionAmount,
         BBS_TOKEN_ADDRESS);
-    log(`Bridge deployed at ${bridge.address}`);
+    common.etherscanLogContract(bridge.address, bridge.deployTransaction.chainId);
     fs.writeFileSync(common.bridgePath, bridge.address);
 
     log(`---Deployment of Bridge Done---`);

@@ -32,9 +32,9 @@ async function main() {
     log(`Required allowence is (wei): ${totalApproveAmountWei}`);
     log(`Current allowence is (wei):  ${currentAllowence}`);
     if (currentAllowence.lt(totalApproveAmountWei)) {
-
         log(`Adding allowence of ${totalApproveAmountWei.sub(currentAllowence)}`);
-        await bbsToken.approve(STACKING_ADDRESS, totalApproveAmountWei);
+        const tx = await bbsToken.approve(STACKING_ADDRESS, totalApproveAmountWei);
+        common.etherscanLogTx(tx.hash, tx.chainId);
     } else {
         log(`Stacking already has allowance of at least ${totalApproveAmountWei}`);
     }

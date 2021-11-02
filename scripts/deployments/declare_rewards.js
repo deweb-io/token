@@ -40,8 +40,8 @@ async function main() {
     const rewardToAddWei = rewardAmountWei.sub(currentRewardWei);
     log(`Adding rewards for quarter ${QUARTER_INDEX}, amount (wei): ${rewardToAddWei}`);
     const tx = await staking.declareReward(QUARTER_INDEX, rewardToAddWei);
+    common.etherscanLogTx(tx.hash, tx.chainId);
 
-    log(`tx hash: ${tx.hash}`);
     common.writeArtifact(ARTIFACT_FILE, JSON.stringify(tx));
 
     log(`---Declare rewards Done---`);
