@@ -37,8 +37,10 @@ contract Staking is OwnableUpgradeable {
 
     event QuarterPromoted(uint16 quarterIdx);
     event RewardDeclared(uint16 quarterIdx, uint256 amount, uint256 totalAmount);
-    event StakeLocked(uint256 amount, uint16 unlockQuarter, address staker, bool isNew);
-    event RewardsClaimed(uint256 amount, address staker);
+    event StakeLocked(
+        address indexed staker, uint16 stakeIdx, uint256 amount, uint16 unlockQuarter,
+        uint256 originalAmount, uint16 originalUnlockQuarter);
+    event RewardsClaimed(address indexed staker, uint16 stakeIdx, uint256 amount, uint256 stakeAmount);
 
     /**
      * @dev Initializer function.
@@ -177,7 +179,7 @@ contract Staking is OwnableUpgradeable {
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
         updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
-        emit StakeLocked(amount, unlockQuarter, msg.sender, true);
+        emit StakeLocked(msg.sender, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
     }
 
     /**
@@ -188,9 +190,12 @@ contract Staking is OwnableUpgradeable {
     function extend(uint16 stakeIdx, uint16 unlockQuarter) external {
         validateUnlockQuarter(unlockQuarter);
         require(unlockQuarter > stakes[msg.sender][stakeIdx].unlockQuarter, "must extend beyond current end quarter");
+        uint16 originalUnlockQuarter = stakes[msg.sender][stakeIdx].unlockQuarter;
         stakes[msg.sender][stakeIdx].unlockQuarter = unlockQuarter;
         updateShare(msg.sender, stakeIdx);
-        emit StakeLocked(stakes[msg.sender][stakeIdx].amount, unlockQuarter, msg.sender, false);
+        emit StakeLocked(
+            msg.sender, stakeIdx, stakes[msg.sender][stakeIdx].amount, unlockQuarter,
+            stakes[msg.sender][stakeIdx].amount, originalUnlockQuarter);
     }
 
     /**
@@ -200,10 +205,13 @@ contract Staking is OwnableUpgradeable {
     function lockRewards(uint16 stakeIdx) external {
         validateUnlockQuarter(stakes[msg.sender][stakeIdx].unlockQuarter);
         uint256 rewards = getRewards(msg.sender, stakeIdx);
+        uint256 originalAmount = stakes[msg.sender][stakeIdx].amount;
         require(rewards > 0, "no rewards to lock");
         stakes[msg.sender][stakeIdx].amount += rewards;
         updateShare(msg.sender, stakeIdx);
-        emit StakeLocked(rewards, stakes[msg.sender][stakeIdx].unlockQuarter, msg.sender, false);
+        emit StakeLocked(
+            msg.sender, stakeIdx, stakes[msg.sender][stakeIdx].amount, stakes[msg.sender][stakeIdx].unlockQuarter,
+            originalAmount, stakes[msg.sender][stakeIdx].unlockQuarter);
     }
 
     /**
@@ -213,12 +221,14 @@ contract Staking is OwnableUpgradeable {
     function claim(uint16 stakeIdx) external {
         validateCurrentQuarter();
         uint256 claimAmount = getRewards(msg.sender, stakeIdx);
+        uint256 stakeAmount = 0;
         if (stakes[msg.sender][stakeIdx].unlockQuarter <= currentQuarter) {
-            claimAmount += stakes[msg.sender][stakeIdx].amount;
+            stakeAmount = stakes[msg.sender][stakeIdx].amount;
+            claimAmount += stakeAmount;
             stakes[msg.sender][stakeIdx].amount = 0;
         }
         require(claimAmount > 0, "nothing to claim");
         bbsToken.transfer(msg.sender, claimAmount);
-        emit RewardsClaimed(claimAmount, msg.sender);
+        emit RewardsClaimed(msg.sender, stakeIdx, claimAmount, stakeAmount);
     }
 }
