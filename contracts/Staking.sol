@@ -136,12 +136,14 @@ contract Staking is OwnableUpgradeable {
             quarterIdx < currentQuarter && quarterIdx < stakes[staker][stakeIdx].unlockQuarter;
             quarterIdx++
         ) {
-            amount +=
-                PRECISION *
-                shares[staker][stakeIdx][quarterIdx] *
-                quarters[quarterIdx].reward /
-                quarters[quarterIdx].shares;
-            shares[staker][stakeIdx][quarterIdx] = 0;
+            if (quarters[quarterIdx].shares > 0) {
+                amount +=
+                    PRECISION *
+                    shares[staker][stakeIdx][quarterIdx] *
+                    quarters[quarterIdx].reward /
+                    quarters[quarterIdx].shares;
+                shares[staker][stakeIdx][quarterIdx] = 0;
+            }
         }
 
         stakes[staker][stakeIdx].earliestUnclaimedQuarter = currentQuarter;
