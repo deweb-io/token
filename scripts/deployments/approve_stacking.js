@@ -20,19 +20,23 @@ async function main() {
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
 
     // approve
-    const numberOfQuarters = config.rewards.quartes.length;
-    const rewardAmountWei = hardhat.ethers.BigNumber.from(hardhat.ethers.utils.parseEther(config.rewards.amount));
-    const totalApproveAmountWei = rewardAmountWei.mul(numberOfQuarters);
+    let totalApproveAmountWei = hardhat.ethers.BigNumber.from(0);
+    config.rewards.forEach(reward => {
+        totalApproveAmountWei = totalApproveAmountWei.add(hardhat.ethers.BigNumber.from(hardhat.ethers.utils.parseEther(reward.amount)));
+    })
 
     // If allowance was not already given, do it
     const accounts = await ethers.getSigners();
-    const deployer = accounts[0].address;
-    const currentAllowence = await bbsToken.allowance(deployer, STACKING_ADDRESS);
+    const signer = accounts[0].address;
+    const currentAllowence = await bbsToken.allowance(signer, STACKING_ADDRESS);
+    log(`Required allowence is (wei): ${totalApproveAmountWei}`);
+    log(`Current allowence is (wei):  ${currentAllowence}`);
     if (currentAllowence.lt(totalApproveAmountWei)) {
-        log('Approving Stacking...');
+
+        log(`Adding allowence of ${totalApproveAmountWei.sub(currentAllowence)}`);
         await bbsToken.approve(STACKING_ADDRESS, totalApproveAmountWei);
     } else {
-        log(`Stacking already has allowance of ${currentAllowence}`);
+        log(`Stacking already has allowance of at least ${totalApproveAmountWei}`);
     }
 
     log('---Approve Done---');

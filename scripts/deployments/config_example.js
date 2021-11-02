@@ -10,10 +10,7 @@ module.exports = {
     safe :  {
         address : '0xE01b6a22c3F1C486181A39442A1D4924730005c8'
     },
-    rewards: {
-        quartes: [0],
-        amount: '1000000'
-    },
+    rewards: [ { q : 0, amount: '100'}, { q : 1, amount: '200'}],
     bridge: {
         maxLockLimit : '40000000000000000000000',
         maxReleaseLimit: '80000000000000000000000',
