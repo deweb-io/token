@@ -187,7 +187,9 @@ contract Staking is OwnableUpgradeable {
      */
     function extend(uint16 stakeIdx, uint16 unlockQuarter) external {
         validateUnlockQuarter(unlockQuarter);
-        require(unlockQuarter > stakes[msg.sender][stakeIdx].unlockQuarter, "must extend beyond current end quarter");
+        uint16 originalUnlockQuarter = stakes[msg.sender][stakeIdx].unlockQuarter;
+        require(originalUnlockQuarter > currentQuarter, "can not extend an unlocked stake");
+        require(unlockQuarter > stakes[msg.sender][stakeIdx].unlockQuarter, "must extend beyond current lock");
         stakes[msg.sender][stakeIdx].unlockQuarter = unlockQuarter;
         updateShare(msg.sender, stakeIdx);
         emit StakeLocked(stakes[msg.sender][stakeIdx].amount, unlockQuarter, msg.sender, false);
