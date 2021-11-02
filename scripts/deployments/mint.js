@@ -18,9 +18,11 @@ async function main() {
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
 
-    log(`Minting ${config.mint.totalSupply} tokens to ${config.mint.address}`);
+    const deployer = (await hardhat.ethers.getSigners())[0].address;
+    log(`Minting ${config.mint.totalSupply} tokens to ${deployer}`);
+
     const totalSupplyWei = hardhat.ethers.utils.parseEther(config.mint.totalSupply);
-    const tx = await bbsToken.mint(config.mint.address, totalSupplyWei);
+    const tx = await bbsToken.mint(deployer, totalSupplyWei);
     log(`tx hash: ${tx.hash}`);
     common.writeArtifact(MINT_ARTIFACT_FILE, JSON.stringify(tx));
 

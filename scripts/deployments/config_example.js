@@ -4,7 +4,6 @@
 module.exports = {
     network: 'ropsten', // For etherscan verification
     mint: {
-        address: '0x44569Aa35Ff6d97e6531880712a41D2af72a007C',
         totalSupply: '1000000000',
     },
     safe :  {
