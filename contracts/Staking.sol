@@ -5,10 +5,10 @@
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract Staking is OwnableUpgradeable {
-    IERC20 bbsToken;
+    ERC20Permit bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
 
@@ -46,7 +46,7 @@ contract Staking is OwnableUpgradeable {
      * @dev Initializer function.
      * @param _bbsToken The address of the BBS token contract.
      */
-    function initialize(IERC20 _bbsToken) public initializer {
+    function initialize(ERC20Permit _bbsToken) public initializer {
         __Ownable_init();
         bbsToken = _bbsToken;
         currentQuarter = 0;
@@ -174,9 +174,16 @@ contract Staking is OwnableUpgradeable {
      * @dev Lock a stake of tokens.
      * @param amount Amount of tokens to lock.
      * @param unlockQuarter The index of the quarter the stake unlocks on.
+     * @param staker The address that is locking tokens.
+     * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
+     * @param v, r, s The signature parameters for the permit.
      */
-    function lock(uint256 amount, uint16 unlockQuarter) external {
+    function lock(
+        uint256 amount, uint16 unlockQuarter,
+        address staker, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
         validateUnlockQuarter(unlockQuarter);
+        bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
         bbsToken.transferFrom(msg.sender, address(this), amount);
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
