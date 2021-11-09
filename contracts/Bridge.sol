@@ -341,7 +341,6 @@ contract Bridge is Ownable {
      * @param _v               ECDSA signature recovery identifier
      * @param _r               ECDSA signature number
      * @param _s               ECDSA signature number
-     * @param _id              pre-determined unique (if non zero) id which refers to this transaction
      */
     function xTransfer(
         bytes32 _toBlockchain,
@@ -351,8 +350,7 @@ contract Bridge is Ownable {
         address _signer,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s,
-        uint256 _id
+        bytes32 _s
     ) public xTransfersAllowed {
         // get the current lock limit
         uint256 currentLockLimit = getCurrentLockLimit();
@@ -372,7 +370,7 @@ contract Bridge is Ownable {
         prevLockBlockNumber = block.number;
 
         // emit XTransfer event
-        emit XTransfer(_signer, _toBlockchain, _to, _amount, _id);
+        emit XTransfer(_signer, _toBlockchain, _to, _amount, 0);
     }
 
     /**

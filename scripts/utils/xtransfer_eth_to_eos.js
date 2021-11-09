@@ -43,7 +43,6 @@ async function main() {
     const tokenSpender = bridge.address;
     const xTransferAmount = ethers.utils.parseEther(BBS_AMOUNT);
     const nonce = await getNonce(tokenOwner);
-    const id = 0;
 
     // EOS data
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
@@ -57,7 +56,7 @@ async function main() {
     // xTransfer
     console.log(`xTransfer ${BBS_AMOUNT} from ${tokenOwner.address} to ${RECEIVER_EOS_ACCOUNT}...`);
     const tx = await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s, id);
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s);
 
     log(JSON.stringify(tx));
 }
