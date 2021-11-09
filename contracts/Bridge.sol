@@ -491,6 +491,8 @@ contract Bridge is Ownable {
      * @param _amount  the amount of tokens to lock
      */
     function lockTokens(address _signer, uint256 _amount) private {
+        // Do not allow amounts that can not be represented in EOS.
+        require(_amount % 10**14 == 0, "ERR_AMOUNT_TOO_MANY_DECIMALS");
         token.transferFrom(_signer, address(this), _amount);
 
         emit TokensLock(_signer, _amount);

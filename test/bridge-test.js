@@ -14,7 +14,7 @@ describe('Bridge', function() {
     const MIN_REQUIRED_REPORTS = 1;
 
     const commissionAmount = ethers.utils.parseEther(`${COMMISSION_AMOUNT}`);
-    const xTransferAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`);
+    const xTransferAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.0001`);
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
@@ -106,7 +106,15 @@ describe('Bridge', function() {
         expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(xTransferAmount.toString());
         expectBigNum(await bbsToken.balanceOf(tokenSpender)).to.equal(0);
 
-        // xTransfer
+        // too many decimals - should fail
+        const xTransferInvalidAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.00001`);
+        const sig = await signPremitData(tokenOwner, tokenSpender, xTransferInvalidAmount, nonce);
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s, id
+        ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
+
+
+        //// xTransfer
         await bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s);
 
