@@ -136,7 +136,7 @@ describe('Staking', () => {
         const firstQuarterShare = await staking.shares(stakers[1].address, 0, 0);
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(0);
-        await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current end quarter');
+        await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current lock');
         await staking.connect(stakers[1]).extend(0, 3);
         expect(await staking.shares(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
@@ -199,7 +199,7 @@ describe('Staking', () => {
         expectBigNum((await staking.shares(stakers[0].address, 0, 2))).to.equal(0);
         expectBigNum((await staking.shares(stakers[0].address, 0, 1))).to.equal(stakeAmount * 100);
 
-        await expectRevert(staking.connect(stakers[0]).extend(0, 2), 'must extend beyond current end quarter');
+        await expectRevert(staking.connect(stakers[0]).extend(0, 2), 'must extend beyond current lock');
         await stake(4);
         expectBigNum((await staking.shares(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
