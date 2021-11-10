@@ -61,9 +61,11 @@ describe('End to End', () => {
         return staking.connect(signer);
     }
 
-    async function declareReward(quarterIdx, rewardAmount){
-        await (await approveAndDoAs(owner, rewardAmount)).declareReward(quarterIdx, rewardAmount);
-        console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
+    async function declareReward(quartersIdx, rewardAmount){
+        for(const quarterIdx of quartersIdx){
+            await (await approveAndDoAs(owner, rewardAmount)).declareReward(quarterIdx, rewardAmount);
+            console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
+        }
     }
 
     async function lock(staker, amount, unlockQuarter){
@@ -101,7 +103,7 @@ describe('End to End', () => {
 
     async function runScenario(steps){
         const functions = {
-            declareReward: async(step) => await declareReward(step.quarterIdx, step.amount),
+            declareReward: async(step) => await declareReward(step.quartersIdx, step.amount),
             lock: async(step) => await lock(step.staker, step.amount, step.unlockQuarter),
             increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
             extend: async(step) => await extend(step.staker, step.stakeIdx, step.unlockQuarter, step.assertSharesEqual),
@@ -124,10 +126,7 @@ describe('End to End', () => {
 
     it('end to end 1 [ @skipOnCoverage ]', async() => {
         await runScenario([
-            {action: 'declareReward', quarterIdx: 0, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 1, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 2, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 3, amount: 10**9},
+            {action: 'declareReward', quartersIdx: range(4), amount: 10**9},
             {action: 'lock', staker: 'alice', amount: 10**6, unlockQuarter: 3},
             {action: 'lock', staker: 'bob', amount: 10**6, unlockQuarter: 3},
             {action: 'lock', staker: 'carol', amount: 10**6, unlockQuarter: 3},
@@ -157,10 +156,7 @@ describe('End to End', () => {
 
     it('end to end 2 [ @skipOnCoverage ]', async() => {
         await runScenario([
-            {action: 'declareReward', quarterIdx: 0, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 1, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 2, amount: 10**9},
-            {action: 'declareReward', quarterIdx: 3, amount: 10**9},
+            {action: 'declareReward', quartersIdx: range(4), amount: 10**9},
             {action: 'lock', staker: 'alice', amount: 10**6, unlockQuarter: 3},
             {action: 'lock', staker: 'bob', amount: 10**6, unlockQuarter: 3},
             {action: 'lock', staker: 'carol', amount: 10**6, unlockQuarter: 3},
@@ -200,11 +196,8 @@ describe('End to End', () => {
 
         // Declare rewards.
         const rewardAmount = 10**9;
-        let totalRewards = 0;
-        for(const quarterIdx of range(14)){
-            await declareReward(quarterIdx, rewardAmount);
-            totalRewards += rewardAmount;
-        }
+        const totalRewards = 14 * rewardAmount;
+        await declareReward(range(14), rewardAmount);
 
         // Lock stakes.
         const stakeAmount = 10**6;
