@@ -184,11 +184,11 @@ contract Staking is OwnableUpgradeable {
     ) external {
         validateUnlockQuarter(unlockQuarter);
         bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
-        bbsToken.transferFrom(msg.sender, address(this), amount);
-        stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
-        shares[msg.sender].push();
-        updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
-        emit StakeLocked(msg.sender, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
+        bbsToken.transferFrom(staker, address(this), amount);
+        stakes[staker].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
+        shares[staker].push();
+        updateShare(staker, uint16(stakes[staker].length - 1));
+        emit StakeLocked(amount, unlockQuarter, staker, true);
     }
 
     /**
