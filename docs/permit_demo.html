@@ -1,0 +1,566 @@
+<!--
+    |Permit demo|
+    1. Run local node: npx hardhat node
+    2. Deploy token: npx hardhat run scripts/deploy.js --network localhost and set 'bbsTokenAddress' const.
+    3. npm i -g http-server and run it (http-server)
+    5. Goto http://127.0.0.1:8080
+    5. Verify you have a metamask client connected to hardhat local network.
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Permit demo</title>
+</head>
+
+<body>
+    <div>
+        <h3> Accounts </h4>
+            <button type="button" id="connect_button">Connect</button><br><br>
+            Owner <input type="text" id="owner_text" value="" size="50" readonly><br><br>
+            Spender <input type="text" id="spender_text" value="" size="50" readonly><br><br>
+            <h3>Sign and permit</h3>
+            Amount <input type="text" id="allowance_amount" value=""><br><br>
+            <button type="button" id="sign_and_permit_button" disabled>Sign data and send permit</button>
+
+            <h3>Check Allowance</h3>
+            <button type="button" id="allowance_button" disabled>Click me to get the current allowance</button>
+            <input type="text" id="allowance_text" value="" readonly><br><br>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+    <script>
+        const abi = [{
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [{
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Approval",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [{
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "previousOwner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "OwnershipTransferred",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [{
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Transfer",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "DOMAIN_SEPARATOR",
+                "outputs": [{
+                    "internalType": "bytes32",
+                    "name": "",
+                    "type": "bytes32"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    }
+                ],
+                "name": "allowance",
+                "outputs": [{
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approve",
+                "outputs": [{
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                }],
+                "name": "balanceOf",
+                "outputs": [{
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{
+                    "internalType": "uint8",
+                    "name": "",
+                    "type": "uint8"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "subtractedValue",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "decreaseAllowance",
+                "outputs": [{
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "addedValue",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "increaseAllowance",
+                "outputs": [{
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "name",
+                "outputs": [{
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address"
+                }],
+                "name": "nonces",
+                "outputs": [{
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [{
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "value",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "deadline",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "v",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "r",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "s",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "permit",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "renounceOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [{
+                    "internalType": "string",
+                    "name": "",
+                    "type": "string"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transfer",
+                "outputs": [{
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [{
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{
+                    "internalType": "address",
+                    "name": "newOwner",
+                    "type": "address"
+                }],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+        const spender = '0x5BD060E8CDf5f3A22d8d54B098bF31Ae9A18B301';
+        const bbsTokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3'; //Taken from step 2 above
+        let bbsTokenInstance = null;
+    </script>
+
+    <script>
+        sign_and_permit_button.addEventListener('click', () => {
+            const value = document.getElementById('allowance_amount').value;
+            const owner = document.getElementById('owner_text').value;
+            const spender = document.getElementById('spender_text').value;
+            const deadline = 10000000000;
+
+            bbsTokenInstance.methods.nonces(owner).call().then(nonce => {
+                const msgParams = JSON.stringify({
+                    types: {
+                        Permit: [{
+                                name: 'owner',
+                                type: 'address'
+                            },
+                            {
+                                name: 'spender',
+                                type: 'address'
+                            },
+                            {
+                                name: 'value',
+                                type: 'uint256'
+                            },
+                            {
+                                name: 'nonce',
+                                type: 'uint256'
+                            },
+                            {
+                                name: 'deadline',
+                                type: 'uint256'
+                            }
+                        ],
+                        EIP712Domain: [{
+                                name: "name",
+                                type: "string"
+                            },
+                            {
+                                name: "version",
+                                type: "string"
+                            },
+                            {
+                                name: "chainId",
+                                type: "uint256"
+                            },
+                            {
+                                name: "verifyingContract",
+                                type: "address"
+                            }
+                        ]
+                    },
+                    domain: {
+                        name: 'BBS',
+                        version: '1',
+                        chainId: '31337',
+                        verifyingContract: bbsTokenAddress
+                    },
+                    primaryType: 'Permit',
+                    message: {
+                        owner: owner,
+                        spender: spender,
+                        value: value,
+                        nonce: parseInt(nonce),
+                        deadline: deadline
+                    }
+                });
+
+                console.log(msgParams)
+
+                //sign data with metamask
+                web3.currentProvider.sendAsync({
+                        method: 'eth_signTypedData_v3',
+                        params: [owner, msgParams],
+                        from: owner,
+                    },
+                    function (err, result) {
+                        if (err) {
+                            console.error('ERROR', err);
+                            return;
+                        }
+                        if (result.error) {
+                            console.error('ERROR', result)
+                            return;
+                        }
+
+                        console.log(
+                            `Succsesfully signed: ${JSON.stringify(result.result)}`);
+
+                        //parse signature to v,r,s
+                        const signature = result.result.substring(2);
+                        const r = "0x" + signature.substring(0, 64);
+                        const s = "0x" + signature.substring(64, 128);
+                        const v = parseInt(signature.substring(128, 130), 16);
+                        console.log(`r:${r}, s:${s}, v:${v}`);
+
+                        //send permit tx to bbs token
+                        bbsTokenInstance.methods.permit(
+                            owner,
+                            spender,
+                            web3.eth.abi.encodeParameter('uint256', value),
+                            web3.eth.abi.encodeParameter('uint256', deadline),
+                            web3.eth.abi.encodeParameter('uint8', v),
+                            web3.eth.abi.encodeParameter('bytes32', r),
+                            web3.eth.abi.encodeParameter('bytes32', s)).send({
+                            from: owner
+                        });
+                    }
+                );
+            });
+
+        });
+
+
+        allowance_button.addEventListener('click', () => {
+            const owner = document.getElementById('owner_text').value;
+            const spender = document.getElementById('spender_text').value;
+
+            bbsTokenInstance.methods.allowance(owner, spender).call().then(allowance => {
+                document.getElementById('allowance_text').value = allowance;
+            });
+        });
+
+
+        connect_button.addEventListener('click', () => {
+            if (typeof window.ethereum === 'undefined') {
+                console.log('Please install MetaMask');
+                return;
+            }
+            window.ethereum.send('eth_requestAccounts').then(res => {
+                console.log(`connected account: ${JSON.stringify(res.result[0])}`);
+                owner = res.result[0];
+                document.getElementById('owner_text').value = owner;
+                document.getElementById('spender_text').value = spender;
+
+                //connect web3 to Metamask
+                window.web3 = new Web3(window.ethereum);
+
+                //create bbs token instance
+                bbsTokenInstance = new window.web3.eth.Contract(abi, bbsTokenAddress);
+
+                //enable buttons
+                document.getElementById('sign_and_permit_button').disabled = false;
+                document.getElementById('allowance_button').disabled = false;
+            }).catch(err => {
+                console.error(err);
+                document.getElementById('sign_and_permit_button').disabled = true;
+                document.getElementById('allowance_button').disabled = true;
+            });
+        });
+    </script>
+</body>
+
+</html>

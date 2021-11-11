@@ -4,8 +4,7 @@ build/
 cache/
 coverage.json
 coverage/
-eosio/*.abi
-eosio/*.wasm
 eosio/state.env
 node_modules/
-package-lock.json
+scripts/common/log.txt
+scripts/deployment/config.js
