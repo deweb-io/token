@@ -1,6 +1,6 @@
 const {execSync} = require('child_process');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum} = require('./utils');
+const {expectRevert, expectBigNum, signPremitData} = require('./utils');
 const fs = require('fs');
 const hardhat = require('hardhat');
 const path = require('path');
@@ -8,12 +8,17 @@ const path = require('path');
 describe('Staking', () => {
     const stakeAmount = 10**6;
     const rewardAmount = 10**9;
-    let owner, stakers, bbsToken, staking, quarterLength;
+    let owner, stakers, bbsToken, staking, quarterLength, tokenName, chainId, deadline;
 
-    async function approveAndDoAs(signer, amount){
+    async function mintAndDoAs(signer, amount){
         await bbsToken.mint(signer.address, amount);
-        await bbsToken.connect(signer).approve(staking.address, amount);
         return staking.connect(signer);
+    }
+
+    async function signPermitData(signer, value) {
+        const nonce = (await bbsToken.nonces(signer.address)).toNumber();
+        return await signPremitData(signer, staking.address, value, nonce,
+            tokenName, chainId, bbsToken.address, deadline);
     }
 
     async function increaseTime(quarters){
@@ -30,15 +35,23 @@ describe('Staking', () => {
             nextQuarterStart = await staking.nextQuarterStart()
         ){
             const currentQuarter = await staking.currentQuarter();
-            await (await approveAndDoAs(owner, rewardAmount)).declareReward(currentQuarter, rewardAmount);
+            const { v, r, s} = await signPermitData(owner, rewardAmount);
+            await (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                currentQuarter, rewardAmount, owner.address, deadline, v, r, s);
             await staking.promoteQuarter();
         }
     }
 
     async function stake(endQuarter){
-        await (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter);
+        let signature = await signPermitData(stakers[0], stakeAmount);
+        await (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter,
+            stakers[0].address, deadline, signature.v, signature.r, signature.s);
+
         await increaseTime(0.5);
-        await (await approveAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter);
+
+        signature = await signPermitData(stakers[1], stakeAmount);
+        await (await mintAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter,
+            stakers[1].address, deadline, signature.v, signature.r, signature.s);
     }
 
     async function getBalance(stakerId) {
@@ -52,6 +65,11 @@ describe('Staking', () => {
         staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
         [owner, ...stakers] = await ethers.getSigners();
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
+
+        const provider = owner.provider;
+        chainId = provider._network.chainId;
+        deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
+        tokenName = await bbsToken.name();
     });
 
     it('quarter promotion', async() => {
@@ -59,10 +77,13 @@ describe('Staking', () => {
         await increaseTime(1);
         expect(await staking.currentQuarter()).to.equal(1);
 
+        let signature = await signPermitData(owner, rewardAmount);
         await expectRevert(
-            (await approveAndDoAs(owner, rewardAmount)).declareReward(0, rewardAmount),
+            (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                0, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s),
             'can not declare rewards for past quarters');
-        await (await approveAndDoAs(owner, rewardAmount)).declareReward(1, rewardAmount);
+        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s);
         await expectRevert(staking.promoteQuarter(), 'current quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await staking.promoteQuarter();
@@ -70,7 +91,9 @@ describe('Staking', () => {
 
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await expectRevert(staking.promoteQuarter(), 'current quarter has no reward');
-        await (await approveAndDoAs(owner, rewardAmount)).declareReward(2, rewardAmount);
+        signature = await signPermitData(owner, rewardAmount);
+        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s);
         await staking.promoteQuarter();
         expect(await staking.currentQuarter()).to.equal(3);
 
@@ -80,8 +103,9 @@ describe('Staking', () => {
 
         // These should fail because quarter was not promoted. We really must stop using unspecified.
         await network.provider.send('evm_increaseTime', [quarterLength]);
+        const {v, r, s} = await signPermitData(stakers[0], stakeAmount);
         await expectRevert(
-            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 13), 'quarter must be promoted');
+            (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 13, stakers[0].address, deadline, v, r, s), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).claim(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).extend(0, 10), 'quarter must be promoted');
@@ -89,12 +113,14 @@ describe('Staking', () => {
     });
 
     it('stake creation', async() => {
-        await expectRevert(staking.lock(stakeAmount, 1), 'transfer amount exceeds balance');
+        const { v, r, s} = await signPermitData(stakers[0], stakeAmount);
+        await expectRevert(staking.lock(stakeAmount, 1,
+            stakers[0].address, deadline, v, r, s), 'transfer amount exceeds balance');
         await expectRevert(
-            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 0),
+            (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 0, stakers[0].address, deadline, v, r, s),
             'can not lock for less than one quarter');
         await expectRevert(
-            (await approveAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 14),
+            (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, 14, stakers[0].address, deadline, v, r, s),
             'can not lock for more than 13 quarters');
 
         await stake(13);

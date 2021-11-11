@@ -42,6 +42,7 @@ contract Staking is OwnableUpgradeable {
         uint256 originalAmount, uint16 originalUnlockQuarter);
     event RewardsClaimed(address indexed staker, uint16 stakeIdx, uint256 amount, uint256 stakeAmount);
 
+
     /**
      * @dev Initializer function.
      * @param _bbsToken The address of the BBS token contract.
@@ -86,9 +87,13 @@ contract Staking is OwnableUpgradeable {
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
      */
-    function declareReward(uint16 quarterIdx, uint256 amount) external {
+    function declareReward(
+        uint16 quarterIdx, uint256 amount,
+        address holder, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
-        bbsToken.transferFrom(msg.sender, address(this), amount);
+        bbsToken.permit(holder, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(holder, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
@@ -181,14 +186,14 @@ contract Staking is OwnableUpgradeable {
     function lock(
         uint256 amount, uint16 unlockQuarter,
         address staker, uint256 deadline, uint8 v, bytes32 r, bytes32 s
-    ) external {
+    ) external /*permit(amount, staker, deadline, v, r, s)*/ {
         validateUnlockQuarter(unlockQuarter);
         bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
         bbsToken.transferFrom(staker, address(this), amount);
         stakes[staker].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[staker].push();
         updateShare(staker, uint16(stakes[staker].length - 1));
-        emit StakeLocked(amount, unlockQuarter, staker, true);
+        emit StakeLocked(staker, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
     }
 
     /**
