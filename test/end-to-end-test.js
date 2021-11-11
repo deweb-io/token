@@ -1,10 +1,10 @@
 const {expect} = require('chai');
-const {range, signPremitData} = require('./utils');
+const {range, signPermit} = require('./utils');
 
 describe('End to End', () => {
-    let owner, stakers, bbsToken, staking, quarterLength, tokenName, chainId, deadline;
-
     const originalConsoleDebug = console.debug;
+    const deadline = 9999999999;
+    let owner, stakers, bbsToken, staking, quarterLength, tokenName;
 
     before(() => {
         if(!process.env.TEST_DEBUG) console.debug = () => null;
@@ -19,13 +19,9 @@ describe('End to End', () => {
         const Staking = await ethers.getContractFactory('Staking');
         bbsToken = await BBSToken.deploy();
         staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-        [owner, ...stakers] = await ethers.getSigners();
-        quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
-
-        const provider = owner.provider;
-        chainId = provider._network.chainId;
-        deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
         tokenName = await bbsToken.name();
+        quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
+        [owner, ...stakers] = await ethers.getSigners();
     });
 
     async function getTime(){
@@ -65,15 +61,9 @@ describe('End to End', () => {
         return staking.connect(signer);
     }
 
-    async function signPermitData(signer, value) {
-        const nonce = (await bbsToken.nonces(signer.address)).toNumber();
-        return await signPremitData(signer, staking.address, value, nonce,
-            tokenName, chainId, bbsToken.address, deadline);
-    }
-
     async function declareReward(quartersIdx, rewardAmount){
         for(const quarterIdx of quartersIdx){
-            const {v, r, s} = await signPermitData(owner, rewardAmount);
+            const {v, r, s} = await signPermit(owner, staking.address, rewardAmount, deadline, bbsToken, tokenName);
             await (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 quarterIdx, rewardAmount, owner.address, deadline, v, r, s);
             console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
@@ -81,7 +71,7 @@ describe('End to End', () => {
     }
 
     async function lock(staker, amount, unlockQuarter){
-        const {v, r, s} = await signPermitData(staker, amount);
+        const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, tokenName);
         await (await mintAndDoAs(staker, amount)).lock(amount, unlockQuarter, staker.address, deadline, v, r, s);
         console.debug(`locked ${amount} tokens until ${unlockQuarter} for ${staker.address.slice(0, 5)}`);
     }

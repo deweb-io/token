@@ -1,6 +1,6 @@
 const {execSync} = require('child_process');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum, signPremitData} = require('./utils');
+const {expectRevert, expectBigNum, signPermit} = require('./utils');
 const fs = require('fs');
 const hardhat = require('hardhat');
 const path = require('path');
@@ -8,7 +8,8 @@ const path = require('path');
 describe('Staking', () => {
     const stakeAmount = 10**6;
     const rewardAmount = 10**9;
-    let owner, stakers, bbsToken, staking, quarterLength, tokenName, chainId, deadline;
+    const deadline = 9999999999;
+    let owner, stakers, bbsToken, staking, quarterLength, tokenName;
 
     async function mintAndDoAs(signer, amount){
         await bbsToken.mint(signer.address, amount);
@@ -16,9 +17,7 @@ describe('Staking', () => {
     }
 
     async function signPermitData(signer, value) {
-        const nonce = (await bbsToken.nonces(signer.address)).toNumber();
-        return await signPremitData(signer, staking.address, value, nonce,
-            tokenName, chainId, bbsToken.address, deadline);
+        return await signPermit(signer, staking.address, value, deadline, bbsToken, tokenName);
     }
 
     async function increaseTime(quarters){
@@ -63,13 +62,9 @@ describe('Staking', () => {
         const Staking = await ethers.getContractFactory('Staking');
         bbsToken = await BBSToken.deploy();
         staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-        [owner, ...stakers] = await ethers.getSigners();
-        quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
-
-        const provider = owner.provider;
-        chainId = provider._network.chainId;
-        deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
         tokenName = await bbsToken.name();
+        quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
+        [owner, ...stakers] = await ethers.getSigners();
     });
 
     it('quarter promotion', async() => {
