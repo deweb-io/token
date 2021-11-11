@@ -110,7 +110,7 @@ describe('Bridge', function() {
         const xTransferInvalidAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.00001`);
         const sig = await signPremitData(tokenOwner, tokenSpender, xTransferInvalidAmount, nonce);
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s, id
+            eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
 
 
