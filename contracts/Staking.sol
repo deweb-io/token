@@ -42,7 +42,6 @@ contract Staking is OwnableUpgradeable {
         uint256 originalAmount, uint16 originalUnlockQuarter);
     event RewardsClaimed(address indexed staker, uint16 stakeIdx, uint256 amount, uint256 stakeAmount);
 
-
     /**
      * @dev Initializer function.
      * @param _bbsToken The address of the BBS token contract.
@@ -86,6 +85,9 @@ contract Staking is OwnableUpgradeable {
      * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
+     * @param holder The address that is giving tokens as reward.
+     * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
+     * @param v, r, s The signature parameters for the permit.
      */
     function declareReward(
         uint16 quarterIdx, uint256 amount,
@@ -186,7 +188,7 @@ contract Staking is OwnableUpgradeable {
     function lock(
         uint256 amount, uint16 unlockQuarter,
         address staker, uint256 deadline, uint8 v, bytes32 r, bytes32 s
-    ) external /*permit(amount, staker, deadline, v, r, s)*/ {
+    ) external {
         validateUnlockQuarter(unlockQuarter);
         bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
         bbsToken.transferFrom(staker, address(this), amount);
