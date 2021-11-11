@@ -1,14 +1,11 @@
 # This file is meant to be sourced to get our environment going.
 pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../scripts/bash_helpers
 
 set -a
 . state.env
 . bbs.env
 set +a
-
-CYAN='\033[1;36m'
-GREEN='\033[0;32m'
-NC='\033[0m'
 
 store() {
     local -n variable=$1
@@ -22,10 +19,6 @@ kleos() {
     else
         cleos "$@"
     fi
-}
-
-from_json() {
-    node -pe "JSON.parse(process.argv[1])$1" "$2"
 }
 
 echo making sure we have an unlocked wallet

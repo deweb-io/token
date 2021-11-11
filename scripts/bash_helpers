@@ -1,0 +1,22 @@
+# Colors
+CYAN='\033[1;36m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+GWEI_TO_ETH="1000000000"
+
+calc_gas_price_in_eth() {
+    bc <<< "scale = 9; "$1" * "$2" / ${GWEI_TO_ETH}"
+}
+
+calc_gas_price_in_usd() {
+    bc <<< ""$1" * "$2""
+}
+
+add() {
+    bc <<< ""$1" + "$2""
+}
+
+from_json() {
+    node -pe "JSON.parse(process.argv[1])$1" "$2" # ִBash's $2 will become process.argv[1]
+}

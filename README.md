@@ -92,9 +92,9 @@ TEST_DEBUG=true npx hardhat test
 
 ## Deployment
 
-All our ethereum related deployment scripts are in `./scripts`, and eosio related scripts are in `./eosio/deployments/`.
+All our ethereum related deployment scripts are in `./scripts/deployment/`, and eosio related scripts are in `./eosio/deployment/`.
 
-We also have a gas calculator, which measures the cost of our full deployment process: `./gas_price_deployment.sh`.
+A gas calculator for the full deployment process can be found in `./scripts/utils/deployment_gas_calculator.sh`.
 
 ### Etherscan Support
 

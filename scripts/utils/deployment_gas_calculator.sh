@@ -1,26 +1,7 @@
 #!/usr/bin/env bash
 # Calculates estimation of total deployment fee on ethereum
-CYAN='\033[1;36m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-GWEI_TO_ETH="1000000000"
-
-calc_gas_price_in_eth() {
-    bc <<< "scale = 9; "$1" * "$2" / ${GWEI_TO_ETH}"
-}
-
-calc_gas_price_in_usd() {
-    bc <<< ""$1" * "$2""
-}
-
-add() {
-    bc <<< ""$1" + "$2""
-}
-
-from_json() {
-    node -pe "JSON.parse(process.argv[1])$1" "$2" # ִrunning node process so $2 will get into process.argv[1]
-}
+pushd "$(dirname "${BASH_SOURCE[0]}")"
+. ../bash_helpers
 
 echo -e "${CYAN}ETH price${NC}"
 coinbase_response=$(curl -s https://api.coinbase.com/v2/exchange-rates?currency=ETH)
@@ -105,7 +86,6 @@ echo "----cold2-----"
 # 10 transfers
 echo -e "${CYAN}{ERC20 - transfer} expected 10 function calls gas price${NC}"
 accumulateFee '515650' # https://ropsten.etherscan.io/tx/0x5562a94946699af3b5eb521d31c1dac75faee1f88019ce615fba8a6b6b03eeba transfer of bbs
-
 
 echo -e "${GREEN}"$totalFeeETH" ETH${NC}"
 echo -e "${GREEN}"$totalFeeUSD" USD${NC}"
