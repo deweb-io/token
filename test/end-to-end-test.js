@@ -1,10 +1,10 @@
 const {expect} = require('chai');
-const {range} = require('./utils');
+const {range, signPermit} = require('./utils');
 
 describe('End to End', () => {
-    let owner, stakers, bbsToken, staking, quarterLength;
-
     const originalConsoleDebug = console.debug;
+    const deadline = 9999999999;
+    let owner, stakers, bbsToken, staking, quarterLength, tokenName;
 
     before(() => {
         if(!process.env.TEST_DEBUG) console.debug = () => null;
@@ -19,8 +19,9 @@ describe('End to End', () => {
         const Staking = await ethers.getContractFactory('Staking');
         bbsToken = await BBSToken.deploy();
         staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-        [owner, ...stakers] = await ethers.getSigners();
+        tokenName = await bbsToken.name();
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
+        [owner, ...stakers] = await ethers.getSigners();
     });
 
     async function getTime(){
@@ -55,21 +56,23 @@ describe('End to End', () => {
         console.debug(`current quarter it is now ${realQuarter} (${quarterIdx} requested)`);
     }
 
-    async function approveAndDoAs(signer, amount){
+    async function mintAndDoAs(signer, amount){
         await bbsToken.mint(signer.address, amount);
-        await bbsToken.connect(signer).approve(staking.address, amount);
         return staking.connect(signer);
     }
 
     async function declareReward(quartersIdx, rewardAmount){
         for(const quarterIdx of quartersIdx){
-            await (await approveAndDoAs(owner, rewardAmount)).declareReward(quarterIdx, rewardAmount);
+            const {v, r, s} = await signPermit(owner, staking.address, rewardAmount, deadline, bbsToken, tokenName);
+            await (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                quarterIdx, rewardAmount, owner.address, deadline, v, r, s);
             console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
         }
     }
 
     async function lock(staker, amount, unlockQuarter){
-        await (await approveAndDoAs(staker, amount)).lock(amount, unlockQuarter);
+        const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, tokenName);
+        await (await mintAndDoAs(staker, amount)).lock(amount, unlockQuarter, staker.address, deadline, v, r, s);
         console.debug(`locked ${amount} tokens until ${unlockQuarter} for ${staker.address.slice(0, 5)}`);
     }
 

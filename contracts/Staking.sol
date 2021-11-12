@@ -5,10 +5,10 @@
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract Staking is OwnableUpgradeable {
-    IERC20 bbsToken;
+    ERC20Permit bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
 
@@ -46,7 +46,7 @@ contract Staking is OwnableUpgradeable {
      * @dev Initializer function.
      * @param _bbsToken The address of the BBS token contract.
      */
-    function initialize(IERC20 _bbsToken) public initializer {
+    function initialize(ERC20Permit _bbsToken) public initializer {
         __Ownable_init();
         bbsToken = _bbsToken;
         currentQuarter = 0;
@@ -85,10 +85,17 @@ contract Staking is OwnableUpgradeable {
      * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
+     * @param holder The address that is giving tokens as reward.
+     * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
+     * @param v, r, s The signature parameters for the permit.
      */
-    function declareReward(uint16 quarterIdx, uint256 amount) external {
+    function declareReward(
+        uint16 quarterIdx, uint256 amount,
+        address holder, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
-        bbsToken.transferFrom(msg.sender, address(this), amount);
+        bbsToken.permit(holder, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(holder, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
@@ -174,14 +181,21 @@ contract Staking is OwnableUpgradeable {
      * @dev Lock a stake of tokens.
      * @param amount Amount of tokens to lock.
      * @param unlockQuarter The index of the quarter the stake unlocks on.
+     * @param staker The address that is locking tokens.
+     * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
+     * @param v, r, s The signature parameters for the permit.
      */
-    function lock(uint256 amount, uint16 unlockQuarter) external {
+    function lock(
+        uint256 amount, uint16 unlockQuarter,
+        address staker, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
         validateUnlockQuarter(unlockQuarter);
-        bbsToken.transferFrom(msg.sender, address(this), amount);
-        stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
-        shares[msg.sender].push();
-        updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
-        emit StakeLocked(msg.sender, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
+        bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(staker, address(this), amount);
+        stakes[staker].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
+        shares[staker].push();
+        updateShare(staker, uint16(stakes[staker].length - 1));
+        emit StakeLocked(staker, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
     }
 
     /**
