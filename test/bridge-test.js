@@ -1,6 +1,7 @@
 const { ethers } = require('hardhat');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum, signPermit} = require('./utils');
+const {expectRevert, expectBigNum} = require('./utils');
+const {signPermit} = require('../scripts/utils/utils');
 
 
 describe('Bridge', function() {

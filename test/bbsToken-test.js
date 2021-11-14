@@ -1,5 +1,6 @@
 const {expect} = require('chai');
-const {expectRevert, expectBigNum} = require('./utils');
+const {expectRevert, expectBigNum } = require('./utils');
+const {signPermit} = require('../scripts/utils/utils');
 
 describe('BBSToken (our token is almost entirely written by openzeppelin, so we just verify our usage)', () => {
     let accounts, bbsToken, bbsContractOwner;
@@ -45,16 +46,10 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(tokenOwner.address)).toNumber();
         const provider = accounts[0].provider;
-        const chainId = provider._network.chainId;
         const latestBlockTimestamp = (await provider.getBlock(await provider.getBlockNumber())).timestamp;
         const deadline = latestBlockTimestamp + 10000000000;
 
-        const signature = await tokenOwner._signTypedData(
-            {name: tokenName, version: '1', chainId, verifyingContract: bbsToken.address},
-            {Permit},
-            {owner: tokenOwner.address, spender: tokenSpender.address, value, nonce, deadline});
-
-        const {v, r, s} = ethers.utils.splitSignature(signature);
+        const {v, r, s} = await signPermit(tokenOwner, tokenSpender.address, value, deadline, bbsToken, tokenName);
 
         expect((await bbsToken.allowance(tokenOwner.address, tokenSpender.address)).toNumber()).to.equal(0);
         await bbsToken.connect(transmitter).permit(tokenOwner.address, tokenSpender.address, value, deadline, v, r, s);

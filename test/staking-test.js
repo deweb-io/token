@@ -1,6 +1,7 @@
 const {execSync} = require('child_process');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum, signPermit} = require('./utils');
+const {expectRevert, expectBigNum} = require('./utils');
+const {signPermit} = require('../scripts/utils/utils');
 const fs = require('fs');
 const hardhat = require('hardhat');
 const path = require('path');

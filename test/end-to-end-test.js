@@ -1,5 +1,6 @@
 const {expect} = require('chai');
-const {range, signPermit} = require('./utils');
+const {range} = require('./utils');
+const {signPermit} = require('../scripts/utils/utils');
 
 describe('End to End', () => {
     const originalConsoleDebug = console.debug;
