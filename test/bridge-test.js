@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat');
 const {expect} = require('chai');
-const {expectRevert, expectBigNum} = require('./utils');
+const {expectRevert, expectBigNum, signPermit} = require('./utils');
 
 
 describe('Bridge', function() {
@@ -52,18 +52,6 @@ describe('Bridge', function() {
         await bridge.setReporters([reporter.address], [true]);
     });
 
-    async function signPremitData(signer, spender, value, nonce) {
-        const signature = await signer._signTypedData(
-            {name: tokenName, version: '1', chainId, verifyingContract: bbsToken.address},
-            {Permit: [
-                {name: 'owner', type: 'address'}, {name: 'spender', type: 'address'},
-                {name: 'value', type: 'uint256'}, {name: 'nonce', type: 'uint256'},
-                {name: 'deadline', type: 'uint256'}
-            ]},
-            {owner: signer.address, spender, value, nonce, deadline});
-        return ethers.utils.splitSignature(signature);
-    }
-
     async function getNonce(account) {
         return (await bbsToken.nonces(account.address)).toNumber();
     }
@@ -74,16 +62,14 @@ describe('Bridge', function() {
      * @param {*} transmitter
      */
     async function xTransfer(amount, transmitter) {
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, amount, nonce);
-
+        const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
         await bridge.connect(transmitter).xTransfer(
             eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s);
     }
 
     it('xTransfer', async function() {
-        const nonce = await getNonce(tokenOwner);
-        const {v, r, s} = await signPremitData(tokenOwner, tokenSpender, xTransferAmount, nonce);
+        const nonceBeforeTransfer = await getNonce(tokenOwner);
+        const {v, r, s} = await signPermit(tokenOwner, tokenSpender, xTransferAmount, deadline, bbsToken, tokenName);
 
         // params do not match signed data - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
@@ -108,7 +94,7 @@ describe('Bridge', function() {
 
         // too many decimals - should fail
         const xTransferInvalidAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.00001`);
-        const sig = await signPremitData(tokenOwner, tokenSpender, xTransferInvalidAmount, nonce);
+        const sig = await signPermit(tokenOwner, tokenSpender, xTransferInvalidAmount, deadline, bbsToken, tokenName);
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
@@ -123,7 +109,7 @@ describe('Bridge', function() {
         expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(xTransferAmount.toString());
 
         // verify nonce
-        expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonce + 1);
+        expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonceBeforeTransfer + 1);
 
         // using the same signature - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
