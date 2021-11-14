@@ -2,6 +2,7 @@
 # Calculates estimation of total deployment fee on ethereum
 pushd "$(dirname "${BASH_SOURCE[0]}")"
 . ../bash_helpers
+popd
 
 echo -e "${CYAN}ETH price${NC}"
 coinbase_response=$(curl -s https://api.coinbase.com/v2/exchange-rates?currency=ETH)
@@ -59,6 +60,8 @@ getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer BBS o
 multiSendApproveFee
 echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
 accumulateFee '91233' # https://ropsten.etherscan.io/tx/0x65057d50a5ef6cabee993d9f72143fda244704471cb555ed112ec6c7c87c6ae3
+echo -e "${CYAN}Ether transfer from deployer to cold1 ${NC}"
+accumulateFee '21000'
 echo "-----------------"
 
 # cold 1 #
@@ -67,12 +70,23 @@ multiSendApproveFee
 echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
 accumulateFee '1990679' # https://ropsten.etherscan.io/tx/0x3d7552b17f1db7dd3b416cc31a7550d3b678bace54ee63c6a69e3e3f51ebf71b
 getDeploymentFee "$gas_report_staking" "Staking"                # Staking deploy
-getFunctionCallFee "$gas_report_staking" "approve"              # approve Staking spending of BBS
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q0
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q1
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q2
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q3
 getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q4
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q5
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q6
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q7
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q8
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q9
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q10
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q11
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q12
+getFunctionCallFee "$gas_report_staking" "declareReward"        # decalre rewards Q13
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer Staking ownership to Gnosis
+echo -e "${CYAN}Ether transfer from cold1 to cold2 ${NC}"
+accumulateFee '21000'
 echo "----cold1-----"
 
 # cold 2 #
@@ -82,10 +96,6 @@ getFunctionCallFee "$gas_report_bridge" "setReporters"          # set bridge rep
 getFunctionCallFee "$gas_report_bridge" "xTransfer"             # set bridge reporters
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer Bridge ownership
 echo "----cold2-----"
-
-# 10 transfers
-echo -e "${CYAN}{ERC20 - transfer} expected 10 function calls gas price${NC}"
-accumulateFee '515650' # https://ropsten.etherscan.io/tx/0x5562a94946699af3b5eb521d31c1dac75faee1f88019ce615fba8a6b6b03eeba transfer of bbs
 
 echo -e "${GREEN}"$totalFeeETH" ETH${NC}"
 echo -e "${GREEN}"$totalFeeUSD" USD${NC}"
