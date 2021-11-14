@@ -16,7 +16,7 @@ async function main() {
     log(`BBS balance of ${bbsTokenHolder} (wei): ${await bbsToken.balanceOf(bbsTokenHolder)}`);
 
     if (BRIDGE_ADDRESS)
-        log(`BBS locked in bridge (${BRIDGE_ADDRESS}) (wei): ${await bbsToken.balanceOf(BRIDGE_ADDRESS)}`);
+        log(`BBS locked in bridge ${BRIDGE_ADDRESS} (wei): ${await bbsToken.balanceOf(BRIDGE_ADDRESS)}`);
 
     if (STAKING_ADDRESS)
         log(`BBS locked in staking ${STAKING_ADDRESS} (wei): ${await bbsToken.balanceOf(STAKING_ADDRESS)}`);
