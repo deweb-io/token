@@ -1,6 +1,7 @@
 const hardhat = require('hardhat');
 const config = require('./config.js');
 const common = require('../common/common');
+const {getSigner} = require('../utils/utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
@@ -18,7 +19,7 @@ async function main() {
     const Token = await hardhat.ethers.getContractFactory('BBSToken');
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
 
-    const deployer = (await hardhat.ethers.getSigners())[0].address;
+    const deployer = (await getSigner()).address;
     log(`Minting ${config.mint.totalSupply} tokens to ${deployer}`);
 
     const totalSupplyWei = hardhat.ethers.utils.parseEther(config.mint.totalSupply);

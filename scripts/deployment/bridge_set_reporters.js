@@ -1,10 +1,9 @@
-const fs = require('fs');
-const hardhat = require('hardhat');
 const config = require('./config.js');
 const common = require('../common/common');
 const log = common.log;
 
 const BRIDGE_ADDRESS = common.getBridgeAddress();
+
 
 async function main() {
     log(`---Set reporters for bridge---`);

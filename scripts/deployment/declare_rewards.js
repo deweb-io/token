@@ -1,7 +1,7 @@
 const hardhat = require('hardhat');
 const config = require('./config.js');
 const common = require('../common/common');
-const {signPermit} = require('../utils/utils');
+const {signPermit, getSigner} = require('../utils/utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
@@ -53,7 +53,7 @@ async function main() {
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
     const tokenName = await bbsToken.name();
 
-    const holder = (await hardhat.ethers.getSigners())[0];
+    const holder = await getSigner();
     const {v, r, s} = await signPermit(holder, STACKING_ADDRESS, rewardToAddWei, deadline, bbsToken, tokenName);
 
     const tx = await staking.declareReward(QUARTER_INDEX, rewardToAddWei, holder.address, deadline, v, r, s);

@@ -5,6 +5,7 @@ const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
+
 log(`---Verify BBS contract---`);
 exec(`npx hardhat verify --network ${config.network} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {

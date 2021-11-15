@@ -4,6 +4,7 @@ const log = common.log;
 
 const STACKING_ADDRESS = common.getStakingAddress();
 
+
 async function main() {
     log(`---Transfer ownership---`);
     await common.transferOwnership('Staking', STACKING_ADDRESS, config.safe.address);

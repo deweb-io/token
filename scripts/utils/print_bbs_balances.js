@@ -1,6 +1,6 @@
-const fs = require('fs');
 const hardhat = require('hardhat');
 const common = require('../common/common.js');
+const {getSigner} = require('../utils/utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = process.env.BBS_TOKEN_ADDRESS || common.getBBStokenAddress();
@@ -12,7 +12,7 @@ async function main() {
     const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
 
     log('---BBS balances---');
-    const bbsTokenHolder = process.env.BBS_TOKEN_HOLDER || (await hardhat.ethers.getSigners())[0].address;
+    const bbsTokenHolder = process.env.BBS_TOKEN_HOLDER || (await getSigner()).address;
     log(`BBS balance of ${bbsTokenHolder} (wei): ${await bbsToken.balanceOf(bbsTokenHolder)}`);
 
     if (BRIDGE_ADDRESS)

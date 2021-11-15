@@ -4,6 +4,7 @@ const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
+
 async function main() {
     log(`---Transfer ownership---`);
     await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, config.safe.address);

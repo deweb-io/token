@@ -1,6 +1,6 @@
 const hardhat = require('hardhat');
 const common = require('../common/common.js');
-const {signPermit} = require('../utils/utils');
+const {signPermit, getSigner} = require('../utils/utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
@@ -8,6 +8,7 @@ const BRIDGE_ADDRESS = common.getBridgeAddress();
 const RECEIVER_EOS_ACCOUNT = process.env.RECEIVER_EOS_ACCOUNT;
 const BBS_AMOUNT = `${process.env.BBS_AMOUNT}`;
 const XTRANSFER_ARTIFACT_FILE = 'xTransfer_tx.txt';
+
 
 async function main() {
     if (!BBS_TOKEN_ADDRESS)
@@ -30,7 +31,7 @@ async function main() {
     const bridge = Bridge.attach(BRIDGE_ADDRESS);
     log(`xTransfersEnabled: ${await bridge.xTransfersEnabled()}`);
 
-    const tokenOwner = (await hardhat.ethers.getSigners())[0];
+    const tokenOwner = await getSigner();
     const tokenSpender = bridge.address;
     const xTransferAmount = ethers.utils.parseEther(BBS_AMOUNT);
 

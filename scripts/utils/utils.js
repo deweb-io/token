@@ -1,4 +1,5 @@
 /* Utilities for our deployment. */
+const hardhat = require('hardhat');
 
 module.exports = {
     signPermit: async(signer, spender, value, deadline, verifyingContract, tokenName) => {
@@ -12,5 +13,8 @@ module.exports = {
             {name: 'deadline', type: 'uint256'}
         ]}, {owner: signer.address, spender, value, nonce, deadline});
         return ethers.utils.splitSignature(signature);
+    },
+    getSigner: async() => {
+        return (await hardhat.ethers.getSigners())[0];
     }
 };
