@@ -83,9 +83,11 @@ module.exports = {
                 break;
             }
             default: {
-                return `https://localhost/etherscan.io`;
+                network = 'undefined.';
             }
         }
+
+        return `https://${network}etherscan.io`;
     },
 
     etherscanLogContract: function(address, chainId) {
