@@ -44,14 +44,16 @@ describe('Staking', () => {
 
     async function stake(endQuarter){
         let signature = await signPermitData(stakers[0], stakeAmount);
-        await (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[0].address, deadline, signature.v, signature.r, signature.s);
+        await expect((await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter,
+            stakers[0].address, deadline, signature.v, signature.r, signature.s)).
+                to.emit(staking,'StakeLocked');
 
         await increaseTime(0.5);
 
         signature = await signPermitData(stakers[1], stakeAmount);
-        await (await mintAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[1].address, deadline, signature.v, signature.r, signature.s);
+        await expect((await mintAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter,
+            stakers[1].address, deadline, signature.v, signature.r, signature.s)).
+                to.emit(staking, 'StakeLocked');
     }
 
     async function getBalance(stakerId) {

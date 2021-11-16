@@ -64,8 +64,9 @@ describe('Bridge', function() {
      */
     async function xTransfer(amount, transmitter) {
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
-        await bridge.connect(transmitter).xTransfer(
-            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s);
+        await expect(bridge.connect(transmitter).xTransfer(
+            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s)).
+                to.emit(bridge, 'XTransfer').withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0);
     }
 
     it('xTransfer', async function() {
@@ -100,10 +101,10 @@ describe('Bridge', function() {
             eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
 
-
-        //// xTransfer
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s);
+        // xTransfer
+        await expect(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s)).
+                to.emit(bridge, 'XTransfer').withArgs(tokenOwner.address, eosBlockchain, eosAddress, xTransferAmount, 0)
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
