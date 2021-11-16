@@ -13,7 +13,7 @@ const common = require('./common/common');
 const { getSigner} = require('./utils/utils');
 
 const NETWORK = 'localhost';
-const SCRIPTS_PATH = './scripts/deployment'
+const SCRIPTS_PATH = './scripts/deployment';
 const DELAY_MS = 5000;
 
 // Bridge
@@ -40,6 +40,7 @@ const TRANSFER_OWNERSHIP_BRIDGE = `NEW_OWNER=${BRIDGE_NEW_OWNER} npx hardhat run
 
 describe('Deployment test', () => {
     function execute(action) {
+        console.log(`command: ${action}`)
         exec(action, (error, stdout, stderr) => {
             if (error)
                 throw new Error(error);
