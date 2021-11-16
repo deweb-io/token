@@ -33,15 +33,6 @@ describe('BBSToken (our token is almost entirely written by openzeppelin, so we 
         const tokenOwner = accounts[1];
         const tokenSpender = accounts[2];
         const transmitter = accounts[3];
-
-        const Permit = [
-          {name: 'owner', type: 'address'},
-          {name: 'spender', type: 'address'},
-          {name: 'value', type: 'uint256'},
-          {name: 'nonce', type: 'uint256'},
-          {name: 'deadline', type: 'uint256'}
-        ];
-
         const value = 100;
         const tokenName = await bbsToken.name();
         const nonce = (await bbsToken.nonces(tokenOwner.address)).toNumber();
