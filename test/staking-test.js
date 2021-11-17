@@ -38,21 +38,22 @@ describe('Staking', () => {
             const { v, r, s} = await signPermitData(owner, rewardAmount);
             await (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 currentQuarter, rewardAmount, owner.address, deadline, v, r, s);
-            await staking.promoteQuarter();
+            await expect(await staking.promoteQuarter()).to.emit(staking, 'QuarterPromoted', currentQuarter+1);
         }
     }
 
     async function stake(endQuarter){
         let signature = await signPermitData(stakers[0], stakeAmount);
-        await expect((await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[0].address, deadline, signature.v, signature.r, signature.s)).
-                to.emit(staking,'StakeLocked');
+        await expect(
+            (await mintAndDoAs(stakers[0], stakeAmount)).
+                lock(stakeAmount, endQuarter, stakers[0].address, deadline, signature.v, signature.r, signature.s)).to.emit(staking, 'StakeLocked');
 
         await increaseTime(0.5);
 
         signature = await signPermitData(stakers[1], stakeAmount);
-        await expect((await mintAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[1].address, deadline, signature.v, signature.r, signature.s)).
+        await expect(
+            (await mintAndDoAs(stakers[1], stakeAmount)).
+                lock(stakeAmount, endQuarter, stakers[1].address, deadline, signature.v, signature.r, signature.s)).
                 to.emit(staking, 'StakeLocked');
     }
 
@@ -80,19 +81,23 @@ describe('Staking', () => {
             (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 0, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s),
             'can not declare rewards for past quarters');
-        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s);
+        await expect(
+            (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s)).
+                    to.emit(staking, 'RewardDeclared').withArgs(1, rewardAmount, rewardAmount);
         await expectRevert(staking.promoteQuarter(), 'current quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
-        await staking.promoteQuarter();
+        await expect(await staking.promoteQuarter()).to.emit(staking, 'QuarterPromoted').withArgs(2);
         expect(await staking.currentQuarter()).to.equal(2);
 
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await expectRevert(staking.promoteQuarter(), 'current quarter has no reward');
         signature = await signPermitData(owner, rewardAmount);
-        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s);
-        await staking.promoteQuarter();
+        await expect(
+            (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s)).
+                  to.emit(staking, 'RewardDeclared').withArgs(2, rewardAmount, rewardAmount)
+        await expect(await staking.promoteQuarter()).to.emit(staking, 'QuarterPromoted').withArgs(3);
         expect(await staking.currentQuarter()).to.equal(3);
 
         await stake(5);
@@ -138,7 +143,7 @@ describe('Staking', () => {
         expect(await getBalance(1)).to.equal(0);
 
         let balance0, balance1;
-        await staking.connect(stakers[0]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, 'RewardsClaimed');
         await staking.connect(stakers[1]).claim(0);
         await expectRevert(staking.connect(stakers[0]).claim(0), 'nothing to claim');
         await expectRevert(staking.connect(stakers[1]).claim(0), 'nothing to claim');
@@ -148,8 +153,8 @@ describe('Staking', () => {
 
         await increaseTime(12);
         expect(await staking.currentQuarter()).to.equal(13);
-        await staking.connect(stakers[0]).claim(0);
-        await staking.connect(stakers[1]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, 'RewardsClaimed');
+        await expect (await staking.connect(stakers[1]).claim(0)).to.emit(staking, 'RewardsClaimed');
         balance0 = (await getBalance(0));
         balance1 = (await getBalance(1));
         expect((2 * stakeAmount) + (13 * rewardAmount) - balance0 - balance1).to.be.below(2);
@@ -171,7 +176,7 @@ describe('Staking', () => {
     it('stake restaking', async() => {
         await stake(3);
         await increaseTime(1);
-        await staking.connect(stakers[0]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, 'RewardsClaimed');
         await increaseTime(1);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
         await staking.connect(stakers[0]).lockRewards(0);

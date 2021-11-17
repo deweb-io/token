@@ -66,7 +66,8 @@ describe('Bridge', function() {
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
         await expect(bridge.connect(transmitter).xTransfer(
             eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s)).
-                to.emit(bridge, 'XTransfer').withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0);
+                to.emit(bridge, 'XTransfer').withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0).
+                    and.emit(bridge, 'TokensLock').withArgs(tokenOwner.address, amount);
     }
 
     it('xTransfer', async function() {
@@ -227,7 +228,9 @@ describe('Bridge', function() {
             , 'Ownable: caller is not the owner'
         );
 
-        await bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address);
+        await expect(
+            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)).
+                to.emit(bridge, 'CommissionsWithdraw');
         currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
     });

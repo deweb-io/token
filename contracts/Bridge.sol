@@ -77,7 +77,7 @@ contract Bridge is Ownable {
      * @param _to      wallet address that the tokens are withdrawn to
      * @param _amount  amount withdrawn
      */
-    event commissionsWithdraw(address indexed _to, uint256 _amount);
+    event CommissionsWithdraw(address indexed _to, uint256 _amount);
 
     /**
      * @dev triggered when xTransfer is successfully called
@@ -533,6 +533,6 @@ contract Bridge is Ownable {
         // no need to require, reverts on failure
         token.transfer(_to, totalCommissions);
 
-        emit commissionsWithdraw(_to, totalCommissions);
+        emit CommissionsWithdraw(_to, totalCommissions);
     }
 }
