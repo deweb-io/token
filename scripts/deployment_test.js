@@ -81,6 +81,7 @@ describe('Deployment test', () => {
 
         const signer = await getSigner();
         const bbsToken = await getBBSToken();
+        expect((await bbsToken.name())).to.equal('BBS');
         expect((await bbsToken.balanceOf(signer.address)).toString()).
                 to.equal(ethers.utils.parseEther(`${config.mint.totalSupply}`).toString());
         expect((await bbsToken.owner()).toLowerCase()).
@@ -126,7 +127,14 @@ describe('Deployment test', () => {
         execute(TRANSFER_OWNERSHIP_BRIDGE);
         await wait(DELAY_MS);
 
+        expect((await bridge.maxLockLimit()).toString()).to.equal(config.bridge.maxLockLimit);
+        expect((await bridge.maxReleaseLimit()).toString()).to.equal(config.bridge.maxReleaseLimit);
+        expect((await bridge.minLimit()).toString()).to.equal(config.bridge.minLimit);
+        expect((await bridge.limitIncPerBlock()).toString()).to.equal(config.bridge.limitIncPerBlock);
+        expect((await bridge.minRequiredReports())).to.equal(config.bridge.minRequiredReports);
+        expect((await bridge.commissionAmount()).toString()).to.equal(config.bridge.commissionAmount);
         expect(await bridge.token()).to.equal(common.getBBStokenAddress());
+
         for (const reporter of config.bridge.reporters.addresses) {
             expect(await bridge.reporters(reporter)).to.equal(true);
         }
