@@ -35,7 +35,7 @@ describe('Staking', () => {
             nextQuarterStart = await staking.nextQuarterStart()
         ){
             const currentQuarter = await staking.currentQuarter();
-            const { v, r, s} = await signPermitData(owner, rewardAmount);
+            const {v, r, s} = await signPermitData(owner, rewardAmount);
             await (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 currentQuarter, rewardAmount, owner.address, deadline, v, r, s);
             await expect(await staking.promoteQuarter()).to.emit(staking, 'QuarterPromoted', currentQuarter+1);
@@ -46,7 +46,8 @@ describe('Staking', () => {
         let signature = await signPermitData(stakers[0], stakeAmount);
         await expect(
             (await mintAndDoAs(stakers[0], stakeAmount)).
-                lock(stakeAmount, endQuarter, stakers[0].address, deadline, signature.v, signature.r, signature.s)).to.emit(staking, 'StakeLocked');
+                lock(stakeAmount, endQuarter, stakers[0].address, deadline, signature.v, signature.r, signature.s)).
+                    to.emit(staking, 'StakeLocked');
 
         await increaseTime(0.5);
 
@@ -54,7 +55,7 @@ describe('Staking', () => {
         await expect(
             (await mintAndDoAs(stakers[1], stakeAmount)).
                 lock(stakeAmount, endQuarter, stakers[1].address, deadline, signature.v, signature.r, signature.s)).
-                to.emit(staking, 'StakeLocked');
+                    to.emit(staking, 'StakeLocked');
     }
 
     async function getBalance(stakerId) {
@@ -112,7 +113,6 @@ describe('Staking', () => {
         await expectRevert(staking.connect(stakers[0]).claim(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).extend(0, 10), 'quarter must be promoted');
-
     });
 
     it('stake creation', async() => {
@@ -166,7 +166,7 @@ describe('Staking', () => {
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(0);
         await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current lock');
-        await staking.connect(stakers[1]).extend(0, 3);
+        await expect(await staking.connect(stakers[1]).extend(0, 3)).to.emit(staking, 'StakeLocked');
         expect(await staking.shares(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
         expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
@@ -179,7 +179,7 @@ describe('Staking', () => {
         await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, 'RewardsClaimed');
         await increaseTime(1);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
-        await staking.connect(stakers[0]).lockRewards(0);
+        await expect( await staking.connect(stakers[0]).lockRewards(0)).to.emit(staking, 'StakeLocked');
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount + (0.5 * rewardAmount));
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'no rewards to lock');
     });
