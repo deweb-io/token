@@ -10,6 +10,10 @@ describe('Staking', () => {
     const stakeAmount = 10**6;
     const rewardAmount = 10**9;
     const deadline = 9999999999;
+    const QUARTER_PROMOTED_EVENT = 'QuarterPromoted';
+    const STAKE_LOCKED_EVENT = 'StakeLocked';
+    const REWARD_DECLARED_EVENT = 'RewardDeclared';
+    const REWARD_CLAIMED_EVENT = 'RewardsClaimed';
     let owner, stakers, bbsToken, staking, quarterLength, tokenName;
 
     async function mintAndDoAs(signer, amount){
@@ -35,23 +39,27 @@ describe('Staking', () => {
             nextQuarterStart = await staking.nextQuarterStart()
         ){
             const currentQuarter = await staking.currentQuarter();
-            const { v, r, s} = await signPermitData(owner, rewardAmount);
+            const {v, r, s} = await signPermitData(owner, rewardAmount);
             await (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 currentQuarter, rewardAmount, owner.address, deadline, v, r, s);
-            await staking.promoteQuarter();
+            await expect(await staking.promoteQuarter()).to.emit(staking, QUARTER_PROMOTED_EVENT, currentQuarter+1);
         }
     }
 
     async function stake(endQuarter){
         let signature = await signPermitData(stakers[0], stakeAmount);
-        await (await mintAndDoAs(stakers[0], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[0].address, deadline, signature.v, signature.r, signature.s);
+        await expect(
+            (await mintAndDoAs(stakers[0], stakeAmount)).
+                lock(stakeAmount, endQuarter, stakers[0].address, deadline, signature.v, signature.r, signature.s)).
+                    to.emit(staking, STAKE_LOCKED_EVENT);
 
         await increaseTime(0.5);
 
         signature = await signPermitData(stakers[1], stakeAmount);
-        await (await mintAndDoAs(stakers[1], stakeAmount)).lock(stakeAmount, endQuarter,
-            stakers[1].address, deadline, signature.v, signature.r, signature.s);
+        await expect(
+            (await mintAndDoAs(stakers[1], stakeAmount)).
+                lock(stakeAmount, endQuarter, stakers[1].address, deadline, signature.v, signature.r, signature.s)).
+                    to.emit(staking, STAKE_LOCKED_EVENT);
     }
 
     async function getBalance(stakerId) {
@@ -78,19 +86,23 @@ describe('Staking', () => {
             (await mintAndDoAs(owner, rewardAmount)).declareReward(
                 0, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s),
             'can not declare rewards for past quarters');
-        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s);
+        await expect(
+            (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s)).
+                    to.emit(staking, REWARD_DECLARED_EVENT).withArgs(1, rewardAmount, rewardAmount);
         await expectRevert(staking.promoteQuarter(), 'current quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
-        await staking.promoteQuarter();
+        await expect(await staking.promoteQuarter()).to.emit(staking, QUARTER_PROMOTED_EVENT).withArgs(2);
         expect(await staking.currentQuarter()).to.equal(2);
 
         await network.provider.send('evm_increaseTime', [quarterLength]);
         await expectRevert(staking.promoteQuarter(), 'current quarter has no reward');
         signature = await signPermitData(owner, rewardAmount);
-        await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s);
-        await staking.promoteQuarter();
+        await expect(
+            (await mintAndDoAs(owner, rewardAmount)).declareReward(
+                2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s)).
+                  to.emit(staking, REWARD_DECLARED_EVENT).withArgs(2, rewardAmount, rewardAmount)
+        await expect(await staking.promoteQuarter()).to.emit(staking, QUARTER_PROMOTED_EVENT).withArgs(3);
         expect(await staking.currentQuarter()).to.equal(3);
 
         await stake(5);
@@ -105,7 +117,6 @@ describe('Staking', () => {
         await expectRevert(staking.connect(stakers[0]).claim(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'quarter must be promoted');
         await expectRevert(staking.connect(stakers[0]).extend(0, 10), 'quarter must be promoted');
-
     });
 
     it('stake creation', async() => {
@@ -136,7 +147,7 @@ describe('Staking', () => {
         expect(await getBalance(1)).to.equal(0);
 
         let balance0, balance1;
-        await staking.connect(stakers[0]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, REWARD_CLAIMED_EVENT);
         await staking.connect(stakers[1]).claim(0);
         await expectRevert(staking.connect(stakers[0]).claim(0), 'nothing to claim');
         await expectRevert(staking.connect(stakers[1]).claim(0), 'nothing to claim');
@@ -146,8 +157,8 @@ describe('Staking', () => {
 
         await increaseTime(12);
         expect(await staking.currentQuarter()).to.equal(13);
-        await staking.connect(stakers[0]).claim(0);
-        await staking.connect(stakers[1]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, REWARD_CLAIMED_EVENT);
+        await expect (await staking.connect(stakers[1]).claim(0)).to.emit(staking, REWARD_CLAIMED_EVENT);
         balance0 = (await getBalance(0));
         balance1 = (await getBalance(1));
         expect((2 * stakeAmount) + (13 * rewardAmount) - balance0 - balance1).to.be.below(2);
@@ -159,7 +170,7 @@ describe('Staking', () => {
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(0);
         await expectRevert(staking.connect(stakers[1]).extend(0, 2), 'must extend beyond current lock');
-        await staking.connect(stakers[1]).extend(0, 3);
+        await expect(await staking.connect(stakers[1]).extend(0, 3)).to.emit(staking, STAKE_LOCKED_EVENT);
         expect(await staking.shares(stakers[1].address, 0, 0) / firstQuarterShare).to.be.within(1.19, 1.21);
         expectBigNum((await staking.shares(stakers[1].address, 0, 1))).to.equal(stakeAmount * 125);
         expectBigNum((await staking.shares(stakers[1].address, 0, 2))).to.equal(stakeAmount * 100);
@@ -169,10 +180,10 @@ describe('Staking', () => {
     it('stake restaking', async() => {
         await stake(3);
         await increaseTime(1);
-        await staking.connect(stakers[0]).claim(0);
+        await expect (await staking.connect(stakers[0]).claim(0)).to.emit(staking, REWARD_CLAIMED_EVENT);
         await increaseTime(1);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount);
-        await staking.connect(stakers[0]).lockRewards(0);
+        await expect( await staking.connect(stakers[0]).lockRewards(0)).to.emit(staking, STAKE_LOCKED_EVENT);
         expectBigNum((await staking.stakes(stakers[0].address, 0)).amount).to.equal(stakeAmount + (0.5 * rewardAmount));
         await expectRevert(staking.connect(stakers[0]).lockRewards(0), 'no rewards to lock');
     });

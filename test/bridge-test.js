@@ -14,6 +14,9 @@ describe('Bridge', function() {
     const LIMIT_INC_PER_BLOCK = '500000000000000000000';
     const MIN_REQUIRED_REPORTS = 1;
 
+    const XTRANSFER_EVENT = 'XTransfer';
+    const TOKENS_LOCK_EVENT = 'TokensLock';
+
     const commissionAmount = ethers.utils.parseEther(`${COMMISSION_AMOUNT}`);
     const xTransferAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.0001`);
 
@@ -64,11 +67,14 @@ describe('Bridge', function() {
      */
     async function xTransfer(amount, transmitter) {
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
-        await bridge.connect(transmitter).xTransfer(
-            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s);
+        await expect(
+                bridge.connect(transmitter).xTransfer(
+                    eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s)).
+                        to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0).
+                            and.emit(bridge, TOKENS_LOCK_EVENT).withArgs(tokenOwner.address, amount);
     }
 
-    it('xTransfer', async function() {
+    it(XTRANSFER_EVENT, async function() {
         const nonceBeforeTransfer = await getNonce(tokenOwner);
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, xTransferAmount, deadline, bbsToken, tokenName);
 
@@ -100,10 +106,11 @@ describe('Bridge', function() {
             eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
 
-
-        //// xTransfer
-        await bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s);
+        // xTransfer
+        await expect(
+                bridge.connect(tokenOwner).xTransfer(
+                    eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s)).
+                        to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, xTransferAmount, 0)
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
@@ -226,7 +233,9 @@ describe('Bridge', function() {
             , 'Ownable: caller is not the owner'
         );
 
-        await bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address);
+        await expect(
+            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)).
+                to.emit(bridge, 'CommissionsWithdraw');
         currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
     });
