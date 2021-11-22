@@ -1,6 +1,6 @@
 const common = require('./common/common');
+const {range} = require('../test/utils');
 const {
-    range, 
     initStaking, 
     runScenario,
     getBBSTokenAddress,
