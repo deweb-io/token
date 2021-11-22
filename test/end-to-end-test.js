@@ -1,11 +1,18 @@
 const {expect} = require('chai');
 const {range} = require('./utils');
-const {signPermit} = require('../scripts/utils/utils');
+const {
+    initStaking, 
+    increaseTimeTo,
+    declareReward,
+    lock,
+    extend,
+    claim,
+    getStakers,
+    getOwner,
+    runScenario} = require('./staking-utils');
 
 describe('End to End', () => {
     const originalConsoleDebug = console.debug;
-    const deadline = 9999999999;
-    let owner, stakers, bbsToken, staking, quarterLength, tokenName;
 
     before(() => {
         if(!process.env.TEST_DEBUG) console.debug = () => null;
@@ -16,117 +23,9 @@ describe('End to End', () => {
     });
 
     beforeEach(async() => {
-        const BBSToken = await ethers.getContractFactory('BBSToken');
-        const Staking = await ethers.getContractFactory('Staking');
-        bbsToken = await BBSToken.deploy();
-        staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-        tokenName = await bbsToken.name();
-        quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
-        [owner, ...stakers] = await ethers.getSigners();
+        await initStaking();
     });
 
-    async function getTime(){
-        await network.provider.send('evm_mine');
-        const stakingQuarter = await staking.currentQuarter();
-        const nextQuarterStart = (await staking.nextQuarterStart()).toNumber();
-        const currentTime = ethers.BigNumber.from(
-            (await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp).toNumber();
-        const realQuarter = stakingQuarter + (1 - ((nextQuarterStart - currentTime) / quarterLength));
-        return {
-            realQuarter: realQuarter,
-            currentTime: currentTime,
-            nextQuarterStart: nextQuarterStart,
-            stakingQuarter: stakingQuarter
-        };
-    }
-
-    async function increaseTimeTo(quarterIdx){
-        let {realQuarter, currentTime, nextQuarterStart} = await getTime();
-
-        if(realQuarter > quarterIdx) throw(`can not increase time from ${realQuarter} to ${quarterIdx}`);
-
-        await network.provider.send('evm_increaseTime', [(quarterIdx - realQuarter) * quarterLength]);
-        await network.provider.send('evm_mine');
-        currentTime = (await getTime()).currentTime;
-        while(currentTime >= nextQuarterStart){
-            await staking.promoteQuarter();
-            nextQuarterStart = await staking.nextQuarterStart();
-        }
-
-        realQuarter = (await getTime()).realQuarter;
-        console.debug(`current quarter it is now ${realQuarter} (${quarterIdx} requested)`);
-    }
-
-    async function mintAndDoAs(signer, amount){
-        await bbsToken.mint(signer.address, amount);
-        return staking.connect(signer);
-    }
-
-    async function declareReward(quartersIdx, rewardAmount){
-        for(const quarterIdx of quartersIdx){
-            const {v, r, s} = await signPermit(owner, staking.address, rewardAmount, deadline, bbsToken, tokenName);
-            await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                quarterIdx, rewardAmount, owner.address, deadline, v, r, s);
-            console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
-        }
-    }
-
-    async function lock(staker, amount, unlockQuarter){
-        const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, tokenName);
-        await (await mintAndDoAs(staker, amount)).lock(amount, unlockQuarter, staker.address, deadline, v, r, s);
-        console.debug(`locked ${amount} tokens until ${unlockQuarter} for ${staker.address.slice(0, 5)}`);
-    }
-
-    async function extend(staker, stakeIdx, unlockQuarter, assertSharesEqual){
-        await staking.connect(staker).extend(stakeIdx, unlockQuarter);
-        const shares = (await staking.shares(staker.address, stakeIdx, await staking.currentQuarter())).toNumber();
-        if(typeof(assertSharesEqual) === typeof(1)) expect(shares).to.equal(assertSharesEqual);
-        console.debug(`extended ${staker.address.slice(0, 5)}/${stakeIdx} until ${unlockQuarter}, current shares are ${shares}`);
-    }
-
-    async function lockRewards(staker, stakeIdx, assertStakeIncreaseEquals){
-        const startingAmount = (await staking.stakes(staker.address, stakeIdx)).amount;
-        await staking.connect(staker).lockRewards(stakeIdx);
-        const stakeChange = (await staking.stakes(staker.address, stakeIdx)).amount - startingAmount;
-        if(typeof(assertStakeIncreaseEquals) === typeof(1)) expect(stakeChange).to.equal(assertStakeIncreaseEquals);
-        console.debug(`restaked ${staker.address.slice(0, 5)}/${stakeIdx} for an added ${stakeChange}`);
-    }
-
-    async function getBalance(staker){
-        return (await bbsToken.balanceOf(staker.address)).toNumber();
-    }
-
-    async function claim(staker, stakeIdx, assertClaimEquals){
-        const startingBalance = await getBalance(staker);
-        await staking.connect(staker).claim(stakeIdx);
-        const claimAmount = (await getBalance(staker)) - startingBalance;
-        if(typeof(assertClaimEquals) === typeof(1)) expect(claimAmount).to.equal(assertClaimEquals);
-        console.debug(`claimed ${staker.address.slice(0, 5)}/${stakeIdx} and got ${claimAmount}`);
-        return claimAmount;
-    }
-
-    async function runScenario(steps){
-        const functions = {
-            declareReward: async(step) => await declareReward(step.quartersIdx, step.amount),
-            lock: async(step) => await lock(step.staker, step.amount, step.unlockQuarter),
-            increaseTimeTo: async(step) => await increaseTimeTo(step.quarterIdx),
-            extend: async(step) => await extend(step.staker, step.stakeIdx, step.unlockQuarter, step.assertSharesEqual),
-            lockRewards: async(step) => await lockRewards(step.staker, step.stakeIdx, step.assertStakeIncreaseEquals),
-            claim: async(step) => await claim(step.staker, step.stakeIdx, step.assertClaimEquals)
-        };
-        const names = {
-            alice: stakers[0],
-            bob: stakers[1],
-            carol: stakers[2],
-            tal: stakers[3]
-        };
-        for(const [stepIdx, step] of steps.entries()){
-            console.debug(`running step ${stepIdx} - ${step.action}`);
-            if(!(step.action in functions)) throw(`unknown action ${step.action}`);
-            if('staker' in step) step.staker = names[step.staker];
-            await functions[step.action](step);
-        }
-    }
 
     it('end to end 1 [ @skipOnCoverage ]', async() => {
         await runScenario([
@@ -193,6 +92,8 @@ describe('End to End', () => {
             console.warn(`NOTE: running load testing with only ${iterations} iterations (set TEST_ITERATIONS)`);
         }
         this.timeout(5000 + (iterations * 10000));
+        let stakers = getStakers();
+        let owner = getOwner();
 
         // Create/remove stakers as needed.
         while(stakers.length < iterations) stakers.push(new ethers.Wallet(stakers.length, owner.provider));
