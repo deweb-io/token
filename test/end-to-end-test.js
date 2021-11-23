@@ -1,7 +1,7 @@
 const {expect} = require('chai');
 const {range} = require('./utils');
 const {
-    initStaking, 
+    initStaking,
     increaseTimeTo,
     declareReward,
     lock,
