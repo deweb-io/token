@@ -54,6 +54,11 @@ multiSendApproveFee() {
 echo "----deployer-----"
 echo -e "${CYAN}{Gnosis-safe: createProxyWithNonce} expected function call gas price${NC}"
 accumulateFee '258606' # Gnosis-safe create (https://rinkeby.etherscan.io/tx/0xbbb8e8df0cb56711e701f5df901752ed2c8cada49607337d70ecfcd02915163d)
+echo -e "${CYAN}{Gnosis-safe: execTransaction} expected function call gas price${NC}"
+accumulateFee '143734' # add signatory (https://rinkeby.etherscan.io/tx/0x94a39f8f9817050060bda676beefa8190291f93810ce78fd232412a98759930f)
+accumulateFee '143734'
+accumulateFee '143734'
+accumulateFee '143734'
 getDeploymentFee "$gas_report_bbs_token" "BBSToken"             # BBS token deploy
 getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer BBS ownership to Gnosis
