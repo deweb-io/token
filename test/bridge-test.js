@@ -13,6 +13,7 @@ describe('Bridge', function() {
     const MIN_LIMIT = '1000000000000000000';
     const LIMIT_INC_PER_BLOCK = '500000000000000000000';
     const MIN_REQUIRED_REPORTS = 1;
+    const REWARDS_MAX_LOCK_LIMIT = ethers.utils.parseEther(`100000`);
 
     const XTRANSFER_EVENT = 'XTransfer';
     const TOKENS_LOCK_EVENT = 'TokensLock';
@@ -50,6 +51,8 @@ describe('Bridge', function() {
             LIMIT_INC_PER_BLOCK,
             MIN_REQUIRED_REPORTS,
             commissionAmount,
+            REWARDS_MAX_LOCK_LIMIT,
+            eosAddress,
             bbsToken.address);
         tokenSpender = bridge.address;
 

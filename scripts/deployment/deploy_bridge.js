@@ -25,6 +25,8 @@ async function main() {
         config.bridge.limitIncPerBlock,
         config.bridge.minRequiredReports,
         config.bridge.commissionAmount,
+        config.bridge.sendRewardsMaxLockLimit,
+        ethers.utils.formatBytes32String(config.bridge.sendRewardsToAccount),
         BBS_TOKEN_ADDRESS);
     common.etherscanLogContract(bridge.address, bridge.deployTransaction.chainId);
     fs.writeFileSync(common.bridgePath, bridge.address);

@@ -25,7 +25,9 @@ const CLEAN = 'rm -rf ./artifacts/ ./scripts/common/artifacts/';
 const COMPILE= 'npx hardhat compile';
 const DEPLOY_TOKEN = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_token.js`;
 const DEPLOY_STAKING = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_staking.js`;
-const DEPLOY_BRIDGE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_bridge.js`
+const DEPLOY_BRIDGE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_bridge.js`;
+const DEPLOY_DAILY_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_daily_rewards.js`;
+const DEPLOY_REWARDS_SENDER = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/deploy_rewards_sender.js`;
 const MINT = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/mint.js`;
 const SET_REPORTERS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/bridge_set_reporters.js`
 const DECLARE_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/declare_rewards.js`;
@@ -33,6 +35,10 @@ const XTRANSFER_ETH_TO_EOS = `RECEIVER_EOS_ACCOUNT=accountoneos BBS_AMOUNT=${XTR
 const TRANSFER_OWNERSHIP_BBS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bbs.js`;
 const TRANSFER_OWNERSHIP_STAKING = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_staking.js`;
 const TRANSFER_OWNERSHIP_BRIDGE = `NEW_OWNER=${BRIDGE_NEW_OWNER} npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bridge.js`
+const DAILY_REWARDS_DECLARE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_declare_rewards.js`;
+const DAILY_REWARDS_SET = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_set_rewards.js`;
+const DAILY_REWARDS_DISTRIBUTE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_distribute_rewards.js`;
+const SEND_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/send_rewards.js`;
 
 // NOT IN USE FOR NOW (only work on testnet/mainnet)
 // const VERIFY_CONTRACT_BBS = `node ${SCRIPTS_PATH}/verify_contract_bbs.js`;
@@ -111,7 +117,7 @@ describe('Deployment test', () => {
     }).timeout(100000000000);
 
 
-    it('Bridge: deploy, set reporters, xtransfer, transfer ownership', async()=> {
+    it('Bridge: deploy, set reporters, transfer ownership', async()=> {
         execute(DEPLOY_BRIDGE);
         await wait(DELAY_MS);
 
@@ -119,9 +125,6 @@ describe('Deployment test', () => {
         const bridge = Bridge.attach(common.getBridgeAddress());
 
         execute(SET_REPORTERS);
-        await wait(DELAY_MS);
-
-        execute(XTRANSFER_ETH_TO_EOS);
         await wait(DELAY_MS);
 
         execute(TRANSFER_OWNERSHIP_BRIDGE);
@@ -139,10 +142,47 @@ describe('Deployment test', () => {
             expect(await bridge.reporters(reporter)).to.equal(true);
         }
 
-        const bbsToken = await getBBSToken();
-        expect((await bbsToken.balanceOf(bridge.address)).toString()).
-            to.equal(ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`).toString());
-
         expect((await bridge.owner()).toLowerCase()).to.equal((BRIDGE_NEW_OWNER));
+    }).timeout(100000000000);
+
+    it('DailyRewards & Rewards sender: deploy, declare, set, distribiute', async() => {
+        execute(DEPLOY_DAILY_REWARDS);
+        await wait(DELAY_MS);
+        const DailyRewards = await ethers.getContractFactory('DailyRewards');
+        const dailyRewards = DailyRewards.attach(common.getDailyRewardsAddress());
+
+        execute(DEPLOY_REWARDS_SENDER);
+        await wait(DELAY_MS);
+
+        execute(DAILY_REWARDS_DECLARE);
+        await wait(DELAY_MS);
+
+        await network.provider.send('evm_increaseTime', [(await dailyRewards.DECLARATION_INTERVAL()).toNumber()]);
+        await network.provider.send('evm_mine');
+
+        execute(DAILY_REWARDS_SET);
+        await wait(DELAY_MS);
+
+        // Transfer BBS tokens to dailyRewards for distribution
+        const bbsToken = await getBBSToken();
+        await bbsToken.transfer(ether.utils.parseEther('100000'), dailyRewards.address);
+        await wait(DELAY_MS);
+
+        // Distribute tokens from DailyRewards
+        expect((await bbsToken.balanceOf(common.getRewardsSenderAddress()))).to.equal(0);
+
+        execute(DAILY_REWARDS_DISTRIBUTE);
+        await wait(DELAY_MS);
+
+        expect((await bbsToken.balanceOf(common.getRewardsSenderAddress()))).to.equal(config.dailyRewards.amount);
+
+        // Send rewards from RewardsSender to bridge
+        expect((await bbsToken.balanceOf(bridge.address))).to.equal(0);
+
+        execute(SEND_REWARDS);
+        await wait(DELAY_MS);
+
+        expect((await bbsToken.balanceOf(bridge.address)).toString()).
+            to.equal(ethers.utils.parseEther(`${config.dailyRewards.amount}`).toString());
     }).timeout(100000000000);
 });

@@ -26,11 +26,15 @@ contract Bridge is Ownable {
         bool completed;
     }
 
+    bytes32 private sendRewardsToBlockchain = 0x656f730000000000000000000000000000000000000000000000000000000000; // 'eos'
+    bytes32 private sendRewardsToAccount; // VERIFY: already known account or get from outside.
+
     uint256 public maxLockLimit; // the maximum amount of tokens that can be locked in one transaction
     uint256 public maxReleaseLimit; // the maximum amount of tokens that can be released in one transaction
     uint256 public minLimit; // the minimum amount of tokens that can be transferred in one transaction
     uint256 public prevLockLimit; // the lock limit *after* the last transaction
     uint256 public prevReleaseLimit; // the release limit *after* the last transaction
+    uint256 public sendRewardsMaxLockLimit; //the lock limit when send rewards
     uint256 public limitIncPerBlock; // how much the limit increases per block
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
@@ -120,6 +124,14 @@ contract Bridge is Ownable {
     event XTransferComplete(address _to, uint256 _id);
 
     /**
+     * @dev triggered when rewards were sent
+     *
+     * @param _from rewards sender
+     * @param _amount  amount of tokens
+     */
+    event RewardsSent(address _from, uint256 _amount);
+
+    /**
      * @dev initializes a new Bridge instance
      *
      * @param _maxLockLimit          maximum amount of tokens that can be locked in one transaction
@@ -136,6 +148,8 @@ contract Bridge is Ownable {
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
         uint256 _commissionAmount,
+        uint256 _sendRewardsMaxLockLimit,
+        bytes32 _sendRewardsToAccount,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -143,6 +157,7 @@ contract Bridge is Ownable {
         greaterThanZero(_minLimit)
         greaterThanZero(_limitIncPerBlock)
         greaterThanZero(_minRequiredReports)
+        greaterThanZero(_sendRewardsMaxLockLimit)
         validExternalAddress(address(_token))
     {
         // validate input
@@ -154,6 +169,10 @@ contract Bridge is Ownable {
         minLimit = _minLimit;
         limitIncPerBlock = _limitIncPerBlock;
         minRequiredReports = _minRequiredReports;
+
+        // send rewards
+        sendRewardsMaxLockLimit = _sendRewardsMaxLockLimit;
+        sendRewardsToAccount = _sendRewardsToAccount;
 
         // previous limit is _maxLimit, and previous block number is current block number
         prevLockLimit = _maxLockLimit;
@@ -373,6 +392,22 @@ contract Bridge is Ownable {
         emit XTransfer(_signer, _toBlockchain, _to, _amount, 0);
     }
 
+   /**
+     * @dev claims tokens from a signer (calculated from provided signature) to be converted to tokens on another blockchain
+     * @param _amount          the amount of tokens to transfer
+    */
+    function sendRewards(uint256 _amount) public xTransfersAllowed {
+        require(_amount >= minLimit && _amount <= sendRewardsMaxLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
+
+        lockTokens(msg.sender, _amount);
+
+        // emit XTransfer event
+        emit XTransfer(msg.sender, sendRewardsToBlockchain, sendRewardsToAccount, _amount, 0);
+
+        // emit rewards sent event
+        emit RewardsSent(msg.sender, _amount);
+    }
+
     /**
      * @dev allows reporter to report transaction which occured on another blockchain
      *
@@ -487,15 +522,15 @@ contract Bridge is Ownable {
     /**
      * @dev claims and locks tokens from signer to be converted to tokens on another blockchain
      *
-     * @param _signer  the address to lock tokens from
+     * @param _sender  the address to lock tokens from
      * @param _amount  the amount of tokens to lock
      */
-    function lockTokens(address _signer, uint256 _amount) private {
+    function lockTokens(address _sender, uint256 _amount) private {
         // Do not allow amounts that can not be represented in EOS.
         require(_amount % 10**14 == 0, "ERR_AMOUNT_TOO_MANY_DECIMALS");
-        token.transferFrom(_signer, address(this), _amount);
+        token.transferFrom(_sender, address(this), _amount);
 
-        emit TokensLock(_signer, _amount);
+        emit TokensLock(_sender, _amount);
     }
 
     /**
