@@ -17,10 +17,16 @@ module.exports = {
         limitIncPerBlock: '500000000000000000000',
         minRequiredReports: 1,
         commissionAmount: '0',
+        sendRewardsToAccount: 'a1234',
+        sendRewardsMaxLockLimit: '1000000000000000000000000',
         reporters: {
             addresses: ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'],
             active: [true]
         }
+    },
+    dailyRewards: {
+        //To avoid copying of rewardsSender address to config, we get it in the script directly
+        amount: '1000'
     }
 }
 
