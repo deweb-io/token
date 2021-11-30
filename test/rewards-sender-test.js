@@ -10,11 +10,15 @@ describe('RewardsSender tests', () => {
     const MIN_REQUIRED_REPORTS = 1;
     const REWARDS_MAX_LOCK_LIMIT = ethers.utils.parseEther(`100000`);
     const commissionAmount = ethers.utils.parseEther(`1`);
+    const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
 
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         bbsToken = await BBSToken.deploy();
+
+        const sendRewardsStruct = ethers.utils.defaultAbiCoder.encode(["bytes32", "bytes32", "uint256"],
+            [eosBlockchain, eosAddress, REWARDS_MAX_LOCK_LIMIT]);
 
         const Bridge = await ethers.getContractFactory('Bridge');
         bridge = await Bridge.deploy(
@@ -24,8 +28,7 @@ describe('RewardsSender tests', () => {
             LIMIT_INC_PER_BLOCK,
             MIN_REQUIRED_REPORTS,
             commissionAmount,
-            REWARDS_MAX_LOCK_LIMIT,
-            eosAddress,
+            sendRewardsStruct,
             bbsToken.address);
 
         const RewardsSender = await ethers.getContractFactory('RewardsSender');

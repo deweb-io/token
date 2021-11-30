@@ -23,6 +23,7 @@ describe('Bridge', function() {
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
+
     const reportTxId = Math.floor(Math.random() * (100000));
     const reportTransferId = 0;
 
@@ -43,6 +44,9 @@ describe('Bridge', function() {
         bbsToken = await Token.deploy();
         tokenName = await bbsToken.name();
 
+        const sendRewardsStruct = ethers.utils.defaultAbiCoder.encode(["bytes32", "bytes32", "uint256"],
+            [eosBlockchain, eosAddress, REWARDS_MAX_LOCK_LIMIT]);
+
         const Bridge = await ethers.getContractFactory('Bridge');
         bridge = await Bridge.deploy(
             MAX_LOCK_LIMIT,
@@ -51,8 +55,7 @@ describe('Bridge', function() {
             LIMIT_INC_PER_BLOCK,
             MIN_REQUIRED_REPORTS,
             commissionAmount,
-            REWARDS_MAX_LOCK_LIMIT,
-            eosAddress,
+            sendRewardsStruct,
             bbsToken.address);
         tokenSpender = bridge.address;
 

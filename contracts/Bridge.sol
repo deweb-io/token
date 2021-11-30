@@ -26,15 +26,20 @@ contract Bridge is Ownable {
         bool completed;
     }
 
-    bytes32 private sendRewardsToBlockchain = 0x656f730000000000000000000000000000000000000000000000000000000000; // 'eos'
-    bytes32 private sendRewardsToAccount; // VERIFY: already known account or get from outside.
+    struct SendRewardsConfig {
+        bytes32 toBlockchain;
+        bytes32 toAccount;
+        uint256 maxLockLimit;
+    }
 
+    bytes32 public sendRewardsToBlockchain; // the target blockchain when send rewards
+    bytes32 public sendRewardsToAccount; // the target account when send rewards
+    uint256 public sendRewardsMaxLockLimit; // the lock limit when send rewards
     uint256 public maxLockLimit; // the maximum amount of tokens that can be locked in one transaction
     uint256 public maxReleaseLimit; // the maximum amount of tokens that can be released in one transaction
     uint256 public minLimit; // the minimum amount of tokens that can be transferred in one transaction
     uint256 public prevLockLimit; // the lock limit *after* the last transaction
     uint256 public prevReleaseLimit; // the release limit *after* the last transaction
-    uint256 public sendRewardsMaxLockLimit; //the lock limit when send rewards
     uint256 public limitIncPerBlock; // how much the limit increases per block
     uint256 public prevLockBlockNumber; // the block number of the last lock transaction
     uint256 public prevReleaseBlockNumber; // the block number of the last release transaction
@@ -148,8 +153,7 @@ contract Bridge is Ownable {
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
         uint256 _commissionAmount,
-        uint256 _sendRewardsMaxLockLimit,
-        bytes32 _sendRewardsToAccount,
+        bytes memory _sendRewards,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -157,7 +161,6 @@ contract Bridge is Ownable {
         greaterThanZero(_minLimit)
         greaterThanZero(_limitIncPerBlock)
         greaterThanZero(_minRequiredReports)
-        greaterThanZero(_sendRewardsMaxLockLimit)
         validExternalAddress(address(_token))
     {
         // validate input
@@ -171,8 +174,10 @@ contract Bridge is Ownable {
         minRequiredReports = _minRequiredReports;
 
         // send rewards
-        sendRewardsMaxLockLimit = _sendRewardsMaxLockLimit;
-        sendRewardsToAccount = _sendRewardsToAccount;
+        SendRewardsConfig memory sendRewardsConfig = abi.decode(_sendRewards, (SendRewardsConfig));
+        sendRewardsToBlockchain = sendRewardsConfig.toBlockchain;
+        sendRewardsToAccount = sendRewardsConfig.toAccount;
+        sendRewardsMaxLockLimit = sendRewardsConfig.maxLockLimit;
 
         // previous limit is _maxLimit, and previous block number is current block number
         prevLockLimit = _maxLockLimit;
@@ -317,6 +322,33 @@ contract Bridge is Ownable {
      */
     function setCommissionAmount(uint256 _commissionAmount) public onlyOwner {
         commissionAmount = _commissionAmount;
+    }
+
+    /**
+     * @dev setter
+     *
+     * @param _blockchain    new maxLockLimit
+     */
+    function setRewardsToBlockchain(bytes32 _blockchain) public onlyOwner {
+        sendRewardsToBlockchain = _blockchain;
+    }
+
+    /**
+     * @dev setter
+     *
+     * @param _toAccount    new maxLockLimit
+     */
+    function setRewardsToAccount(bytes32 _toAccount) public onlyOwner {
+        sendRewardsToAccount = _toAccount;
+    }
+
+    /**
+     * @dev setter
+     *
+     * @param _maxLockLimit    new maxLockLimit
+     */
+    function setRewardsMaxLockLimit(uint256 _maxLockLimit) public onlyOwner greaterThanZero(_maxLockLimit) {
+        sendRewardsMaxLockLimit = _maxLockLimit;
     }
 
     /**

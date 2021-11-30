@@ -139,7 +139,11 @@ describe('Deployment test', () => {
         expect((await bridge.limitIncPerBlock()).toString()).to.equal(config.bridge.limitIncPerBlock);
         expect((await bridge.minRequiredReports())).to.equal(config.bridge.minRequiredReports);
         expect((await bridge.commissionAmount()).toString()).to.equal(config.bridge.commissionAmount);
-        expect((await bridge.sendRewardsMaxLockLimit()).toString()).to.equal(config.bridge.sendRewardsMaxLockLimit);
+        expect((await bridge.sendRewardsMaxLockLimit()).toString()).to.equal(config.bridge.sendRewards.maxLockLimit);
+        expect((await bridge.sendRewardsToBlockchain()).toString()).to.equal(
+            ethers.utils.formatBytes32String(config.bridge.sendRewards.toBlockchain).toString());
+        expect((await bridge.sendRewardsToAccount()).toString()).to.equal(
+            ethers.utils.formatBytes32String(config.bridge.sendRewards.toAccount).toString());
         expect(await bridge.token()).to.equal(common.getBBStokenAddress());
 
         for (const reporter of config.bridge.reporters.addresses) {
