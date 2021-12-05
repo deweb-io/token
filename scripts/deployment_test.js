@@ -2,6 +2,8 @@
  * Test deployment scripts.
  * Please run hardhat local node ('npx hardhat node') before running:
  * npx hardhat test --network localhost scripts/deployment_test.js
+ *
+ * Tests are separated but depend on each other.
  */
 
 const hardhat = require('hardhat');
@@ -14,7 +16,7 @@ const { getSigner} = require('./utils/utils');
 
 const NETWORK = 'localhost';
 const SCRIPTS_PATH = './scripts/deployment';
-const DELAY_MS = 5000;
+const DELAY_MS = 6000;
 
 // Bridge
 const XTRANSFER_AMOUNT = '100';
@@ -31,17 +33,15 @@ const DEPLOY_REWARDS_SENDER = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PA
 const MINT = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/mint.js`;
 const SET_REPORTERS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/bridge_set_reporters.js`
 const DECLARE_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/declare_rewards.js`;
+const XTRANSFER_ETH_TO_EOS = `RECEIVER_EOS_ACCOUNT=accountoneos BBS_AMOUNT=${XTRANSFER_AMOUNT} npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/xtransfer_eth_to_eos.js`
 const TRANSFER_OWNERSHIP_BBS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bbs.js`;
 const TRANSFER_OWNERSHIP_STAKING = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_staking.js`;
 const TRANSFER_OWNERSHIP_BRIDGE = `NEW_OWNER=${BRIDGE_NEW_OWNER} npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bridge.js`
+const TRANSFER_OWNERSHIP_DAILY_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_daily_rewards.js`;
 const DAILY_REWARDS_DECLARE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_declare_rewards.js`;
 const DAILY_REWARDS_SET = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_set_rewards.js`;
 const DAILY_REWARDS_DISTRIBUTE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_distribute_rewards.js`;
 const SEND_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/send_rewards.js`;
-
-// NOT IN USE FOR NOW (only work on testnet/mainnet)
-// const VERIFY_CONTRACT_BBS = `node ${SCRIPTS_PATH}/verify_contract_bbs.js`;
-// const VERIFY_CONTRACT_BRIDGE = `node ${SCRIPTS_PATH}/verify_contract_bridge.js`;
 
 describe('Deployment test', () => {
     function execute(action) {
@@ -121,7 +121,7 @@ describe('Deployment test', () => {
     }).timeout(100000000000);
 
 
-    it('Bridge: deploy, set reporters, transfer ownership', async()=> {
+    it('Bridge: deploy, set reporters, xtransfer, transfer ownership', async()=> {
         execute(DEPLOY_BRIDGE);
         await wait(DELAY_MS);
 
@@ -133,13 +133,17 @@ describe('Deployment test', () => {
         execute(TRANSFER_OWNERSHIP_BRIDGE);
         await wait(DELAY_MS);
 
-        expect((await bridge.maxLockLimit()).toString()).to.equal(config.bridge.maxLockLimit);
-        expect((await bridge.maxReleaseLimit()).toString()).to.equal(config.bridge.maxReleaseLimit);
-        expect((await bridge.minLimit()).toString()).to.equal(config.bridge.minLimit);
-        expect((await bridge.limitIncPerBlock()).toString()).to.equal(config.bridge.limitIncPerBlock);
+        // lock bbs-bounties
+        execute(XTRANSFER_ETH_TO_EOS);
+        await wait(DELAY_MS);
+
+        expect((await bridge.maxLockLimit())).to.equal(ethers.utils.parseEther(config.bridge.maxLockLimit));
+        expect((await bridge.maxReleaseLimit())).to.equal(ethers.utils.parseEther(config.bridge.maxReleaseLimit));
+        expect((await bridge.minLimit())).to.equal(ethers.utils.parseEther(config.bridge.minLimit));
+        expect((await bridge.limitIncPerBlock())).to.equal(ethers.utils.parseEther(config.bridge.limitIncPerBlock));
         expect((await bridge.minRequiredReports())).to.equal(config.bridge.minRequiredReports);
-        expect((await bridge.commissionAmount()).toString()).to.equal(config.bridge.commissionAmount);
-        expect((await bridge.sendRewardsMaxLockLimit()).toString()).to.equal(config.bridge.sendRewards.maxLockLimit);
+        expect((await bridge.commissionAmount())).to.equal(ethers.utils.parseEther(config.bridge.commissionAmount));
+        expect((await bridge.sendRewardsMaxLockLimit())).to.equal(ethers.utils.parseEther(config.bridge.sendRewards.maxLockLimit));
         expect((await bridge.sendRewardsToBlockchain()).toString()).to.equal(
             ethers.utils.formatBytes32String(config.bridge.sendRewards.toBlockchain).toString());
         expect((await bridge.sendRewardsToAccount()).toString()).to.equal(
@@ -149,6 +153,10 @@ describe('Deployment test', () => {
         for (const reporter of config.bridge.reporters.addresses) {
             expect(await bridge.reporters(reporter)).to.equal(true);
         }
+
+        const bbsToken = await getBBSToken();
+        expect((await bbsToken.balanceOf(bridge.address)).toString()).
+            to.equal(ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`).toString());
 
         expect((await bridge.owner()).toLowerCase()).to.equal((BRIDGE_NEW_OWNER));
     }).timeout(100000000000);
@@ -177,31 +185,39 @@ describe('Deployment test', () => {
         expect(rewards[0]).to.equal(common.getRewardsSenderAddress());
         expect(rewards[1]).to.equal(hardhat.ethers.utils.parseEther(config.dailyRewards.amount));
 
+        // transfer ownership
+        execute(TRANSFER_OWNERSHIP_DAILY_REWARDS);
+        await wait(DELAY_MS);
 
-        // Transfer BBS tokens to dailyRewards for distribution
+        // transfer BBS tokens to dailyRewards for distribution
         const bbsToken = await getBBSToken();
         await bbsToken.transfer(dailyRewards.address, hardhat.ethers.utils.parseEther('100000'));
         await wait(DELAY_MS);
 
-        //check balance before distribute
+        // check balance before distribute
         expect((await bbsToken.balanceOf(common.getRewardsSenderAddress()))).to.equal(0);
 
-        // Distribute tokens from DailyRewards to beneficaries
+        // distribute tokens from DailyRewards to beneficaries
         execute(DAILY_REWARDS_DISTRIBUTE);
         await wait(DELAY_MS);
 
-        //check balance after distribute of daily rewards
+        // check balance after distribute of daily rewards
         expect((await bbsToken.balanceOf(common.getRewardsSenderAddress()))).to.equal(hardhat.ethers.utils.parseEther(config.dailyRewards.amount));
 
-        // Send rewards from RewardsSender (to bridge)
+        // send rewards from RewardsSender (to bridge)
         const bridge = await getBridge();
-        expect((await bbsToken.balanceOf(bridge.address))).to.equal(0);
 
         execute(SEND_REWARDS);
         await wait(DELAY_MS);
 
         expect((await bbsToken.balanceOf(common.getRewardsSenderAddress()))).to.equal(0);
-        expect((await bbsToken.balanceOf(bridge.address)).toString()).
-            to.equal(ethers.utils.parseEther(config.dailyRewards.amount).toString());
+
+        // bridge balance now includes both bbs-rewards and bbs-bounties
+        expect((await bbsToken.balanceOf(bridge.address))).to.equal(
+                (ethers.utils.parseEther(config.dailyRewards.amount).add(
+                    ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`))));
+
+        expect((await dailyRewards.owner()).toLowerCase()).
+                to.equal(config.safe.address.toLowerCase());
     }).timeout(100000000000);
 });

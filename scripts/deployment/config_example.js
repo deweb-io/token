@@ -2,7 +2,7 @@
  * Copy this file to config.js before using.
  */
 module.exports = {
-    network: 'ropsten', // For etherscan verification
+    network: 'rinkeby', // For etherscan verification
     mint: {
         totalSupply: '1000000000',
     },
@@ -11,16 +11,16 @@ module.exports = {
     },
     rewards: [ { q : 0, amount: '100000'}, { q : 1, amount: '100000'}],
     bridge: {
-        maxLockLimit : '40000000000000000000000',
-        maxReleaseLimit: '80000000000000000000000',
-        minLimit: '1000000000000000000',
-        limitIncPerBlock: '500000000000000000000',
+        maxLockLimit : '40000',
+        maxReleaseLimit: '80000',
+        minLimit: '1',
+        limitIncPerBlock: '500',
         minRequiredReports: 1,
         commissionAmount: '0',
         sendRewards : {
             toBlockchain: 'eos',
             toAccount: 'a1234',
-            maxLockLimit: '1000000000000000000000000'
+            maxLockLimit: '1000000'
         },
         reporters: {
             addresses: ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'],
@@ -31,5 +31,5 @@ module.exports = {
         //To avoid copying of rewardsSender address to config, we get it in the script directly
         amount: '1000'
     }
-}
+};
 
