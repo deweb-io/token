@@ -161,7 +161,7 @@ describe('Deployment test', () => {
         expect((await bridge.owner()).toLowerCase()).to.equal((BRIDGE_NEW_OWNER));
     }).timeout(100000000000);
 
-    it('DailyRewards & RewardsSender: deploy, declare, set, distribiute', async() => {
+    it('DailyRewards & RewardsSender: deploy, declare, set, distribute, transfer ownership', async() => {
         execute(DEPLOY_DAILY_REWARDS);
         await wait(DELAY_MS);
         const DailyRewards = await hardhat.ethers.getContractFactory('DailyRewards');
