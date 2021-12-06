@@ -92,6 +92,8 @@ CONTRACT BancorX : public contract { /*! \endcond */
                 uint64_t max_destroy_limit;
                 uint64_t prev_destroy_limit;
                 uint64_t prev_destroy_time;
+                name     rewards_receiver;
+                uint64_t max_rewards_issue_limit;
             }; /** @}*/
 
         /**
@@ -153,8 +155,10 @@ CONTRACT BancorX : public contract { /*! \endcond */
          * @param min_limit - minimum amount that can be transferred out (destroyed)
          * @param max_issue_limit - maximum amount that can be issued on EOS in a given timespan
          * @param max_destroy_limit - maximum amount that can be transferred out (destroyed) in a given timespan
+         * @param rewards_receiver - rewards receiver account
+         * @param max_rewards_issue_limit - maximum amount of rewards that can be issued
          */
-        ACTION init(name x_token_name, uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit);
+        ACTION init(name x_token_name, uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit, name rewards_receiver, uint64_t max_rewards_issue_limit);
 
         /**
          * @brief updates the contract settings
@@ -165,7 +169,7 @@ CONTRACT BancorX : public contract { /*! \endcond */
          * @param max_issue_limit - new maximum incoming amount
          * @param max_destroy_limit - new maximum outgoing amount
          */
-        ACTION update(uint64_t min_reporters,uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit);
+        ACTION update(uint64_t min_reporters,uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit, name rewards_receiver, uint64_t max_rewards_issue_limit);
 
         /**
          * @brief can only be called by the contract account

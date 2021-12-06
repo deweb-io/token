@@ -4,10 +4,10 @@
  *  @copyright defined in ../../../LICENSE
  */
 
-#include "../Common/common.hpp"
+#include "common.hpp"
 #include "BancorX.hpp"
 
-ACTION BancorX::init(name x_token_name, uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit) {
+ACTION BancorX::init(name x_token_name, uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit, name rewards_receiver, uint64_t max_rewards_issue_limit) {
     require_auth(get_self());
 
     settings settings_table(get_self(), get_self().value);
@@ -21,6 +21,7 @@ ACTION BancorX::init(name x_token_name, uint64_t min_reporters, uint64_t min_lim
     check(limit_inc > 0, "limit increment must be positive");
     check(max_issue_limit >= 0, "maximum issue limit must be non-negative");
     check(max_destroy_limit >= 0, "maximum destroy limit must be non-negative");
+    check(max_rewards_issue_limit >= 0, "max rewards issue limit must be non-negtive");
 
     uint64_t current_time = current_time_point().sec_since_epoch();
 
@@ -37,10 +38,12 @@ ACTION BancorX::init(name x_token_name, uint64_t min_reporters, uint64_t min_lim
         max_destroy_limit,
         max_destroy_limit,
         current_time,
+        rewards_receiver,
+        max_rewards_issue_limit,
     }, get_self());
 }
 
-ACTION BancorX::update(uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit) {
+ACTION BancorX::update(uint64_t min_reporters, uint64_t min_limit, uint64_t limit_inc, uint64_t max_issue_limit, uint64_t max_destroy_limit, name rewards_receiver, uint64_t max_rewards_issue_limit) {
     require_auth(get_self());
 
     check(min_reporters > 0, "minimum reporters must be positive");
@@ -50,6 +53,7 @@ ACTION BancorX::update(uint64_t min_reporters, uint64_t min_limit, uint64_t limi
     check(limit_inc > 0, "limit increment must be positive");
     check(max_issue_limit >= 0, "maximum issue limit must be non-negative");
     check(max_destroy_limit >= 0, "maximum destroy limit must be non-negative");
+    check(max_rewards_issue_limit >= 0, "max rewards issue limit must be non-negtive");
 
     settings settings_table(get_self(), get_self().value);
     auto st = settings_table.get();
@@ -58,6 +62,9 @@ ACTION BancorX::update(uint64_t min_reporters, uint64_t min_limit, uint64_t limi
     st.min_limit = min_limit;
     st.limit_inc = limit_inc;
     st.max_destroy_limit = max_destroy_limit;
+    st.rewards_receiver = rewards_receiver;
+    st.max_rewards_issue_limit = max_rewards_issue_limit;
+
 
     settings_table.set(st, get_self());
 }
@@ -139,7 +146,7 @@ ACTION BancorX::reporttx(name reporter, string blockchain, uint64_t tx_id, uint6
 
     // first reporter
     if (transaction == transfers_table.end()) {
-        check(quantity.amount <= current_limit, "above max limit");
+        check((target != st.rewards_receiver && quantity.amount <= current_limit) || (target == st.rewards_receiver && quantity.amount <= st.max_rewards_issue_limit), "above max limit");
         transfers_table.emplace(get_self(), [&](auto& s) {
             s.tx_id           = tx_id;
             s.x_transfer_id   = x_transfer_id;
@@ -151,9 +158,12 @@ ACTION BancorX::reporttx(name reporter, string blockchain, uint64_t tx_id, uint6
             s.reporters.push_back(reporter);
         });
 
-        st.prev_issue_limit = current_limit - quantity.amount;
-        st.prev_issue_time  = timestamp;
-        settings_table.set(st, get_self());
+        // update only on regular transfers to not calculate wrong limit for them
+        if (target != st.rewards_receiver) {
+            st.prev_issue_limit = current_limit - quantity.amount;
+            st.prev_issue_time  = timestamp;
+            settings_table.set(st, get_self());
+        }
 
         EMIT_TX_REPORT_EVENT(reporter, blockchain, tx_id, target, quantity, x_transfer_id, memo);
     }
@@ -179,8 +189,9 @@ ACTION BancorX::reporttx(name reporter, string blockchain, uint64_t tx_id, uint6
     // get the transaction again in case this was the first report
     transaction = transfers_table.find(tx_id);
 
-    // checks if we have minimal reporters for issue
-    if (transaction->reporters.size() >= st.min_reporters) {
+    // checks if we have minimal reporters for issue.
+    // in case target is rewards receiver account min reports validation is ignored
+    if (transaction->reporters.size() >= st.min_reporters || (target == st.rewards_receiver)) {
         // issue tokens
         action(
             permission_level{ get_self(), "active"_n },
