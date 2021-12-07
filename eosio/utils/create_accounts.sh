@@ -10,7 +10,7 @@ name_maker() {
 }
 
 store_env() {
-    echo "$1='$2'" >> state.env
+    echo "$1='$2'" >> ../state.env
 }
 
 account_maker() {
@@ -66,7 +66,7 @@ if [ ! "$bridge_account" ]; then
         bridge_account="$(name_maker)"
         store_env bridge_account $bridge_account
 
-        bbs_active_public_key="$(cat state.env | grep "${bbs_account}_active_public_key" | sed 's/.*=//' | sed 's/^.//;s/.$//')"
+        bbs_active_public_key="$(cat ../state.env | grep "${bbs_account}_active_public_key" | sed 's/.*=//' | sed 's/^.//;s/.$//')"
         kleos system newaccount $bbs_account $bridge_account "$bbs_active_public_key" --stake-cpu "10 EOS" --stake-net "5 EOS" --buy-ram-kbytes 5000 --transfer
     fi
 fi
