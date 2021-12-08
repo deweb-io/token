@@ -24,7 +24,6 @@ module.exports = {
     },
     dailyRewards: {
         //To avoid copying of rewardsSender address to config, we get it in the script directly
-        amount: 1000
+        amount: '1000'
     }
-}
-
+};

@@ -12,8 +12,9 @@ contract DailyRewards is Ownable {
     IERC20 immutable bbsToken;
 
     uint256 public constant DECLARATION_INTERVAL = 1 days;
+    uint256 public constant DISTRIBUTION_INTERVAL = 1 days;
     uint256 public declarationTimestamp;
-    uint256 public distributionDayIndex;
+    uint256 public distributionTimestamp;
 
     struct Reward {
         address beneficiary;
@@ -65,13 +66,13 @@ contract DailyRewards is Ownable {
      * @dev Distribute the daily rewards as they were set.
      */
     function distributeRewards() external {
-        uint256 currentDayIndex = (block.timestamp / 1 days);
-        require(currentDayIndex > distributionDayIndex, "rewards distributed too recently");
+        require(block.timestamp - (block.timestamp % DISTRIBUTION_INTERVAL) > distributionTimestamp,
+            "rewards distributed too recently");
         for (uint16 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
             bbsToken.transfer(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
             emit RewardDistributed(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
         }
-        distributionDayIndex = currentDayIndex;
+        distributionTimestamp = block.timestamp;
         emit RewardsDistributed();
     }
 }
