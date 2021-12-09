@@ -10,12 +10,12 @@ const hardhat = require('hardhat');
 const {expect} = require('chai');
 const { exec } = require('child_process');
 const { ethers } = require('ethers');
-const config = require('./deployment/config.js');
-const common = require('./common/common');
-const { getSigner} = require('./utils/utils');
+const config = require('../deployment/config.js');
+const common = require('../common/common');
+const { getSigner} = require('../utils/utils');
 
 const NETWORK = 'localhost';
-const SCRIPTS_PATH = './scripts/deployment';
+const SCRIPTS_PATH = '../deployment';
 const DELAY_MS = 6000;
 
 // Bridge
