@@ -144,6 +144,7 @@ contract Bridge is Ownable {
      * @param _minLimit              minimum amount of tokens that can be transferred in one transaction
      * @param _limitIncPerBlock      how much the limit increases per block
      * @param _minRequiredReports    minimum number of reporters to report transaction before tokens can be released
+     * @param _sendRewards           send rewards config
      * @param _token                 erc20 token
      */
     constructor(
@@ -425,7 +426,7 @@ contract Bridge is Ownable {
     }
 
    /**
-     * @dev claims tokens from a signer (calculated from provided signature) to be converted to tokens on another blockchain
+     * @dev claims tokens from a signer to be converted to tokens on another blockchain (for a specific account)
      * @param _amount          the amount of tokens to transfer
     */
     function sendRewards(uint256 _amount) public xTransfersAllowed {
