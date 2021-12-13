@@ -1,5 +1,5 @@
 /**
- * This tests requires cross-chain service to run and configured with bridge and bbs token addreses on db.
+ * This script requires cross-chain service to run and be configured with bridge and bbs token addreses on db.
  */
 const hardhat = require('hardhat');
 const config = require('../deployment/config.js');

@@ -1,7 +1,9 @@
 /**
- * Test deployment scripts.
+ * Test deployment script.
+ * This script needs to be run from root (/token) directory.
+ *
  * Please run hardhat local node ('npx hardhat node') before running:
- * npx hardhat test --network localhost scripts/deployment_test.js
+ * npx hardhat test --network localhost scripts/tests/deployment_test.js
  *
  * Tests are separated but depend on each other.
  */
@@ -15,7 +17,7 @@ const common = require('../common/common');
 const { getSigner} = require('../utils/utils');
 
 const NETWORK = 'localhost';
-const SCRIPTS_PATH = '../deployment';
+const SCRIPTS_PATH = './scripts/deployment';
 const DELAY_MS = 6000;
 
 // Bridge
