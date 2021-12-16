@@ -90,6 +90,12 @@ To run tests with extra console.debug messages:
 TEST_DEBUG=true npx hardhat test
 ```
 
+## Audits
+
+Our contracts have been audited twice by [Peckshield](https://peckshield.com/):
+ - `./docs/audit.peckshield.2021.07.pdf`
+ - `./docs/audit.peckshield.2021.11.pdf`
+
 ## Deployment
 
 All our ethereum related deployment scripts are in `./scripts/deployment/`, and eosio related scripts are in `./eosio/deployment/`.
