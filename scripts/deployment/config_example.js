@@ -1,5 +1,6 @@
 /**
  * Copy this file to config.js before using.
+ * Note: amounts are written as strings.
  */
 module.exports = {
     "network": "rinkeby",
