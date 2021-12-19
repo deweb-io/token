@@ -1,6 +1,6 @@
 const {expect} = require('chai');
 const {expectRevert} = require('./utils');
-const { network } = require('hardhat');
+const {network} = require('hardhat');
 
 describe('DailyRewards', () => {
     let accounts, bbsToken, dailyRewards, plannedRewards, invalidRewards, events;

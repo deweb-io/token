@@ -328,7 +328,7 @@ contract Bridge is Ownable {
     /**
      * @dev setter
      *
-     * @param _blockchain    new maxLockLimit
+     * @param _blockchain    target blockchain where the rewards will be sent to
      */
     function setRewardsToBlockchain(bytes32 _blockchain) public onlyOwner {
         sendRewardsToBlockchain = _blockchain;
@@ -337,7 +337,7 @@ contract Bridge is Ownable {
     /**
      * @dev setter
      *
-     * @param _toAccount    new maxLockLimit
+     * @param _toAccount    target account which the rewards will be sent to
      */
     function setRewardsToAccount(bytes32 _toAccount) public onlyOwner {
         sendRewardsToAccount = _toAccount;
@@ -346,7 +346,7 @@ contract Bridge is Ownable {
     /**
      * @dev setter
      *
-     * @param _maxLockLimit    new maxLockLimit
+     * @param _maxLockLimit    rewards max limit amount
      */
     function setRewardsMaxLockLimit(uint256 _maxLockLimit) public onlyOwner greaterThanZero(_maxLockLimit) {
         sendRewardsMaxLockLimit = _maxLockLimit;
