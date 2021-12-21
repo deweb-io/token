@@ -55,6 +55,7 @@ module.exports = {
     },
 
     transferOwnership: async function (contractName, address, newOwner) {
+        this.log(`---Transfer ownership---`);
         if (!address)
             throw new Error('Address is missing. aborting');
         if (!newOwner)
@@ -71,6 +72,7 @@ module.exports = {
         } else {
             this.log(`${contractName} owner is already ${newOwner}`);
         }
+        this.log(`---Transfer ownership Done---`);
     },
 
     writeArtifact: function (fileName, data) {
