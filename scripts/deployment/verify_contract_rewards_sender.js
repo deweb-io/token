@@ -20,4 +20,3 @@ exec(`npx hardhat verify --network ${config.network} ${REWARDS_SENDER_ADDRESS} $
     log(`stdout: ${stdout}`);
     log(`---Verify RewardsSenser contract Done---`);
 });
-

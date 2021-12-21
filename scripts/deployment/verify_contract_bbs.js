@@ -19,4 +19,3 @@ exec(`npx hardhat verify --network ${config.network} ${BBS_TOKEN_ADDRESS}`, (err
     log(`stdout: ${stdout}`);
     log(`---Verify BBS contract Done---`);
 });
-

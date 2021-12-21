@@ -20,4 +20,3 @@ exec(`npx hardhat verify --network ${config.network} ${DAILY_REWARDS_ADDRESS} ${
     log(`stdout: ${stdout}`);
     log(`---Verify DailyRewards contract Done---`);
 });
-

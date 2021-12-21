@@ -22,4 +22,3 @@ exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} '${config
     log(`stdout: ${stdout}`);
     log(`---Verify BRIDGE contract Done---`);
 });
-

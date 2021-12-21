@@ -28,9 +28,9 @@ module.exports = {
         fs.appendFileSync(LOGFILE, `${new Date().toString().slice(0, 24)} | ${data} \n`);
     },
 
-    onError: function(err) {
-        console.error(err);
-        fs.appendFileSync(LOGFILE, `${new Date()} | ` + err + '\n');
+    onError: function(error) {
+        console.error(error);
+        fs.appendFileSync(LOGFILE, `${new Date()} | ` + error + '\n');
         process.exit(1);
     },
 
