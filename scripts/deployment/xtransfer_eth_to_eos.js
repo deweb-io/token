@@ -30,6 +30,7 @@ async function main() {
     const Bridge = await ethers.getContractFactory('Bridge');
     const bridge = Bridge.attach(BRIDGE_ADDRESS);
     log(`xTransfersEnabled: ${await bridge.xTransfersEnabled()}`);
+    log(`current lock limit: ${(await bridge.getCurrentLockLimit()).toString()}`)
 
     const tokenOwner = await getSigner();
     const tokenSpender = bridge.address;

@@ -1,5 +1,12 @@
 module.exports = {
     network: 'ropsten', // For etherscan verification
+    mint: {
+        totalSupply: '1000000000',
+    },
+    safe : {
+        address : '0xE01b6a22c3F1C486181A39442A1D4924730005c8'
+    },
+    rewards: [ { q : 0, amount: '100000'}, { q : 1, amount: '100000'}],
     bridge: {
         maxLockLimit : '40000000000000000000000',
         maxReleaseLimit: '80000000000000000000000',
@@ -10,15 +17,13 @@ module.exports = {
         reporters: {
             addresses: ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'],
             active: [true]
-        }
+        },
+        sendRewardsToBlockchain: 'eos',
+        sendRewardsToAccount: 'a1234',
+        sendRewardsMaxLockLimit: '1000000000000000000000000'
     },
-    mint: {
-        amount: '500000000',
-        to: '0x44569Aa35Ff6d97e6531880712a41D2af72a007C' // BBS TOKEN deployer address
-    },
-    rewards: {
-        quartes: [0, 1, 2, 3, 4],
-        amount: '10000'
+    dailyRewards: {
+        //To avoid copying of rewardsSender address to config, we get it in the script directly
+        amount: '1000'
     }
-}
-
+};

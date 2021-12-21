@@ -66,7 +66,8 @@ contract DailyRewards is Ownable {
      * @dev Distribute the daily rewards as they were set.
      */
     function distributeRewards() external {
-        require(block.timestamp - distributionTimestamp >= DISTRIBUTION_INTERVAL, "rewards distributed too recently");
+        require(block.timestamp - (block.timestamp % DISTRIBUTION_INTERVAL) > distributionTimestamp,
+            "rewards distributed too recently");
         for (uint16 rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
             bbsToken.transfer(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);
             emit RewardDistributed(rewards[rewardIndex].beneficiary, rewards[rewardIndex].amountBBS);

@@ -19,7 +19,7 @@ async function main() {
     common.etherscanLogTx(tx.hash, tx.chainId);
     log(`Set Reporters Done`);
 
-    log(`---Deployment of Bridge Done---`);
+    log(`---Set reporters for bridge Done---`);
 }
 
 main().then(() => process.exit(0)).catch(error => {

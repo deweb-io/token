@@ -1,8 +1,10 @@
 const {expect} = require('chai');
 const {expectRevert} = require('./utils');
+const {network} = require('hardhat');
 
 describe('DailyRewards', () => {
     let accounts, bbsToken, dailyRewards, plannedRewards, invalidRewards, events;
+    const oneDay = 24 * 60 * 60;
     beforeEach(async() => {
         const BBSToken = await ethers.getContractFactory('BBSToken');
         const DailyRewards = await ethers.getContractFactory('DailyRewards');
@@ -40,8 +42,6 @@ describe('DailyRewards', () => {
             expect(reward[0]).to.equal(plannedRewards[0][rewardIndex]);
             expect(reward[1].toNumber()).to.equal(plannedRewards[1][rewardIndex]);
         }
-
-
     });
 
     it('distributing rewards', async() => {
@@ -67,7 +67,14 @@ describe('DailyRewards', () => {
         }
 
         await expectRevert(dailyRewards.distributeRewards(), 'rewards distributed too recently');
-        await network.provider.send('evm_increaseTime', [(await dailyRewards.DISTRIBUTION_INTERVAL()).toNumber()]);
+        await network.provider.send('evm_increaseTime', [ oneDay ]);
         await dailyRewards.distributeRewards();
+
+        let lastBlockTimestamp = new Date(
+                ethers.BigNumber.from(((await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp)) * 1000);
+        const oneMillisecondBeforeMidnightTimesamp = lastBlockTimestamp.setHours(25, 59, 59, 999); // to get 23(PM) we need to set GMT+2 (23+2=25)
+        await network.provider.send('evm_setNextBlockTimestamp', [oneMillisecondBeforeMidnightTimesamp / 1000]);
+        await expectRevert(dailyRewards.distributeRewards(), 'rewards distributed too recently'); // this tx will run in block with timestamp 23:59:59.999
+        await dailyRewards.distributeRewards(); // this tx will run in block with timestamp 00:00:00 (every block adds one second to timestamp)
     });
 });

@@ -4,10 +4,11 @@ const common = require('../common/common');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
+const BRIDGE_ADDRESS = common.getBridgeAddress();
+const REWARDS_SENDER_ADDRESS = common.getRewardsSenderAddress();
 
-
-log(`---Verify BBS contract---`);
-exec(`npx hardhat verify --network ${config.network} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
+log(`---Verify RewardsSenser contract---`);
+exec(`npx hardhat verify --network ${config.network} ${REWARDS_SENDER_ADDRESS} ${BBS_TOKEN_ADDRESS} ${BRIDGE_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
         return;
@@ -17,5 +18,5 @@ exec(`npx hardhat verify --network ${config.network} ${BBS_TOKEN_ADDRESS}`, (err
         return;
     }
     log(`stdout: ${stdout}`);
-    log(`---Verify BBS contract Done---`);
+    log(`---Verify RewardsSenser contract Done---`);
 });

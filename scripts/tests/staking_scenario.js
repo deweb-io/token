@@ -1,10 +1,10 @@
-const common = require('./common/common');
-const {range} = require('../test/utils');
+const common = require('../common/common');
+const {range} = require('../../test/utils');
 const {
     initStaking,
     runScenario,
     getBBSTokenAddress,
-    getStakingContractAddress} = require('../test/staking-utils');
+    getStakingContractAddress} = require('../../test/staking-utils');
 const { network } = require('hardhat');
 
 

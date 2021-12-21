@@ -2,12 +2,12 @@ const config = require('./config.js');
 const common = require('../common/common.js');
 const log = common.log;
 
-const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
+const DAILY_REWARDS_ADDRESS = common.getDailyRewardsAddress();
 
 
 async function main() {
     log(`---Transfer ownership---`);
-    await common.transferOwnership('BBSToken', BBS_TOKEN_ADDRESS, config.safe.address);
+    await common.transferOwnership('DailyRewards', DAILY_REWARDS_ADDRESS, config.safe.address);
     log(`---Transfer ownership Done---`);
 }
 
