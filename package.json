@@ -20,18 +20,18 @@
         "url": "http://github.com/Creator-Eco/token.git"
     },
     "dependencies": {
-        "@nomiclabs/hardhat-ethers": "^2.0.2",
-        "@nomiclabs/hardhat-etherscan": "^2.1.7",
-        "@nomiclabs/hardhat-waffle": "^2.0.0",
-        "@openzeppelin/contracts": "^4.3.2",
-        "@openzeppelin/contracts-upgradeable": "^4.3.2",
+        "@nomiclabs/hardhat-ethers": "^2.0.3",
+        "@nomiclabs/hardhat-etherscan": "^2.1.8",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@openzeppelin/contracts": "^4.4.1",
+        "@openzeppelin/contracts-upgradeable": "^4.4.1",
         "@openzeppelin/hardhat-upgrades": "^1.12.0",
         "chai": "^4.3.4",
-        "eslint": "^7.29.0",
-        "ethereum-waffle": "^3.0.0",
-        "ethers": "^5.5.1",
-        "hardhat": "^2.6.8",
-        "hardhat-gas-reporter": "^1.0.4",
+        "eslint": "^8.5.0",
+        "ethereum-waffle": "^3.4.0",
+        "ethers": "^5.5.2",
+        "hardhat": "^2.8.0",
+        "hardhat-gas-reporter": "^1.0.6",
         "solidity-coverage": "^0.7.17"
     }
 }
