@@ -22,7 +22,7 @@ const DELAY_MS = 6000;
 
 // Bridge
 const XTRANSFER_AMOUNT = '100';
-const BRIDGE_NEW_OWNER = '0xcd3b766ccdd6ae721141f452c550ca635964ce71';
+
 
 // Commands
 const CLEAN = 'rm -rf ./artifacts/ ./scripts/common/artifacts/';
@@ -38,7 +38,7 @@ const DECLARE_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/de
 const XTRANSFER_ETH_TO_EOS = `RECEIVER_EOS_ACCOUNT=accountoneos BBS_AMOUNT=${XTRANSFER_AMOUNT} npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/xtransfer_eth_to_eos.js`
 const TRANSFER_OWNERSHIP_BBS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bbs.js`;
 const TRANSFER_OWNERSHIP_STAKING = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_staking.js`;
-const TRANSFER_OWNERSHIP_BRIDGE = `NEW_OWNER=${BRIDGE_NEW_OWNER} npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bridge.js`
+const TRANSFER_OWNERSHIP_BRIDGE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_bridge.js`
 const TRANSFER_OWNERSHIP_DAILY_REWARDS = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/transfer_ownership_daily_rewards.js`;
 const DAILY_REWARDS_DECLARE = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_declare_rewards.js`;
 const DAILY_REWARDS_SET = `npx hardhat run --network ${NETWORK} ${SCRIPTS_PATH}/daily_rewards_set_rewards.js`;
@@ -160,7 +160,7 @@ describe('Deployment test', () => {
         expect((await bbsToken.balanceOf(bridge.address)).toString()).
             to.equal(ethers.utils.parseEther(`${XTRANSFER_AMOUNT}`).toString());
 
-        expect((await bridge.owner()).toLowerCase()).to.equal((BRIDGE_NEW_OWNER));
+        expect((await bridge.owner()).toLowerCase()).to.equal((config.safe.address.toLowerCase()));
     }).timeout(100000000000);
 
     it('DailyRewards & RewardsSender: deploy, declare, set, distribute, transfer ownership', async() => {
