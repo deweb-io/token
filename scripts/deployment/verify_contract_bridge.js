@@ -1,3 +1,4 @@
+const ethers = require('ethers');
 const fs = require('fs');
 const { exec } = require('child_process');
 const config = require('./config.js');
@@ -10,7 +11,7 @@ const BRIDGE_ADDRESS = common.getBridgeAddress();
 const sendRewardsArg = fs.readFileSync(common.bridgeSendRewardsArgPath, 'utf8').toString();
 
 log(`---Verify BRIDGE contract---`);
-exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} '${config.bridge.maxLockLimit}' '${config.bridge.maxReleaseLimit}' '${config.bridge.minLimit}' '${config.bridge.limitIncPerBlock}' ${config.bridge.minRequiredReports} ${config.bridge.commissionAmount} ${sendRewardsArg} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
+exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} ${ethers.utils.parseEther(config.bridge.maxLockLimit)} ${ethers.utils.parseEther(config.bridge.maxReleaseLimit)} ${ethers.utils.parseEther(config.bridge.minLimit)} ${ethers.utils.parseEther(config.bridge.limitIncPerBlock)} ${config.bridge.minRequiredReports} ${ethers.utils.parseEther(config.bridge.commissionAmount)} ${sendRewardsArg} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
         return;
