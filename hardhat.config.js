@@ -20,7 +20,7 @@ module.exports = {
         enabled: (process.env.REPORT_GAS) ? true : false
     },
     etherscan: {
-        apiKey: 'ETHERSCAN_API_KEY'
+        apiKey: '54S5K5ZUKCVMABUTIUGAZCYFN8FCFYSSKY'
     },
     networks: {
          hardhat: {
