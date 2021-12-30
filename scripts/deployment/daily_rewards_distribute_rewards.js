@@ -2,10 +2,10 @@ const common = require('../common/common.js');
 const log = common.log;
 
 const DAILY_REWARDS_ADDRESS = common.getDailyRewardsAddress();
-const ARTIFACT_FILE = `dailyRewards_distribute_tx.txt`;
+const ARTIFACT_FILE = 'dailyRewards_distribute_tx.txt';
 
 async function main() {
-    log(`---Set rewards---`);
+    log('---Set rewards---');
     if (!DAILY_REWARDS_ADDRESS)
         throw new Error('DailyRewards address is missing. aborting.');
 
@@ -15,7 +15,7 @@ async function main() {
     const tx = await dailyRewards.distributeRewards();
     common.etherscanLogTx(tx.hash, tx.chainId);
     common.writeArtifact(ARTIFACT_FILE, JSON.stringify(tx));
-    log(`---Set rewards Done---`);
+    log('---Set rewards Done---');
 }
 
 main().then(() => process.exit(0)).catch(error => {

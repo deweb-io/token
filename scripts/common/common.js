@@ -55,11 +55,11 @@ module.exports = {
     },
 
     transferOwnership: async function (contractName, address, newOwner) {
-        this.log(`---Transfer ownership---`);
+        this.log('---Transfer ownership---');
         if (!address)
             throw new Error('Address is missing. aborting');
         if (!newOwner)
-            throw new Error("New owner address is missing. aborting");
+            throw new Error('New owner address is missing. aborting');
 
         const Contract = await hardhat.ethers.getContractFactory(`${contractName}`);
         const instance = Contract.attach(address);
@@ -72,7 +72,7 @@ module.exports = {
         } else {
             this.log(`${contractName} owner is already ${newOwner}`);
         }
-        this.log(`---Transfer ownership Done---`);
+        this.log('---Transfer ownership Done---');
     },
 
     writeArtifact: function (fileName, data) {
@@ -117,4 +117,4 @@ module.exports = {
         if (prefix)
             this.log(`${prefix}/tx/${hash}`);
     },
-}
+};

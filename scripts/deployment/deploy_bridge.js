@@ -8,7 +8,7 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
 
 async function main() {
-    log(`---Deployment of Bridge---`);
+    log('---Deployment of Bridge---');
 
     if (!BBS_TOKEN_ADDRESS)
         throw new Error('BBS token address is missing. aborting.');
@@ -17,13 +17,13 @@ async function main() {
         throw new Error('Bridge already deployed. aborting.');
 
     const sendRewardsData = hardhat.ethers.utils.defaultAbiCoder.encode(
-            ["bytes32", "bytes32", "uint256"],
-            [hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toBlockchain),
-                hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toAccount),
-                hardhat.ethers.utils.parseEther(config.bridge.sendRewards.maxLockLimit)]
+        ['bytes32', 'bytes32', 'uint256'],
+        [hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toBlockchain),
+            hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toAccount),
+            hardhat.ethers.utils.parseEther(config.bridge.sendRewards.maxLockLimit)]
     );
 
-    log(`Deploying Bridge...`);
+    log('Deploying Bridge...');
     const Bridge = await hardhat.ethers.getContractFactory('Bridge');
     const bridge = await Bridge.deploy(
         hardhat.ethers.utils.parseEther(config.bridge.maxLockLimit),
@@ -38,7 +38,7 @@ async function main() {
     fs.writeFileSync(common.bridgePath, bridge.address);
     fs.writeFileSync(common.bridgeSendRewardsArgPath, sendRewardsData);
 
-    log(`---Deployment of Bridge Done---`);
+    log('---Deployment of Bridge Done---');
 }
 
 main().then(() => process.exit(0)).catch(error => {

@@ -1,5 +1,5 @@
 require('@nomiclabs/hardhat-etherscan');
-require("@nomiclabs/hardhat-waffle");
+require('@nomiclabs/hardhat-waffle');
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
@@ -23,7 +23,7 @@ module.exports = {
         apiKey: '54S5K5ZUKCVMABUTIUGAZCYFN8FCFYSSKY'
     },
     networks: {
-         hardhat: {
+        hardhat: {
             chainId: 1337
         },
         // mainnet: {

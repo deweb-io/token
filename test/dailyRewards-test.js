@@ -70,11 +70,14 @@ describe('DailyRewards', () => {
         await network.provider.send('evm_increaseTime', [ oneDay ]);
         await dailyRewards.distributeRewards();
 
-        let lastBlockTimestamp = new Date(
-                ethers.BigNumber.from(((await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp)) * 1000);
-        const oneMillisecondBeforeMidnightTimesamp = lastBlockTimestamp.setHours(25, 59, 59, 999); // to get 23(PM) we need to set GMT+2 (23+2=25)
+        let lastBlockTimestamp = new Date(ethers.BigNumber.from(
+            ((await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp)) * 1000);
+        // To get 23(PM) we need to set GMT+2 (23+2=25)
+        const oneMillisecondBeforeMidnightTimesamp = lastBlockTimestamp.setHours(25, 59, 59, 999);
         await network.provider.send('evm_setNextBlockTimestamp', [oneMillisecondBeforeMidnightTimesamp / 1000]);
-        await expectRevert(dailyRewards.distributeRewards(), 'rewards distributed too recently'); // this tx will run in block with timestamp 23:59:59.999
-        await dailyRewards.distributeRewards(); // this tx will run in block with timestamp 00:00:00 (every block adds one second to timestamp)
+        // This tx will run in block with timestamp 23:59:59.999
+        await expectRevert(dailyRewards.distributeRewards(), 'rewards distributed too recently');
+        // This tx will run in block with timestamp 00:00:00 (every block adds one second to timestamp)
+        await dailyRewards.distributeRewards();
     });
 });

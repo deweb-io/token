@@ -8,10 +8,10 @@ describe('Bridge', function() {
     const COMMISSION_AMOUNT = 12;
     const XTRANSFER_AMOUNT = COMMISSION_AMOUNT + 1;
 
-    const MAX_LOCK_LIMIT = ethers.utils.parseEther('40000');;
+    const MAX_LOCK_LIMIT = ethers.utils.parseEther('40000');
     const MAX_RELEASE_LIMIT = ethers.utils.parseEther('80000');
     const MIN_LIMIT = ethers.utils.parseEther('1');
-    const LIMIT_INC_PER_BLOCK = ethers.utils.parseEther('500');;
+    const LIMIT_INC_PER_BLOCK = ethers.utils.parseEther('500');
     const MIN_REQUIRED_REPORTS = 1;
     const REWARDS_MAX_LOCK_LIMIT = ethers.utils.parseEther('100000');
 
@@ -28,7 +28,7 @@ describe('Bridge', function() {
     const reportTxId = Math.floor(Math.random() * (100000));
     const reportTransferId = 0;
 
-    let accounts, bbsToken, bridge, bbsContractOwner, reporter, chainId, deadline, tokenName,
+    let accounts, bbsToken, bridge, bbsContractOwner, reporter, deadline, tokenName,
         tokenOwner, tokenSpender;
 
     beforeEach(async function() {
@@ -38,14 +38,13 @@ describe('Bridge', function() {
         tokenOwner = accounts[2];
 
         const provider = bbsContractOwner.provider;
-        chainId = provider._network.chainId;
         deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
 
         const Token = await ethers.getContractFactory('BBSToken');
         bbsToken = await Token.deploy();
         tokenName = await bbsToken.name();
 
-        const sendRewardsStruct = ethers.utils.defaultAbiCoder.encode(["bytes32", "bytes32", "uint256"],
+        const sendRewardsStruct = ethers.utils.defaultAbiCoder.encode(['bytes32', 'bytes32', 'uint256'],
             [eosBlockchain, rewardsReceiver, REWARDS_MAX_LOCK_LIMIT]);
 
         const Bridge = await ethers.getContractFactory('Bridge');
@@ -74,11 +73,12 @@ describe('Bridge', function() {
      */
     async function xTransfer(amount, transmitter) {
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
-        await expect(
-                bridge.connect(transmitter).xTransfer(
-                    eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s)).
-                        to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0).
-                            and.emit(bridge, TOKENS_LOCK_EVENT).withArgs(tokenOwner.address, amount);
+        await expect(bridge.connect(transmitter).xTransfer(
+            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s
+        )).to.emit(
+            bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0
+        ).and.emit(
+            bridge, TOKENS_LOCK_EVENT).withArgs(tokenOwner.address, amount);
     }
 
     it(XTRANSFER_EVENT, async function() {
@@ -114,10 +114,9 @@ describe('Bridge', function() {
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
 
         // xTransfer
-        await expect(
-                bridge.connect(tokenOwner).xTransfer(
-                    eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s)).
-                        to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, xTransferAmount, 0)
+        await expect(bridge.connect(tokenOwner).xTransfer(
+            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s)
+        ).to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, xTransferAmount, 0);
 
         // test balances after xTransfer
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
@@ -241,8 +240,8 @@ describe('Bridge', function() {
         );
 
         await expect(
-            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)).
-                to.emit(bridge, 'CommissionsWithdraw');
+            bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)
+        ).to.emit(bridge, 'CommissionsWithdraw');
         currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
     });
@@ -252,16 +251,15 @@ describe('Bridge', function() {
         await bbsToken.mint(tokenOwner.address, sendRewardsMaxLimit);
 
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, xTransferAmount, deadline, bbsToken, tokenName);
-        await expectRevert(
-            bridge.connect(tokenOwner).xTransfer(
+        await expectRevert(bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, rewardsReceiver, sendRewardsMaxLimit, deadline, tokenOwner.address, v, r, s
         ), 'ERR_AMOUNT_NOT_IN_RANGE');
 
         await bbsToken.connect(tokenOwner).approve(bridge.address, sendRewardsMaxLimit);
         await expect (
-            await bridge.connect(
-                tokenOwner).sendRewards(sendRewardsMaxLimit)).to.emit(bridge, 'XTransfer').withArgs(
-                    tokenOwner.address, eosBlockchain, rewardsReceiver, sendRewardsMaxLimit, 0);
+            await bridge.connect(tokenOwner).sendRewards(sendRewardsMaxLimit)
+        ).to.emit(bridge, 'XTransfer').withArgs(
+            tokenOwner.address, eosBlockchain, rewardsReceiver, sendRewardsMaxLimit, 0);
 
         expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
         expect((await bbsToken.balanceOf(bridge.address)).toString()).to.equal(sendRewardsMaxLimit.toString());

@@ -12,10 +12,10 @@ const BRIDGE_ADDRESS = common.getBridgeAddress();
 
 async function main() {
     if (!BBS_TOKEN_ADDRESS)
-        throw new Error("BBS token is missing. aborting");
+        throw new Error('BBS token is missing. aborting');
 
     if (!BRIDGE_ADDRESS)
-        throw new Error("bridge address is missing. aborting.")
+        throw new Error('bridge address is missing. aborting.');
 
     const sender = (await getSigner()).address;
     const rewardsAmount = hardhat.ethers.utils.parseEther(config.dailyRewards.amount);
@@ -32,7 +32,7 @@ async function main() {
     await bbsToken.approve(bridge.address, rewardsAmount);
 
     while ((await bbsToken.allowance(sender, bridge.address)) < rewardsAmount){
-        console.log(`waiting for approval`);
+        console.log('waiting for approval');
     }
 
     await bridge.sendRewards(rewardsAmount);

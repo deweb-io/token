@@ -1,6 +1,5 @@
 const config = require('./config.js');
 const common = require('../common/common.js');
-const log = common.log;
 
 const BRIDGE_ADDRESS = common.getBridgeAddress();
 
