@@ -6,7 +6,7 @@ module.exports = {
     "safe" : {
         "address" : "0x3B3944D7351c69944DCFEc85651394dC38326a4d"
     },
-    "rewards": [ { "q" : 0, "amount": "100000"}, { "q" : 1, "amount": "100000"}],
+    "rewards": [ { "q" : 0, "amount": "200000"}, { "q" : 1, "amount": "100000"}],
     "bridge": {
         "maxLockLimit" : "40000",
         "maxReleaseLimit": "80000",

@@ -106,3 +106,33 @@ Wed Dec 22 2021 15:04:13 | error: Command failed: npx hardhat verify --network r
 Error in plugin @nomiclabs/hardhat-etherscan: Contract source code already verified
 For more info run Hardhat with --show-stack-traces
  
+Thu Dec 30 2021 15:14:34 | ---Declare rewards--- 
+Thu Dec 30 2021 15:14:35 | Required rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:14:37 | Current rewards for quarter 0 is 0 (wei) 
+Thu Dec 30 2021 15:14:37 | Adding rewards for quarter 0, amount (wei): 100000000000000000000000 
+Thu Dec 30 2021 15:14:47 | https://rinkeby.etherscan.io/tx/0xaafece75f244b247cdcf82f6979f6f70cbce9279761fb1b7a0621a3bad5ad270 
+Thu Dec 30 2021 15:14:47 | ---Declare rewards Done--- 
+Thu Dec 30 2021 15:16:15 | ---Declare rewards--- 
+Thu Dec 30 2021 15:16:16 | Required rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:16:17 | Current rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:16:17 GMT+0200 (Israel Standard Time) | Error: script already run. aborting.
+Thu Dec 30 2021 15:16:52 | ---Declare rewards--- 
+Thu Dec 30 2021 15:16:52 | Required rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:16:54 | Current rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:16:54 GMT+0200 (Israel Standard Time) | Error: Quarter 0 already has a reward: 100000000000000000000000. aborting.
+Thu Dec 30 2021 15:17:22 | ---Declare rewards--- 
+Thu Dec 30 2021 15:17:23 | Required rewards for quarter 0 is 200000000000000000000000 (wei) 
+Thu Dec 30 2021 15:17:25 | Current rewards for quarter 0 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:17:25 | Adding rewards for quarter 0, amount (wei): 100000000000000000000000 
+Thu Dec 30 2021 15:17:35 | https://rinkeby.etherscan.io/tx/0x252006e99b4b877352d42218c9d5ef128438e4e56a1bac2243cf9864e674f2d8 
+Thu Dec 30 2021 15:17:35 | ---Declare rewards Done--- 
+Thu Dec 30 2021 15:18:34 | ---Declare rewards--- 
+Thu Dec 30 2021 15:18:35 | Required rewards for quarter 1 is 100000000000000000000000 (wei) 
+Thu Dec 30 2021 15:18:36 | Current rewards for quarter 1 is 0 (wei) 
+Thu Dec 30 2021 15:18:36 | Adding rewards for quarter 1, amount (wei): 100000000000000000000000 
+Thu Dec 30 2021 15:18:46 | https://rinkeby.etherscan.io/tx/0x195c3307b83d03bf06444653d4b2b3bceea79a646736b808aafb41cc8b608670 
+Thu Dec 30 2021 15:18:46 | ---Declare rewards Done--- 
+Thu Dec 30 2021 15:19:29 | ---Transfer ownership--- 
+Thu Dec 30 2021 15:19:31 | Transfering ownership of Staking to 0x3B3944D7351c69944DCFEc85651394dC38326a4d 
+Thu Dec 30 2021 15:19:37 | https://rinkeby.etherscan.io/tx/0xa0c47e57c683794911ca5477abe7999622dce42c61e73e5dc0395a1f0f14c375 
+Thu Dec 30 2021 15:19:37 | ---Transfer ownership Done--- 
