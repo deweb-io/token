@@ -6,6 +6,18 @@
  * npx hardhat test --network localhost scripts/tests/deployment_test.js
  *
  * Tests are separated but depend on each other.
+ *
+ * - What is being tested -
+ *  Ethereum Actions (contracts deployment, relevant methods executions, ownership transfer)
+ *
+ * - What is NOT being tested -
+ *  Gnosis safe actions
+ *  BBS transfers (done by Multisend app)
+ *  ETH transfers (The whole cold wallets and asset transfer at the end of the day (mostly done by metamask))
+ *  Manual checks (mostly etherscan)
+ *  Bridge Oracles/reporters
+ *  Voting on Snapshot
+ *  ALL EOS stuff
  */
 
 const hardhat = require('hardhat');
