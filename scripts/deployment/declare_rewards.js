@@ -11,7 +11,7 @@ const QUARTER_INDEX = process.env.QUARTER_INDEX;
 const ARTIFACT_FILE = `reward_quarter_${QUARTER_INDEX}_tx.txt`;
 
 async function main() {
-    log(`---Declare rewards---`);
+    log('---Declare rewards---');
 
     if (!BBS_TOKEN_ADDRESS)
         throw new Error('BBS token address is missing. aborting.');
@@ -32,7 +32,7 @@ async function main() {
     log(`Current rewards for quarter ${rewardConfig.q} is ${currentRewardWei} (wei)`);
 
     if (common.artifactExists(ARTIFACT_FILE))
-        throw new Error("script already run. aborting.");
+        throw new Error('script already run. aborting.');
 
     if (currentRewardWei.gt(rewardAmountWei)) {
         throw new Error(`Quarter ${QUARTER_INDEX} already has a BIGGER reward (${currentRewardWei}) then configured ${rewardAmountWei}. aborting.`);
@@ -60,7 +60,7 @@ async function main() {
     common.etherscanLogTx(tx.hash, tx.chainId);
     common.writeArtifact(ARTIFACT_FILE, JSON.stringify(tx));
 
-    log(`---Declare rewards Done---`);
+    log('---Declare rewards Done---');
 }
 
 main().then(() => process.exit(0)).catch(error => {

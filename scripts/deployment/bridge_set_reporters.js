@@ -6,7 +6,7 @@ const BRIDGE_ADDRESS = common.getBridgeAddress();
 
 
 async function main() {
-    log(`---Set reporters for bridge---`);
+    log('---Set reporters for bridge---');
 
     if (!BRIDGE_ADDRESS)
         throw new Error('Bridge address is missing. aborting.');
@@ -14,12 +14,12 @@ async function main() {
     const Bridge = await ethers.getContractFactory('Bridge');
     const bridge = Bridge.attach(BRIDGE_ADDRESS);
 
-    log(`Set Reporters...`);
+    log('Set Reporters...');
     const tx = await bridge.setReporters(config.bridge.reporters.addresses, config.bridge.reporters.active);
     common.etherscanLogTx(tx.hash, tx.chainId);
-    log(`Set Reporters Done`);
+    log('Set Reporters Done');
 
-    log(`---Set reporters for bridge Done---`);
+    log('---Set reporters for bridge Done---');
 }
 
 main().then(() => process.exit(0)).catch(error => {

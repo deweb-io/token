@@ -7,13 +7,13 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 
 
 async function main() {
-    log(`---Deplyoment of BBS token---`);
+    log('---Deplyoment of BBS token---');
 
     if (!fs.existsSync(common.artifactsDir))
         fs.mkdirSync(common.artifactsDir);
 
     if (!BBS_TOKEN_ADDRESS) {
-        log(`Deploying BBS token...`);
+        log('Deploying BBS token...');
         const Token = await hardhat.ethers.getContractFactory('BBSToken');
         const token = await Token.deploy();
         common.etherscanLogContract(token.address, token.deployTransaction.chainId);
@@ -21,7 +21,7 @@ async function main() {
     } else
         log(`BBS token already deployed at ${BBS_TOKEN_ADDRESS}`);
 
-    log(`---Deplyoment of BBS token Done---`);
+    log('---Deplyoment of BBS token Done---');
 }
 
 main().then(() => process.exit(0)).catch(error => {

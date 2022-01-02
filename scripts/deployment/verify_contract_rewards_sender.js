@@ -7,7 +7,7 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 const BRIDGE_ADDRESS = common.getBridgeAddress();
 const REWARDS_SENDER_ADDRESS = common.getRewardsSenderAddress();
 
-log(`---Verify RewardsSenser contract---`);
+log('---Verify RewardsSenser contract---');
 exec(`npx hardhat verify --network ${config.network} ${REWARDS_SENDER_ADDRESS} ${BBS_TOKEN_ADDRESS} ${BRIDGE_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
@@ -18,5 +18,5 @@ exec(`npx hardhat verify --network ${config.network} ${REWARDS_SENDER_ADDRESS} $
         return;
     }
     log(`stdout: ${stdout}`);
-    log(`---Verify RewardsSenser contract Done---`);
+    log('---Verify RewardsSenser contract Done---');
 });

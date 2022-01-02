@@ -7,7 +7,7 @@ const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 const DAILY_REWARDS_ADDRESS = common.getDailyRewardsAddress();
 
 
-log(`---Verify DailyRewards contract---`);
+log('---Verify DailyRewards contract---');
 exec(`npx hardhat verify --network ${config.network} ${DAILY_REWARDS_ADDRESS} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
@@ -18,5 +18,5 @@ exec(`npx hardhat verify --network ${config.network} ${DAILY_REWARDS_ADDRESS} ${
         return;
     }
     log(`stdout: ${stdout}`);
-    log(`---Verify DailyRewards contract Done---`);
+    log('---Verify DailyRewards contract Done---');
 });
