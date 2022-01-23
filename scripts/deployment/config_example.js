@@ -31,4 +31,4 @@ module.exports = {
     'dailyRewards': {
         'amount': '60000'
     }
-};
+} // DO NOT ADD ';' here - it breaks the reading of the json while deploying eos bridge

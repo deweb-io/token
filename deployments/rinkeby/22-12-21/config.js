@@ -27,4 +27,4 @@ module.exports = {
     "dailyRewards": {
         "amount": "60000"
     }
-};
+}
