@@ -5,6 +5,8 @@ pushd "$(dirname "${BASH_SOURCE[0]}")"
 . ../env.sh
 popd
 
+FAUCET='http://faucet-kylin.blockzone.net'
+
 name_maker() {
     echo "$(shuf -zern1 {a..z} | tr -d '\0')$(shuf -zern11 {1..5} {a..z} {a..z} | tr -d '\0')"
 }
