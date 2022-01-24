@@ -16,13 +16,6 @@ async function main() {
     if (common.getBridgeAddress() && !process.env.ENFORCE_BRIDGE_DEPLOY)
         throw new Error('Bridge already deployed. aborting.');
 
-    const sendRewardsData = hardhat.ethers.utils.defaultAbiCoder.encode(
-        ['bytes32', 'bytes32', 'uint256'],
-        [hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toBlockchain),
-            hardhat.ethers.utils.formatBytes32String(config.bridge.sendRewards.toAccount),
-            hardhat.ethers.utils.parseEther(config.bridge.sendRewards.maxLockLimit)]
-    );
-
     log('Deploying Bridge...');
     const Bridge = await hardhat.ethers.getContractFactory('Bridge');
     const bridge = await Bridge.deploy(
@@ -32,11 +25,9 @@ async function main() {
         hardhat.ethers.utils.parseEther(config.bridge.limitIncPerBlock),
         config.bridge.minRequiredReports,
         hardhat.ethers.utils.parseEther(config.bridge.commissionAmount),
-        sendRewardsData,
         BBS_TOKEN_ADDRESS);
     common.etherscanLogContract(bridge.address, bridge.deployTransaction.chainId);
     fs.writeFileSync(common.bridgePath, bridge.address);
-    fs.writeFileSync(common.bridgeSendRewardsArgPath, sendRewardsData);
 
     log('---Deployment of Bridge Done---');
 }

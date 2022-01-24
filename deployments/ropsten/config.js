@@ -1,5 +1,5 @@
 module.exports = {
-    "network": "rinkeby",
+    "network": "ropsten",
     "mint": {
         "totalSupply": "1000000000"
     },
@@ -14,11 +14,6 @@ module.exports = {
         "limitIncPerBlock": "500",
         "minRequiredReports": 1,
         "commissionAmount": "0",
-        "sendRewards" : {
-            "toBlockchain": "eos",
-            "toAccount": "rjyqmacwqxbc",
-            "maxLockLimit": "100000"
-        },
         "reporters": {
             "addresses": ["0x869fAD6004c59fd426939855062aF6f1378817a4"],
             "active": [true]

@@ -19,8 +19,6 @@ echo $avg_gas_price_in_gwei Gwei
 gas_report_bbs_token="$(REPORT_GAS=true npx hardhat test test/bbsToken-test.js 2>/dev/null)"
 gas_report_bridge="$(REPORT_GAS=true npx hardhat test test/bridge-test.js 2>/dev/null)"
 gas_report_staking="$(REPORT_GAS=true npx hardhat test test/staking-test.js 2>/dev/null)"
-gas_report_dailyRewards="$(REPORT_GAS=true npx hardhat test test/dailyRewards-test.js 2>/dev/null)"
-gas_report_rewardsSender="$(REPORT_GAS=true npx hardhat test test/rewards-sender-test.js 2>/dev/null)"
 
 totalFeeETH="0.0"
 totalFeeUSD="0.0"
@@ -83,9 +81,6 @@ getFunctionCallFee "$gas_report_bbs_token" "mint"               # BBS minting
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"  # transfer BBS ownership to Gnosis
 getDeploymentFee "$gas_report_bridge" "Bridge"                  # Bridge deploy
 getFunctionCallFee "$gas_report_bridge" "setReporters"          # set bridge reporters
-getDeploymentFee "$gas_report_dailyRewards" "DailyRewards"      # DailyRewards deploy
-getDeploymentFee "$gas_report_rewardsSender" "RewardsSender"    # RewardsSender deploy
-getFunctionCallFee "$gas_report_dailyRewards" "declareRewards"  # declare rewards
 multiSendApproveFee
 echo -e "${CYAN}{Multisend-transfer} expected function call gas price${NC}"
 accumulateCurrentFee '91233' # https://ropsten.etherscan.io/tx/0x65057d50a5ef6cabee993d9f72143fda244704471cb555ed112ec6c7c87c6ae3
@@ -125,10 +120,6 @@ initCurrentFee
 echo "--------------------------------------------"
 
 echo -e "${RED}----Liquidity and Engagement-----${NC}"
-getFunctionCallFee "$gas_report_dailyRewards" "setRewards"           # declare rewards
-getFunctionCallFee "$gas_report_dailyRewards" "distributeRewards"    # declare rewards
-getFunctionCallFee "$gas_report_rewardsSender" "sendRewards"         # send bbs rewards to bridge
-getFunctionCallFee "$gas_report_bridge" "xTransfer"                  # transfer bbs bounties to bridge
 getFunctionCallFee "$gas_report_bbs_token" "transferOwnership"       # transfer Bridge ownership
 printFee
 accumulateTotalFee

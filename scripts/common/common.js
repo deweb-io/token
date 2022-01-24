@@ -7,8 +7,6 @@ const BBS_TOKEN_PATH = `${ARTIFCATS_DIR}/bbsToken.txt`;
 const BRIDGE_PATH = `${ARTIFCATS_DIR}/bridge.txt`;
 const STAKING_PATH = `${ARTIFCATS_DIR}/staking.txt`;
 const DAILY_REWARDS_PATH = `${ARTIFCATS_DIR}/dailyRewards.txt`;
-const REWARDS_SENDER_PATH = `${ARTIFCATS_DIR}/rewardsSender.txt`;
-const BRIDGE_SEND_REWARDS_ARGUMENT_PATH = `${ARTIFCATS_DIR}/bridge_send_reward_data_argument.txt`;
 
 function getAddress(path) {
     return fs.existsSync(path) ? fs.readFileSync(path, 'utf8').toString() : null;
@@ -20,8 +18,6 @@ module.exports = {
     bridgePath: BRIDGE_PATH,
     stakingPath: STAKING_PATH,
     dailyRewardsPath: DAILY_REWARDS_PATH,
-    rewardsSenderPath: REWARDS_SENDER_PATH,
-    bridgeSendRewardsArgPath: BRIDGE_SEND_REWARDS_ARGUMENT_PATH,
 
     log: function (data) {
         console.log(data);
@@ -48,10 +44,6 @@ module.exports = {
 
     getDailyRewardsAddress: function () {
         return getAddress(DAILY_REWARDS_PATH);
-    },
-
-    getRewardsSenderAddress: function () {
-        return getAddress(REWARDS_SENDER_PATH);
     },
 
     transferOwnership: async function (contractName, address, newOwner) {

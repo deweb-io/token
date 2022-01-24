@@ -14,11 +14,6 @@ module.exports = {
         "limitIncPerBlock": "500",
         "minRequiredReports": 1,
         "commissionAmount": "0",
-        "sendRewards" : {
-            "toBlockchain": "eos",
-            "toAccount": "",
-            "maxLockLimit": ""
-        },
         "reporters": {
             "addresses": [""],
             "active": [true]
