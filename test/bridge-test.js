@@ -13,7 +13,6 @@ describe('Bridge', function() {
     const MIN_LIMIT = ethers.utils.parseEther('1');
     const LIMIT_INC_PER_BLOCK = ethers.utils.parseEther('500');
     const MIN_REQUIRED_REPORTS = 1;
-    const REWARDS_MAX_LOCK_LIMIT = ethers.utils.parseEther('100000');
 
     const XTRANSFER_EVENT = 'XTransfer';
     const TOKENS_LOCK_EVENT = 'TokensLock';
@@ -230,15 +229,20 @@ describe('Bridge', function() {
             throw new Error('current total commissions after first tx should be equal to commission amount');
         }
 
+        // withdraw
         await expectRevert(
             bridge.connect(tokenOwner).withdrawCommissions(tokenOwner.address)
             , 'Ownable: caller is not the owner'
         );
 
+        expect(await bbsToken.balanceOf(bbsContractOwner.address)).to.equal(0);
         await expect(
             bridge.connect(bbsContractOwner).withdrawCommissions(bbsContractOwner.address)
         ).to.emit(bridge, 'CommissionsWithdraw');
+
+        // after withdraw
         currentTotalCommissions = await bridge.totalCommissions();
         expectBigNum(currentTotalCommissions).to.equal(0);
+        expect(await bbsToken.balanceOf(bbsContractOwner.address)).to.equal(commissionAmount);
     });
 });
