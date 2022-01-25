@@ -529,9 +529,10 @@ contract Bridge is Ownable {
     function withdrawCommissions(address _to) public onlyOwner validAddress(_to) {
         // no need to require, reverts on failure
         token.transfer(_to, totalCommissions);
-        // reset total commissions
-        totalCommissions = 0;
 
         emit CommissionsWithdraw(_to, totalCommissions);
+
+        // reset total commissions
+        totalCommissions = 0;
     }
 }
