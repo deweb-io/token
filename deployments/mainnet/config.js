@@ -18,8 +18,5 @@ module.exports = {
             "addresses": [""],
             "active": [true]
         }
-    },
-    "dailyRewards": {
-        "amount": "60000"
     }
 }

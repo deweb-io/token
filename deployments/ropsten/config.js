@@ -18,8 +18,5 @@ module.exports = {
             "addresses": ["0x869fAD6004c59fd426939855062aF6f1378817a4"],
             "active": [true]
         }
-    },
-    "dailyRewards": {
-        "amount": "60000"
     }
 }
