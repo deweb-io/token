@@ -26,15 +26,6 @@ contract Bridge is Ownable {
         bool completed;
     }
 
-    struct SendRewardsConfig {
-        bytes32 toBlockchain;
-        bytes32 toAccount;
-        uint256 maxLockLimit;
-    }
-
-    bytes32 public sendRewardsToBlockchain; // the target blockchain when send rewards
-    bytes32 public sendRewardsToAccount; // the target account when send rewards
-    uint256 public sendRewardsMaxLockLimit; // the lock limit when send rewards
     uint256 public maxLockLimit; // the maximum amount of tokens that can be locked in one transaction
     uint256 public maxReleaseLimit; // the maximum amount of tokens that can be released in one transaction
     uint256 public minLimit; // the minimum amount of tokens that can be transferred in one transaction
@@ -129,14 +120,6 @@ contract Bridge is Ownable {
     event XTransferComplete(address _to, uint256 _id);
 
     /**
-     * @dev triggered when rewards were sent
-     *
-     * @param _from rewards sender
-     * @param _amount  amount of tokens
-     */
-    event RewardsSent(address _from, uint256 _amount);
-
-    /**
      * @dev initializes a new Bridge instance
      *
      * @param _maxLockLimit          maximum amount of tokens that can be locked in one transaction
@@ -144,7 +127,6 @@ contract Bridge is Ownable {
      * @param _minLimit              minimum amount of tokens that can be transferred in one transaction
      * @param _limitIncPerBlock      how much the limit increases per block
      * @param _minRequiredReports    minimum number of reporters to report transaction before tokens can be released
-     * @param _sendRewards           send rewards config
      * @param _token                 erc20 token
      */
     constructor(
@@ -154,7 +136,6 @@ contract Bridge is Ownable {
         uint256 _limitIncPerBlock,
         uint8 _minRequiredReports,
         uint256 _commissionAmount,
-        bytes memory _sendRewards,
         IERC20 _token
     )
         greaterThanZero(_maxLockLimit)
@@ -173,12 +154,6 @@ contract Bridge is Ownable {
         minLimit = _minLimit;
         limitIncPerBlock = _limitIncPerBlock;
         minRequiredReports = _minRequiredReports;
-
-        // send rewards
-        SendRewardsConfig memory sendRewardsConfig = abi.decode(_sendRewards, (SendRewardsConfig));
-        sendRewardsToBlockchain = sendRewardsConfig.toBlockchain;
-        sendRewardsToAccount = sendRewardsConfig.toAccount;
-        sendRewardsMaxLockLimit = sendRewardsConfig.maxLockLimit;
 
         // previous limit is _maxLimit, and previous block number is current block number
         prevLockLimit = _maxLockLimit;
@@ -326,33 +301,6 @@ contract Bridge is Ownable {
     }
 
     /**
-     * @dev setter
-     *
-     * @param _blockchain    target blockchain where the rewards will be sent to
-     */
-    function setRewardsToBlockchain(bytes32 _blockchain) public onlyOwner {
-        sendRewardsToBlockchain = _blockchain;
-    }
-
-    /**
-     * @dev setter
-     *
-     * @param _toAccount    target account which the rewards will be sent to
-     */
-    function setRewardsToAccount(bytes32 _toAccount) public onlyOwner {
-        sendRewardsToAccount = _toAccount;
-    }
-
-    /**
-     * @dev setter
-     *
-     * @param _maxLockLimit    rewards max limit amount
-     */
-    function setRewardsMaxLockLimit(uint256 _maxLockLimit) public onlyOwner greaterThanZero(_maxLockLimit) {
-        sendRewardsMaxLockLimit = _maxLockLimit;
-    }
-
-    /**
      * @dev allows the owner to set/remove reporters
      *
      * @param _reporters   array of reporters which their status is to be set
@@ -423,22 +371,6 @@ contract Bridge is Ownable {
 
         // emit XTransfer event
         emit XTransfer(_signer, _toBlockchain, _to, _amount, 0);
-    }
-
-   /**
-     * @dev claims tokens from a signer to be converted to tokens on another blockchain (for a specific account)
-     * @param _amount          the amount of tokens to transfer
-    */
-    function sendRewards(uint256 _amount) public xTransfersAllowed {
-        require(_amount >= minLimit && _amount <= sendRewardsMaxLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
-
-        lockTokens(msg.sender, _amount);
-
-        // emit XTransfer event
-        emit XTransfer(msg.sender, sendRewardsToBlockchain, sendRewardsToAccount, _amount, 0);
-
-        // emit rewards sent event
-        emit RewardsSent(msg.sender, _amount);
     }
 
     /**
@@ -595,12 +527,12 @@ contract Bridge is Ownable {
      * @param _to      the address to withdraw commissions to
      */
     function withdrawCommissions(address _to) public onlyOwner validAddress(_to) {
-        // reset total commissions
-        totalCommissions = 0;
-
         // no need to require, reverts on failure
         token.transfer(_to, totalCommissions);
 
         emit CommissionsWithdraw(_to, totalCommissions);
+
+        // reset total commissions
+        totalCommissions = 0;
     }
 }

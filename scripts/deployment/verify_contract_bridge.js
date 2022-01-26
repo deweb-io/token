@@ -8,10 +8,8 @@ const log = common.log;
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
 const BRIDGE_ADDRESS = common.getBridgeAddress();
 
-const sendRewardsArg = fs.readFileSync(common.bridgeSendRewardsArgPath, 'utf8').toString();
-
 log('---Verify BRIDGE contract---');
-exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} ${ethers.utils.parseEther(config.bridge.maxLockLimit)} ${ethers.utils.parseEther(config.bridge.maxReleaseLimit)} ${ethers.utils.parseEther(config.bridge.minLimit)} ${ethers.utils.parseEther(config.bridge.limitIncPerBlock)} ${config.bridge.minRequiredReports} ${ethers.utils.parseEther(config.bridge.commissionAmount)} ${sendRewardsArg} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
+exec(`npx hardhat verify --network ${config.network} ${BRIDGE_ADDRESS} ${ethers.utils.parseEther(config.bridge.maxLockLimit)} ${ethers.utils.parseEther(config.bridge.maxReleaseLimit)} ${ethers.utils.parseEther(config.bridge.minLimit)} ${ethers.utils.parseEther(config.bridge.limitIncPerBlock)} ${config.bridge.minRequiredReports} ${ethers.utils.parseEther(config.bridge.commissionAmount)} ${BBS_TOKEN_ADDRESS}`, (error, stdout, stderr) => {
     if (error) {
         log(`error: ${error.message}`);
         return;

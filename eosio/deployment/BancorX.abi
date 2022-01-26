@@ -88,14 +88,6 @@
                 {
                     "name": "max_destroy_limit",
                     "type": "uint64"
-                },
-                {
-                    "name": "rewards_receiver",
-                    "type": "name"
-                },
-                {
-                    "name": "max_rewards_issue_limit",
-                    "type": "uint64"
                 }
             ]
         },
@@ -208,14 +200,6 @@
                 {
                     "name": "prev_destroy_time",
                     "type": "uint64"
-                },
-                {
-                    "name": "rewards_receiver",
-                    "type": "name"
-                },
-                {
-                    "name": "max_rewards_issue_limit",
-                    "type": "uint64"
                 }
             ]
         },
@@ -279,14 +263,6 @@
                 },
                 {
                     "name": "max_destroy_limit",
-                    "type": "uint64"
-                },
-                {
-                    "name": "rewards_receiver",
-                    "type": "name"
-                },
-                {
-                    "name": "max_rewards_issue_limit",
                     "type": "uint64"
                 }
             ]

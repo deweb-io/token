@@ -18,17 +18,9 @@ module.exports = {
         'limitIncPerBlock': '500',
         'minRequiredReports': 1,
         'commissionAmount': '0',
-        'sendRewards' : {
-            'toBlockchain': 'eos',
-            'toAccount': 'rjyqmacwqxbc',
-            'maxLockLimit': '100000'
-        },
         'reporters': {
             'addresses': ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'],
             'active': [true]
         }
-    },
-    'dailyRewards': {
-        'amount': '60000'
     }
 } // DO NOT ADD ';' here - it breaks the reading of the json while deploying eos bridge
