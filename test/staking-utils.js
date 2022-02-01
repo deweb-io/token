@@ -57,7 +57,7 @@ const declareReward = async (quartersIdx, rewardAmount) => {
     for(const quarterIdx of quartersIdx){
         const {v, r, s} = await signPermit(owner, staking.address, rewardAmount, deadline, bbsToken, tokenName);
         await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-            quarterIdx, rewardAmount, owner.address, deadline, v, r, s);
+            quarterIdx, rewardAmount, deadline, v, r, s);
         console.debug(`reward of ${rewardAmount} was declared for quarter ${quarterIdx}`);
     }
 };

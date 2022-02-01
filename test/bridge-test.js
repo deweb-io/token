@@ -68,7 +68,7 @@ describe('Bridge', function() {
     async function xTransfer(amount, transmitter) {
         const {v, r, s} = await signPermit(tokenOwner, tokenSpender, amount, deadline, bbsToken, tokenName);
         await expect(bridge.connect(transmitter).xTransfer(
-            eosBlockchain, eosAddress, amount, deadline, tokenOwner.address, v, r, s
+            eosBlockchain, eosAddress, amount, deadline, v, r, s
         )).to.emit(
             bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, amount, 0
         ).and.emit(
@@ -81,17 +81,17 @@ describe('Bridge', function() {
 
         // params do not match signed data - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, ethers.utils.parseEther('11'), deadline, tokenOwner.address, v, r, s
+            eosBlockchain, eosAddress, ethers.utils.parseEther('11'), deadline, v, r, s
         ), 'ERC20Permit: invalid signature');
 
         // wrong signer address - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenSpender, v, r, s
-        ), 'can not use permit for delegation');
+            eosBlockchain, eosAddress, xTransferAmount, deadline, v, r, s
+        ), 'ERC20: transfer amount exceeds balance');
 
         // not enough bbs balance - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s
+            eosBlockchain, eosAddress, xTransferAmount, deadline, v, r, s
         ), 'ERC20: transfer amount exceeds balance');
 
         await bbsToken.mint(tokenOwner.address, xTransferAmount);
@@ -104,12 +104,12 @@ describe('Bridge', function() {
         const xTransferInvalidAmount = ethers.utils.parseEther(`${XTRANSFER_AMOUNT}.00001`);
         const sig = await signPermit(tokenOwner, tokenSpender, xTransferInvalidAmount, deadline, bbsToken, tokenName);
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, tokenOwner.address, sig.v, sig.r, sig.s
+            eosBlockchain, eosAddress, xTransferInvalidAmount, deadline, sig.v, sig.r, sig.s
         ), 'ERR_AMOUNT_TOO_MANY_DECIMALS');
 
         // xTransfer
         await expect(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s)
+            eosBlockchain, eosAddress, xTransferAmount, deadline, v, r, s)
         ).to.emit(bridge, XTRANSFER_EVENT).withArgs(tokenOwner.address, eosBlockchain, eosAddress, xTransferAmount, 0);
 
         // test balances after xTransfer
@@ -121,7 +121,7 @@ describe('Bridge', function() {
 
         // using the same signature - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
-            eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s
+            eosBlockchain, eosAddress, xTransferAmount, deadline, v, r, s
         ), 'ERC20Permit: invalid signature');
     });
 

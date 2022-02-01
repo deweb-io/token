@@ -41,7 +41,7 @@ describe('Staking', () => {
             const currentQuarter = await staking.currentQuarter();
             const {v, r, s} = await signPermitData(owner, rewardAmount);
             await (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                currentQuarter, rewardAmount, owner.address, deadline, v, r, s);
+                currentQuarter, rewardAmount, deadline, v, r, s);
             await expect(await staking.promoteQuarter()).to.emit(staking, QUARTER_PROMOTED_EVENT, currentQuarter+1);
         }
     }
@@ -82,10 +82,10 @@ describe('Staking', () => {
         let signature = await signPermitData(owner, rewardAmount);
         await expectRevert(
             (await mintAndDoAs(owner, rewardAmount)).declareReward(
-                0, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s),
+                0, rewardAmount, deadline, signature.v, signature.r, signature.s),
             'can not declare rewards for past quarters');
         await expect((await mintAndDoAs(owner, rewardAmount)).declareReward(
-            1, rewardAmount, owner.address, deadline, signature.v, signature.r, signature.s
+            1, rewardAmount, deadline, signature.v, signature.r, signature.s
         )).to.emit(staking, REWARD_DECLARED_EVENT).withArgs(1, rewardAmount, rewardAmount);
         await expectRevert(staking.promoteQuarter(), 'current quarter is not yet over');
         await network.provider.send('evm_increaseTime', [quarterLength]);
@@ -96,7 +96,7 @@ describe('Staking', () => {
         await expectRevert(staking.promoteQuarter(), 'current quarter has no reward');
         signature = await signPermitData(owner, rewardAmount);
         await expect((await mintAndDoAs(owner, rewardAmount)).declareReward(
-            2, rewardAmount,  owner.address, deadline, signature.v, signature.r, signature.s
+            2, rewardAmount, deadline, signature.v, signature.r, signature.s
         )).to.emit(staking, REWARD_DECLARED_EVENT).withArgs(2, rewardAmount, rewardAmount);
         await expect(await staking.promoteQuarter()).to.emit(staking, QUARTER_PROMOTED_EVENT).withArgs(3);
         expect(await staking.currentQuarter()).to.equal(3);

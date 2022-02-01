@@ -85,18 +85,15 @@ contract Staking is OwnableUpgradeable {
      * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
-     * @param holder The address that is giving tokens as reward.
      * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
      * @param v, r, s The signature parameters for the permit.
      */
     function declareReward(
-        uint16 quarterIdx, uint256 amount,
-        address holder, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+        uint16 quarterIdx, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s
     ) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
-        require(holder == msg.sender, "can not use permit for delegation");
-        bbsToken.permit(holder, address(this), amount, deadline, v, r, s);
-        bbsToken.transferFrom(holder, address(this), amount);
+        bbsToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(msg.sender, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
