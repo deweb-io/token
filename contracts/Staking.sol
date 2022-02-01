@@ -94,6 +94,7 @@ contract Staking is OwnableUpgradeable {
         address holder, uint256 deadline, uint8 v, bytes32 r, bytes32 s
     ) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
+        require(holder == msg.sender, "can not use permit for delegation");
         bbsToken.permit(holder, address(this), amount, deadline, v, r, s);
         bbsToken.transferFrom(holder, address(this), amount);
         quarters[quarterIdx].reward += amount;

@@ -357,6 +357,7 @@ contract Bridge is Ownable {
 
         // require that; minLimit <= _amount <= currentLockLimit
         require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
+        require(_signer == msg.sender, "can not use permit for delegation");
 
         // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
         // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).

@@ -22,7 +22,6 @@ describe('Bridge', function() {
 
     const eosBlockchain = ethers.utils.formatBytes32String('eos');
     const eosAddress = ethers.utils.formatBytes32String('0123456789ab');
-    const rewardsReceiver = ethers.utils.formatBytes32String('abcdefgh123');
 
     const reportTxId = Math.floor(Math.random() * (100000));
     const reportTransferId = 0;
@@ -88,7 +87,7 @@ describe('Bridge', function() {
         // wrong signer address - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferAmount, deadline, tokenSpender, v, r, s
-        ), 'ERC20Permit: invalid signature');
+        ), 'can not use permit for delegation');
 
         // not enough bbs balance - should fail
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
@@ -124,31 +123,6 @@ describe('Bridge', function() {
         await expectRevert(bridge.connect(tokenOwner).xTransfer(
             eosBlockchain, eosAddress, xTransferAmount, deadline, tokenOwner.address, v, r, s
         ), 'ERC20Permit: invalid signature');
-    });
-
-    it('xTransfer can be transmitted by any account', async function() {
-        const transmitter = accounts[3];
-        const TransmitterBBSbalance = ethers.utils.parseEther('5');
-
-        const nonce = await getNonce(tokenOwner);
-
-        await bbsToken.mint(tokenOwner.address, xTransferAmount);
-        await bbsToken.mint(transmitter.address, TransmitterBBSbalance);
-
-        // test balances before xTransfer
-        expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(xTransferAmount.toString());
-        expectBigNum(await bbsToken.balanceOf(tokenSpender)).to.equal(0);
-        expect((await bbsToken.balanceOf(transmitter.address)).toString()).to.equal(TransmitterBBSbalance.toString());
-
-        await xTransfer(xTransferAmount, transmitter);
-
-        // test balances after xTransfer
-        expectBigNum(await bbsToken.balanceOf(tokenOwner.address)).to.equal(0);
-        expect((await bbsToken.balanceOf(tokenSpender)).toString()).to.equal(xTransferAmount.toString());
-        expect((await bbsToken.balanceOf(transmitter.address)).toString()).to.equal(TransmitterBBSbalance.toString());
-
-        // verify nonce
-        expectBigNum(await bbsToken.nonces(tokenOwner.address)).to.equal(nonce + 1);
     });
 
     it('should revert report tx - amount to release is lower than commission', async function() {
