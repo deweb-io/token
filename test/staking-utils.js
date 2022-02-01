@@ -64,7 +64,7 @@ const declareReward = async (quartersIdx, rewardAmount) => {
 
 const lock = async (staker, amount, unlockQuarter) => {
     const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, tokenName);
-    await (await mintAndDoAs(staker, amount)).lock(amount, unlockQuarter, staker.address, deadline, v, r, s);
+    await (await mintAndDoAs(staker, amount)).lock(amount, unlockQuarter, deadline, v, r, s);
     console.debug(`locked ${amount} tokens until ${unlockQuarter} for ${staker.address.slice(0, 5)}`);
 };
 

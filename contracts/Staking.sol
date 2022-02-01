@@ -179,21 +179,20 @@ contract Staking is OwnableUpgradeable {
      * @dev Lock a stake of tokens.
      * @param amount Amount of tokens to lock.
      * @param unlockQuarter The index of the quarter the stake unlocks on.
-     * @param staker The address that is locking tokens.
      * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
      * @param v, r, s The signature parameters for the permit.
      */
     function lock(
         uint256 amount, uint16 unlockQuarter,
-        address staker, uint256 deadline, uint8 v, bytes32 r, bytes32 s
+        uint256 deadline, uint8 v, bytes32 r, bytes32 s
     ) external {
         validateUnlockQuarter(unlockQuarter);
-        bbsToken.permit(staker, address(this), amount, deadline, v, r, s);
-        bbsToken.transferFrom(staker, address(this), amount);
-        stakes[staker].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
-        shares[staker].push();
-        updateShare(staker, uint16(stakes[staker].length - 1));
-        emit StakeLocked(staker, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
+        bbsToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(msg.sender, address(this), amount);
+        stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
+        shares[msg.sender].push();
+        updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
+        emit StakeLocked(msg.sender, uint16(stakes[msg.sender].length - 1), amount, unlockQuarter, 0, 0);
     }
 
     /**
