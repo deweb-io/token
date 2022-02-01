@@ -56,7 +56,7 @@ async function main() {
     const holder = await getSigner();
     const {v, r, s} = await signPermit(holder, STACKING_ADDRESS, rewardToAddWei, deadline, bbsToken, tokenName);
 
-    const tx = await staking.declareReward(QUARTER_INDEX, rewardToAddWei, holder.address, deadline, v, r, s);
+    const tx = await staking.declareReward(QUARTER_INDEX, rewardToAddWei, deadline, v, r, s);
     common.etherscanLogTx(tx.hash, tx.chainId);
     common.writeArtifact(ARTIFACT_FILE, JSON.stringify(tx));
 
