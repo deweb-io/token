@@ -53,14 +53,6 @@ The staking contract is an upgradable contract that distributes rewards on a qua
 
 The essesntial idea is described and can be played with in this [web-based "paper" demo](https://deweb-io.github.io/token/staking.html).
 
-### Daily Rewards
-
-`./contracts/DailyRewards.sol`
-
-The daily rewards contract holds a pool of BBS tokens and an updatable list of addresses it sends rewards to, and the amount of rewards it sends. The function that distributes the rewards can be called by anyone, but setting the reward targets is a two phase operation: first the owner has to declare the change, and after 24 hours anyone can cause the change to happen.
-
-We are still not sure how useful this will be, and it might change into quarterly rewards.
-
 ## Tests
 
 The eos components are either completely standard or maintained and tested by Bancor, so we only need tests for the ethereum components. These tests are all run on Hardhat, which makes it easy to test on the internal Hardhat network, on a local ganache-cli environment, or on a mainnet fork.
