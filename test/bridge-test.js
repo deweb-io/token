@@ -245,4 +245,18 @@ describe('Bridge', function() {
         expectBigNum(currentTotalCommissions).to.equal(0);
         expect(await bbsToken.balanceOf(bbsContractOwner.address)).to.equal(commissionAmount);
     });
+
+    it('set min limit amount', async function() {
+        await expectRevert(
+            bridge.connect(reporter).setMinLimit(ethers.utils.parseEther('16')),
+            'Ownable: caller is not the owner');
+
+        const newMinitLimitValue = ethers.utils.parseEther('100');
+
+        const oldminLimit = await bridge.minLimit();
+        await bridge.connect(bbsContractOwner).setMinLimit(newMinitLimitValue);
+        const newMinLimit = await bridge.minLimit();
+        expect(newMinLimit).to.not.equal(oldminLimit._hex);
+        expect(newMinLimit).to.equal(newMinitLimitValue._hex);
+    });
 });
