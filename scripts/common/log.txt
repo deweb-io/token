@@ -1,0 +1,20 @@
+Thu Dec 16 2021 15:52:55 | ---Deplyoment of BBS token--- 
+Thu Dec 16 2021 15:52:55 | Deploying BBS token... 
+Thu Dec 16 2021 15:53:07 | https://etherscan.io/address/0xFe459828c90c0BA4bC8b42F5C5D44F316700B430 
+Thu Dec 16 2021 15:53:07 | ---Deplyoment of BBS token Done--- 
+Thu Dec 16 2021 15:58:57 | ---Verify BBS contract--- 
+Thu Dec 16 2021 15:58:59 | error: Command failed: npx hardhat verify --network main 0xFe459828c90c0BA4bC8b42F5C5D44F316700B430
+Error HH100: Network main doesn't exist
+For more info go to https://hardhat.org/HH100 or run Hardhat with --show-stack-traces
+ 
+Thu Dec 16 2021 16:00:15 | ---Verify BBS contract--- 
+Thu Dec 16 2021 16:01:50 | stdout: Nothing to compile
+Compiling 1 file with 0.8.6
+Successfully submitted source code for contract
+contracts/BBSToken.sol:BBSToken at 0xFe459828c90c0BA4bC8b42F5C5D44F316700B430
+for verification on Etherscan. Waiting for verification result...
+
+Successfully verified contract BBSToken on Etherscan.
+https://etherscan.io/address/0xFe459828c90c0BA4bC8b42F5C5D44F316700B430#code
+ 
+Thu Dec 16 2021 16:01:50 | ---Verify BBS contract Done--- 

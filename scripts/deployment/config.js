@@ -1,12 +1,12 @@
 module.exports = {
-    "network": "rinkeby",
+    "network": "mainnet",
     "mint": {
         "totalSupply": "1000000000"
     },
     "safe" : {
-        "address" : "0x3B3944D7351c69944DCFEc85651394dC38326a4d"
+        "address" : "0xeE294a573eA5B77b84880a109FAeD7FdC0136d2D"
     },
-    "rewards": [ { "q" : 0, "amount": "200000"}, { "q" : 1, "amount": "100000"}],
+    "rewards": [ { "q" : 0, "amount": "100000"}, { "q" : 1, "amount": "100000"}],
     "bridge": {
         "maxLockLimit" : "40000",
         "maxReleaseLimit": "80000",
@@ -15,11 +15,8 @@ module.exports = {
         "minRequiredReports": 1,
         "commissionAmount": "0",
         "reporters": {
-            "addresses": ["0x869fAD6004c59fd426939855062aF6f1378817a4"],
+            "addresses": [""],
             "active": [true]
         }
-    },
-    "dailyRewards": {
-        "amount": "60000"
     }
 }
