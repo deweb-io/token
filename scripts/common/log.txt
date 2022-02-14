@@ -22,3 +22,7 @@ Sun Feb 13 2022 20:58:31 | ---Mint BBS tokens---
 Sun Feb 13 2022 20:58:32 | Minting 1000000000 tokens to 0x725AC570B0ED65219b950a606404BB35021A6b1E 
 Sun Feb 13 2022 20:58:38 | https://etherscan.io/tx/0xcf41f5098c3accb76be1bbed8abe64311a9257bdeeb2f881a93e46f82af765a1 
 Sun Feb 13 2022 20:58:38 | ---Mint BBS tokens Done--- 
+Mon Feb 14 2022 15:42:31 | ---Transfer ownership--- 
+Mon Feb 14 2022 15:42:34 | Transfering ownership of BBSToken to 0xeE294a573eA5B77b84880a109FAeD7FdC0136d2D 
+Mon Feb 14 2022 15:42:39 | https://etherscan.io/tx/0xb7c868297aab2f5d8ca41a38392b34b2565298d7a5021ebc2db4f3c0ceaccc1a 
+Mon Feb 14 2022 15:42:39 | ---Transfer ownership Done--- 
