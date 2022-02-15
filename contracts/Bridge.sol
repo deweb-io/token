@@ -356,9 +356,7 @@ contract Bridge is Ownable {
         // require that; minLimit <= _amount <= currentLockLimit
         require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
 
-        // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
-        // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).
-        // Example: https://deweb-io.github.io/token/permit_demo.html
+        // give allowance to this contract to spend the tokens
         ERC20Permit(address(token)).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
 
         lockTokens(msg.sender, _amount);
