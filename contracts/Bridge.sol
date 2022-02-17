@@ -337,7 +337,6 @@ contract Bridge is Ownable {
      * @param _to              address to send the tokens to
      * @param _amount          the amount of tokens to transfer
      * @param _deadline        permit deadline
-     * @param _signer          address to claim tokens from
      * @param _v               ECDSA signature recovery identifier
      * @param _r               ECDSA signature number
      * @param _s               ECDSA signature number
@@ -347,7 +346,6 @@ contract Bridge is Ownable {
         bytes32 _to,
         uint256 _amount,
         uint256 _deadline,
-        address _signer,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
@@ -358,19 +356,17 @@ contract Bridge is Ownable {
         // require that; minLimit <= _amount <= currentLockLimit
         require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
 
-        // Permit function enables to give allowance to a spender, without a payment of the signer, due to the fact
-        // that any account can call permit, provided that it has the signature (_v, _r, _s parameters).
-        // Example: https://deweb-io.github.io/token/permit_demo.html
-        ERC20Permit(address(token)).permit(_signer, address(this), _amount, _deadline, _v, _r, _s);
+        // give allowance to this contract to spend the tokens
+        ERC20Permit(address(token)).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
 
-        lockTokens(_signer, _amount);
+        lockTokens(msg.sender, _amount);
 
         // set the previous lock limit and block number
         prevLockLimit = currentLockLimit - _amount;
         prevLockBlockNumber = block.number;
 
         // emit XTransfer event
-        emit XTransfer(_signer, _toBlockchain, _to, _amount, 0);
+        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, 0);
     }
 
     /**
