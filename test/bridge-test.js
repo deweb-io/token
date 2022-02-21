@@ -238,9 +238,7 @@ describe('Bridge', function() {
         await bbsToken.mint(tokenOwner.address, xTransferAmount);
         await expectRevert(
             bridge.connect(tokenOwner)['xTransfer(bytes32,bytes32,uint256)'](
-            eosBlockchain, eosAddress, xTransferAmount
-        ),
-        'ERC20: transfer amount exceeds allowance');
+                eosBlockchain, eosAddress, xTransferAmount), 'ERC20: transfer amount exceeds allowance');
 
         // test balances before xTransfer
         expect((await bbsToken.balanceOf(tokenOwner.address)).toString()).to.equal(xTransferAmount.toString());
