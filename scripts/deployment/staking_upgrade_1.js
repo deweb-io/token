@@ -1,7 +1,6 @@
 const hardhat = require('hardhat');
 const config = require('./config.js');
 const common = require('../common/common');
-const {signPermit, getSigner} = require('../utils/utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
@@ -17,7 +16,7 @@ async function main() {
         throw new Error('No Staking address is missing. aborting.');
 
     log('Upgrading Staking...');
-    const staking = await upgrades.upgradeProxy(STAKING_ADDRESS, await ethers.getContractFactory('StakingUpgrade'));
+    const staking = await upgrades.upgradeProxy(STAKING_ADDRESS, await ethers.getContractFactory('StakingUpgrade1'));
     await staking.deployed();
     common.etherscanLogContract(staking.address, staking.deployTransaction.chainId);
 
