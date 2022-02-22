@@ -370,6 +370,34 @@ contract Bridge is Ownable {
     }
 
     /**
+     * @dev claims tokens from a signer to be converted to tokens on another blockchain
+     *
+     * @param _toBlockchain    blockchain on which tokens will be issued
+     * @param _to              address to send the tokens to
+     * @param _amount          the amount of tokens to transfer
+     */
+    function xTransfer(
+        bytes32 _toBlockchain,
+        bytes32 _to,
+        uint256 _amount
+    ) public xTransfersAllowed {
+        // get the current lock limit
+        uint256 currentLockLimit = getCurrentLockLimit();
+
+        // require that; minLimit <= _amount <= currentLockLimit
+        require(_amount >= minLimit && _amount <= currentLockLimit, "ERR_AMOUNT_NOT_IN_RANGE");
+
+        lockTokens(msg.sender, _amount);
+
+        // set the previous lock limit and block number
+        prevLockLimit = currentLockLimit - _amount;
+        prevLockBlockNumber = block.number;
+
+        // emit XTransfer event
+        emit XTransfer(msg.sender, _toBlockchain, _to, _amount, 0);
+    }
+
+    /**
      * @dev allows reporter to report transaction which occured on another blockchain
      *
      * @param _fromBlockchain  blockchain in which tokens were destroyed
