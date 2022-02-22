@@ -144,3 +144,25 @@ Tue Feb 22 2022 15:07:28 | ---Staking upgrade 1---
 Tue Feb 22 2022 15:07:28 | Upgrading Staking...
 Tue Feb 22 2022 15:07:53 | https://etherscan.io/address/0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c
 Tue Feb 22 2022 15:07:53 | ---Staking upgrade 1 done---
+
+Tue Feb 22 2022 15:43:29 | ---Transfer ownership---
+Tue Feb 22 2022 15:43:32 | Transfering ownership of Staking to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4
+Tue Feb 22 2022 15:43:35 GMT+0200 (Israel Standard Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572"}, method="estimateGas", transaction={"from":"0x725AC570B0ED65219b950a606404BB35021A6b1E","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0xf2fde38b0000000000000000000000008fff2c4517708d51540ed6ef9124bb48b5db50e4","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.1)
+Tue Feb 22 2022 15:44:28 | ---Transfer ownership---
+Tue Feb 22 2022 15:44:31 | Transfering ownership of Staking to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4
+Tue Feb 22 2022 15:44:37 | https://etherscan.io/tx/0x8c810086882f615e9b35e8d23d9559f09038467b2757770f2f3ca3927aa63a85
+Tue Feb 22 2022 15:44:37 | ---Transfer ownership Done---
+Tue Feb 22 2022 15:45:58 | ---Transfer ownership---
+Tue Feb 22 2022 15:46:01 | Transfering ownership of Staking to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4
+Tue Feb 22 2022 15:46:07 | https://etherscan.io/tx/0x8939c17026e0f7dcfb6ae2e22587d66a626dd8319b989ac5004492263a053a9e
+Tue Feb 22 2022 15:46:07 | ---Transfer ownership Done---
+Tue Feb 22 2022 15:49:45 | ---Staking upgrade 1---
+Tue Feb 22 2022 15:49:45 | Upgrading Staking...
+Tue Feb 22 2022 15:49:55 GMT+0200 (Israel Standard Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572"}, method="estimateGas", transaction={"from":"0x725AC570B0ED65219b950a606404BB35021A6b1E","to":"0xAb1E3fb4D35A0eA4e369463743f964Ae90ac09AF","data":"0x99a88ec4000000000000000000000000cee4510fc056fd7dccf8109f9ed9fe452d732b4c00000000000000000000000038061355272e487ca6ba929038442734127114e1","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.1)
+Tue Feb 22 2022 15:51:20 | ---Staking upgrade 1---
+Tue Feb 22 2022 15:51:20 | Upgrading Staking...
+Tue Feb 22 2022 15:51:30 GMT+0200 (Israel Standard Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572"}, method="estimateGas", transaction={"from":"0xcAc33C535B2c09C0Ae312E09841d51CCaeF9b11c","to":"0xAb1E3fb4D35A0eA4e369463743f964Ae90ac09AF","data":"0x99a88ec4000000000000000000000000cee4510fc056fd7dccf8109f9ed9fe452d732b4c00000000000000000000000038061355272e487ca6ba929038442734127114e1","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.1)
+Tue Feb 22 2022 17:17:58 | ---Set min limit for bridge---
+Tue Feb 22 2022 17:17:59 | Set min limit amount...
+Tue Feb 22 2022 17:18:06 | https://etherscan.io/tx/0x6d88cdab80844e8fe6cb7f52145da46be7aa2adf8a62bd22c07e7b98dee418cd
+Tue Feb 22 2022 17:18:06 | Set min limit Done
