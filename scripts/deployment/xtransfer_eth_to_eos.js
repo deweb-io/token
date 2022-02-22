@@ -47,7 +47,7 @@ async function main() {
 
     // xTransfer
     console.log(`xTransfer ${BBS_AMOUNT} from ${tokenOwner.address} to ${RECEIVER_EOS_ACCOUNT}...`);
-    const tx = await bridge.connect(tokenOwner).xTransfer(
+    const tx = await bridge.connect(tokenOwner)['xTransfer(bytes32,bytes32,uint256,uint256,uint8,bytes32,bytes32)'](
         eosBlockchain, eosAddress, xTransferAmount, deadline, v, r, s);
     common.etherscanLogTx(tx.hash, tx.chainId);
 
