@@ -136,3 +136,11 @@ Tue Feb 22 2022 13:06:14 | Set Reporters...
 Tue Feb 22 2022 13:06:21 | https://etherscan.io/tx/0x57a46bad1bb2eb4952800dc09b7e651b41b3e2b7c84c426c54a78b4483ffaeda
 Tue Feb 22 2022 13:06:21 | Set Reporters Done
 Tue Feb 22 2022 13:06:21 | ---Set reporters for bridge Done---
+
+Tue Feb 22 2022 15:06:14 | ---Staking upgrade 1---
+Tue Feb 22 2022 15:06:14 | Upgrading Staking...
+Tue Feb 22 2022 15:06:35 GMT+0200 (Israel Standard Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572"}, method="estimateGas", transaction={"from":"0xcAc33C535B2c09C0Ae312E09841d51CCaeF9b11c","to":"0xAb1E3fb4D35A0eA4e369463743f964Ae90ac09AF","data":"0x99a88ec4000000000000000000000000cee4510fc056fd7dccf8109f9ed9fe452d732b4c00000000000000000000000038061355272e487ca6ba929038442734127114e1","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.1)
+Tue Feb 22 2022 15:07:28 | ---Staking upgrade 1---
+Tue Feb 22 2022 15:07:28 | Upgrading Staking...
+Tue Feb 22 2022 15:07:53 | https://etherscan.io/address/0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c
+Tue Feb 22 2022 15:07:53 | ---Staking upgrade 1 done---
