@@ -166,3 +166,7 @@ Tue Feb 22 2022 17:17:58 | ---Set min limit for bridge---
 Tue Feb 22 2022 17:17:59 | Set min limit amount...
 Tue Feb 22 2022 17:18:06 | https://etherscan.io/tx/0x6d88cdab80844e8fe6cb7f52145da46be7aa2adf8a62bd22c07e7b98dee418cd
 Tue Feb 22 2022 17:18:06 | Set min limit Done
+Thu Feb 24 2022 18:24:52 | ---Set comission amount for bridge---
+Thu Feb 24 2022 18:24:54 | Set comission amount...
+Thu Feb 24 2022 18:24:59 | https://etherscan.io/tx/0xec15083ddef62b6d7c488d12938e2be54f5f61259eab757b1bdce07bb41d1795
+Thu Feb 24 2022 18:24:59 | Set comission amount Done

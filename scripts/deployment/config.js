@@ -13,7 +13,7 @@ module.exports = {
         "minLimit": "135",
         "limitIncPerBlock": "1300",
         "minRequiredReports": 1,
-        "commissionAmount": "135",
+        "commissionAmount": "340",
         "reporters": {
             "addresses": ["0x0dAD71Ad92C4770AF7c3c28bc1E4F50e12eE4860"],
             "active": [true]
