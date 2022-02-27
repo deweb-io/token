@@ -170,3 +170,7 @@ Thu Feb 24 2022 18:24:52 | ---Set comission amount for bridge---
 Thu Feb 24 2022 18:24:54 | Set comission amount...
 Thu Feb 24 2022 18:24:59 | https://etherscan.io/tx/0xec15083ddef62b6d7c488d12938e2be54f5f61259eab757b1bdce07bb41d1795
 Thu Feb 24 2022 18:24:59 | Set comission amount Done
+Sun Feb 27 2022 16:07:49 | ---Transfer ownership---
+Sun Feb 27 2022 16:07:51 | Transfering ownership of Bridge to 0x6F8F0Fc5887dDf09A1D3e84E60438FF37B6604ad
+Sun Feb 27 2022 16:07:58 | https://etherscan.io/tx/0xb1573b727002f0c837b2eddf91279c34871094711d3611fddb9c9d36bebff3cb
+Sun Feb 27 2022 16:07:58 | ---Transfer ownership Done---
