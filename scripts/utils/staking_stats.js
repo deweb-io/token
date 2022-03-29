@@ -3,8 +3,8 @@ const common = require('../common/common');
 const log = common.log;
 
 const STACKING_ADDRESS = common.getStakingAddress();
-const INDIVISBLES_PER_TOKEN = ethers.BigNumber.from('1000000000000000000');
-const humanize = bigNumber => bigNumber.div(INDIVISBLES_PER_TOKEN).toNumber();
+const PRECISION = [ethers.BigNumber.from('100000000000000'), 10000];
+const humanize = bigNumber => bigNumber.div(PRECISION[0]).toNumber() / PRECISION[1];
 
 async function main() {
     log('---Calculating Staking Stats---');
