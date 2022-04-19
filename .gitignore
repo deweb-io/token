@@ -8,3 +8,6 @@ eosio/state.env
 node_modules/
 scripts/common/log.txt
 scripts/deployment/config.js
+scripts/common/_artifacts_mainnet
+scripts/common/_artifacts_rinkeby
+scripts/common/_artifacts_ropsten
