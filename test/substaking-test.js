@@ -10,6 +10,7 @@ describe('SubStaking', () => {
     const stakeAmount = 10**6;
     const rewardAmount = 10**9;
     const deadline = 9999999999;
+    const QUARTER_LENGTH_SECONDS = 60*60*24*91; // 91 days
     const QUARTER_PROMOTED_EVENT = 'QuarterPromoted';
     const STAKE_LOCKED_EVENT = 'StakeLocked';
     const REWARD_DECLARED_EVENT = 'RewardDeclared';
@@ -70,15 +71,16 @@ describe('SubStaking', () => {
 
         const currentTime = ethers.BigNumber.from(
             (await network.provider.send('eth_getBlockByNumber', ['latest', false])).timestamp);
-        const expectedQuarterLength = ethers.BigNumber.from(60*60*24*91); //expected length is 91 days
+        const expectedQuarterLength = ethers.BigNumber.from(QUARTER_LENGTH_SECONDS); //expected length is 91 days
         const nextQuarterStart = currentTime.add(expectedQuarterLength);
         staking = await upgrades.deployProxy(Staking, [bbsToken.address, 0, nextQuarterStart]);
 
         tokenName = await bbsToken.name();
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
-        //verify that quarter length is as expected before
+        // verify that quarter length is as expected before
         if (quarterLength != expectedQuarterLength.toNumber())
-            throw new Error('quarter length is not unique');
+            throw new Error('quarter length is different');
+
         [owner, ...stakers] = await ethers.getSigners();
     });
 
