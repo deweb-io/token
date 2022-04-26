@@ -8,7 +8,7 @@ pragma solidity 0.8.6;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
-contract StakingUpgrade1 is OwnableUpgradeable {
+contract SubStaking is OwnableUpgradeable {
     ERC20Permit bbsToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
@@ -42,16 +42,29 @@ contract StakingUpgrade1 is OwnableUpgradeable {
         address indexed staker, uint16 stakeIdx, uint256 amount, uint16 unlockQuarter,
         uint256 originalAmount, uint16 originalUnlockQuarter);
     event RewardsClaimed(address indexed staker, uint16 stakeIdx, uint256 amount, uint256 stakeAmount);
+    event Withdraw(address indexed owner, uint256 amount);
 
     /**
      * @dev Initializer function.
      * @param _bbsToken The address of the BBS token contract.
+     * @param _currentQuarter The current quarter.
+     * @param _nextQuarterStart Next quarter start time.
      */
     function initialize(ERC20Permit _bbsToken, uint16 _currentQuarter, uint256 _nextQuarterStart) public initializer {
+        require(_nextQuarterStart > block.timestamp, "next quarter start must be in the future");
+        require(_nextQuarterStart <= block.timestamp + QUARTER_LENGTH, "quarter length is too long");
         __Ownable_init();
         bbsToken = _bbsToken;
         currentQuarter = _currentQuarter;
         nextQuarterStart = _nextQuarterStart;
+    }
+
+    /**
+     * @dev Transfer amount of BBS tokens to the owner of the contract
+     */
+    function withdraw(uint256 amount) public onlyOwner {
+         bbsToken.transfer(msg.sender, amount);
+         emit Withdraw(msg.sender, amount);
     }
 
     /**
@@ -92,8 +105,22 @@ contract StakingUpgrade1 is OwnableUpgradeable {
     function declareReward(
         uint16 quarterIdx, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s
     ) external {
-        require(quarterIdx -1 >= currentQuarter, "can not declare rewards for quarters before the previous");
+        require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
         bbsToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bbsToken.transferFrom(msg.sender, address(this), amount);
+        quarters[quarterIdx].reward += amount;
+        emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
+    }
+
+    /**
+     * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
+     * @param quarterIdx The index of the quarter a reward is declared for.
+     * @param amount The amount of tokens in the reward - must have sufficient allowance.
+     */
+    function declareReward(
+        uint16 quarterIdx, uint256 amount
+    ) external {
+        require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
         bbsToken.transferFrom(msg.sender, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
@@ -225,22 +252,6 @@ contract StakingUpgrade1 is OwnableUpgradeable {
         emit StakeLocked(
             msg.sender, stakeIdx, stakes[msg.sender][stakeIdx].amount, unlockQuarter,
             stakes[msg.sender][stakeIdx].amount, originalUnlockQuarter);
-    }
-
-    /**
-     * @dev Add the rewards of a stake to the locked amount.
-     * @param stakeIdx The index of the stake to be restaked.
-     */
-    function lockRewards(uint16 stakeIdx) external {
-        validateUnlockQuarter(stakes[msg.sender][stakeIdx].unlockQuarter);
-        uint256 rewards = getRewards(msg.sender, stakeIdx);
-        uint256 originalAmount = stakes[msg.sender][stakeIdx].amount;
-        require(rewards > 0, "no rewards to lock");
-        stakes[msg.sender][stakeIdx].amount += rewards;
-        updateShare(msg.sender, stakeIdx);
-        emit StakeLocked(
-            msg.sender, stakeIdx, stakes[msg.sender][stakeIdx].amount, stakes[msg.sender][stakeIdx].unlockQuarter,
-            originalAmount, stakes[msg.sender][stakeIdx].unlockQuarter);
     }
 
     /**
