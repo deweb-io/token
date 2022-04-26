@@ -235,13 +235,15 @@ describe('SubStaking', () => {
         expect(await bbsToken.balanceOf(owner.address)).to.equal(0);
         expect(await bbsToken.balanceOf(staking.address)).to.equal(0);
 
-        await stake(13);
-        expect(await bbsToken.balanceOf(staking.address)).to.above(0);
+        await stake(1);
+        const balanceBeforeWithdraw = await bbsToken.balanceOf(staking.address);
 
         await expectRevert(
             staking.connect(stakers[1]).withdraw(stakeAmount), 'Ownable: caller is not the owner');
 
         await staking.withdraw(stakeAmount);
+        const balanceAfterWithdraw = await bbsToken.balanceOf(staking.address);
         expect(await bbsToken.balanceOf(owner.address)).to.equal(stakeAmount);
+        expect(balanceBeforeWithdraw - stakeAmount).to.equal(balanceAfterWithdraw);
     });
 });
