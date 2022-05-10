@@ -210,6 +210,10 @@ const getStakingContractAddress = () => {
     return staking.address;
 };
 
+const getSubStakingContractAddress = () => {
+    return substaking.address;
+};
+
 module.exports = {
     initStaking,
     getTime,
@@ -225,5 +229,6 @@ module.exports = {
     getStakers,
     getOwner,
     getBBSTokenAddress,
-    getStakingContractAddress
+    getStakingContractAddress,
+    getSubStakingContractAddress
 };
