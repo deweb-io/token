@@ -96,7 +96,8 @@ contract SubStaking is OwnableUpgradeable {
     }
 
     /**
-     * @dev Declare a reward for a quarter by transferring (approved) tokens to the contract.
+     * @dev Declare a reward for a quarter by transferring tokens to the contract.
+     *      This implementation of 'declareReward' is using permit mechanism to aviod paying gas for approve.
      * @param quarterIdx The index of the quarter a reward is declared for.
      * @param amount The amount of tokens in the reward - must have sufficient allowance.
      * @param deadline A deadline for the permit to transfer tokens on behalf of that address.

@@ -24,7 +24,7 @@ const initSubStaking = async () => {
     const stakingNextQuarterStart = await staking.nextQuarterStart();
     substaking = await upgrades.deployProxy(
         SubStaking,
-        [bbsToken.address, stakingCurrentQuarter, hardhat.ethers.BigNumber.from(stakingNextQuarterStart.add(14*60*60*24))]);
+        [bbsToken.address, stakingCurrentQuarter, hardhat.ethers.BigNumber.from(stakingNextQuarterStart.add(60*60*24*14))]);
 }
 
 const getTime = async () => {
