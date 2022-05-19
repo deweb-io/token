@@ -174,3 +174,7 @@ Sun Feb 27 2022 16:07:49 | ---Transfer ownership---
 Sun Feb 27 2022 16:07:51 | Transfering ownership of Bridge to 0x6F8F0Fc5887dDf09A1D3e84E60438FF37B6604ad 
 Sun Feb 27 2022 16:07:58 | https://etherscan.io/tx/0xb1573b727002f0c837b2eddf91279c34871094711d3611fddb9c9d36bebff3cb 
 Sun Feb 27 2022 16:07:58 | ---Transfer ownership Done--- 
+Thu May 19 2022 17:28:55 | ---Promote Quarter--- 
+Thu May 19 2022 17:28:59 | current quarter is:0 
+Thu May 19 2022 17:29:06 | https://etherscan.io/tx/0xfec405b6ad50c30ce1c782432cf1223a6894132b66cc3ee7806a1ab75938e62d 
+Thu May 19 2022 17:29:06 | ---Promote Quarter Done--- 
