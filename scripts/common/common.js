@@ -6,6 +6,7 @@ const ARTIFCATS_DIR = `${__dirname}/artifacts`;
 const BBS_TOKEN_PATH = `${ARTIFCATS_DIR}/bbsToken.txt`;
 const BRIDGE_PATH = `${ARTIFCATS_DIR}/bridge.txt`;
 const STAKING_PATH = `${ARTIFCATS_DIR}/staking.txt`;
+const SUB_STAKING_PATH = `${ARTIFCATS_DIR}/subStaking.txt`;
 
 function getAddress(path) {
     return fs.existsSync(path) ? fs.readFileSync(path, 'utf8').toString() : null;
@@ -16,6 +17,7 @@ module.exports = {
     bbsTokenPath: BBS_TOKEN_PATH,
     bridgePath: BRIDGE_PATH,
     stakingPath: STAKING_PATH,
+    subStakingPath: SUB_STAKING_PATH,
 
     log: function (data) {
         console.log(data);
@@ -38,6 +40,10 @@ module.exports = {
 
     getBridgeAddress: function () {
         return getAddress(BRIDGE_PATH);
+    },
+
+    getSubStakingAddress: function () {
+        return getAddress(SUB_STAKING_PATH);
     },
 
     transferOwnership: async function (contractName, address, newOwner) {

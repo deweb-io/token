@@ -22,5 +22,10 @@ module.exports = {
             'addresses': ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'],
             'active': [true]
         }
+    },
+    'subStaking': {
+        'bbsToken': "",
+        'currentQuarter': 0,
+        'nextQuarterStart': "1653654891"
     }
 } // DO NOT ADD ';' here - it breaks the reading of the json while deploying eos bridge
