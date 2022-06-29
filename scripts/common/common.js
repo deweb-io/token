@@ -84,6 +84,10 @@ module.exports = {
                 network = 'rinkeby.';
                 break;
             }
+            case(5): {
+                network = 'goerli.';
+                break;
+            }
             default: {
                 network = 'undefined.';
             }

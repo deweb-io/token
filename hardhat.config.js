@@ -37,6 +37,11 @@ module.exports = {
         ropsten: {
             url: 'https://ropsten.infura.io/v3/b481942a6a15462988f7ab9000ca51ab',
             accounts : ['0xa54eb7f94dae3fdf83bdb0036eea1c673e824fc8109a70bdb6748adddffe3538']
+        },
+        goreli: {
+            url: 'https://goerli.infura.io/v3/96d44bc5ebd845fb98ca54e3488fd1ac',
+            accounts: ['0xa54eb7f94dae3fdf83bdb0036eea1c673e824fc8109a70bdb6748adddffe3538']
+
         }
     }
 };

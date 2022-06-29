@@ -1,0 +1,43 @@
+Tue Jun 28 2022 11:54:03 | ---Deplyoment of BBS token--- 
+Tue Jun 28 2022 11:54:03 | Deploying BBS token... 
+Tue Jun 28 2022 11:54:11 | https://undefined.etherscan.io/address/0x56454C9d4C7856A54ac8EFF8EFe0910eBa294A28 
+Tue Jun 28 2022 11:54:11 | ---Deplyoment of BBS token Done--- 
+Tue Jun 28 2022 11:57:06 | ---Mint BBS tokens--- 
+Tue Jun 28 2022 11:57:07 | Minting 1000000000 tokens to 0x44569Aa35Ff6d97e6531880712a41D2af72a007C 
+Tue Jun 28 2022 11:57:13 | https://goerli.etherscan.io/tx/0xd330484f0ed6ef110f1a370ba013088495a5fce591648c9aa331fac6666fcca7 
+Tue Jun 28 2022 11:57:13 | ---Mint BBS tokens Done--- 
+Tue Jun 28 2022 11:59:23 | ---Verify BBS contract--- 
+Tue Jun 28 2022 11:59:54 | stdout: Nothing to compile
+Compiling 1 file with 0.8.6
+Successfully submitted source code for contract
+contracts/BBSToken.sol:BBSToken at 0x56454C9d4C7856A54ac8EFF8EFe0910eBa294A28
+for verification on the block explorer. Waiting for verification result...
+
+Successfully verified contract BBSToken on Etherscan.
+https://goerli.etherscan.io/address/0x56454C9d4C7856A54ac8EFF8EFe0910eBa294A28#code
+ 
+Tue Jun 28 2022 11:59:54 | ---Verify BBS contract Done--- 
+Tue Jun 28 2022 12:01:49 | ---Deployment of Staking--- 
+Tue Jun 28 2022 12:01:49 | Deploying Staking... 
+Tue Jun 28 2022 12:02:55 | https://goerli.etherscan.io/address/0x74D22cf65bb9433aa7AfbDf6a4f84FA49C15ed68 
+Tue Jun 28 2022 12:02:55 | ---Deployment of Staking Done--- 
+Tue Jun 28 2022 12:18:40 | ---Declare rewards--- 
+Tue Jun 28 2022 12:18:40 GMT+0300 (Israel Daylight Time) | Error: No quarter index. aborting
+Tue Jun 28 2022 12:19:01 | ---Declare rewards--- 
+Tue Jun 28 2022 12:19:02 | Required rewards for quarter 0 is 100000000000000000000000 (wei) 
+Tue Jun 28 2022 12:19:03 | Current rewards for quarter 0 is 0 (wei) 
+Tue Jun 28 2022 12:19:03 | Adding rewards for quarter 0, amount (wei): 100000000000000000000000 
+Tue Jun 28 2022 12:19:13 | https://goerli.etherscan.io/tx/0x91c7cccc6962632deb607549cded8a897a1b0a2ff4e32ed997f8c5eedac3ffa6 
+Tue Jun 28 2022 12:19:13 | ---Declare rewards Done--- 
+Tue Jun 28 2022 12:19:55 | ---Declare rewards--- 
+Tue Jun 28 2022 12:19:56 | Required rewards for quarter 1 is 100000000000000000000000 (wei) 
+Tue Jun 28 2022 12:19:57 | Current rewards for quarter 1 is 0 (wei) 
+Tue Jun 28 2022 12:19:57 | Adding rewards for quarter 1, amount (wei): 100000000000000000000000 
+Tue Jun 28 2022 12:20:07 | https://goerli.etherscan.io/tx/0x68b2b1e04392c8d1021e5e3c990604cc375c485592c3338fb67db112e2bfe0c3 
+Tue Jun 28 2022 12:20:07 | ---Declare rewards Done--- 
+Tue Jun 28 2022 12:20:15 | ---Declare rewards--- 
+Tue Jun 28 2022 12:20:16 | Required rewards for quarter 2 is 100000000000000000000000 (wei) 
+Tue Jun 28 2022 12:20:17 | Current rewards for quarter 2 is 0 (wei) 
+Tue Jun 28 2022 12:20:17 | Adding rewards for quarter 2, amount (wei): 100000000000000000000000 
+Tue Jun 28 2022 12:20:27 | https://goerli.etherscan.io/tx/0xea39144427e142bf26c3cc4c4e46a0586362382906863aa610e057ddd6939914 
+Tue Jun 28 2022 12:20:27 | ---Declare rewards Done--- 
