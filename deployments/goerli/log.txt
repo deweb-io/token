@@ -41,3 +41,38 @@ Tue Jun 28 2022 12:20:17 | Current rewards for quarter 2 is 0 (wei)
 Tue Jun 28 2022 12:20:17 | Adding rewards for quarter 2, amount (wei): 100000000000000000000000 
 Tue Jun 28 2022 12:20:27 | https://goerli.etherscan.io/tx/0xea39144427e142bf26c3cc4c4e46a0586362382906863aa610e057ddd6939914 
 Tue Jun 28 2022 12:20:27 | ---Declare rewards Done--- 
+Mon Jul 04 2022 10:39:59 | ---Deployment of Bridge--- 
+Mon Jul 04 2022 10:39:59 | Deploying Bridge... 
+Mon Jul 04 2022 10:40:06 | https://goerli.etherscan.io/address/0x2AE3E889A0dEE690884E9c01bAf6d98CB1e6707E 
+Mon Jul 04 2022 10:40:06 | ---Deployment of Bridge Done--- 
+Mon Jul 04 2022 10:41:14 | ---Verify BRIDGE contract--- 
+Mon Jul 04 2022 10:41:24 | error: Command failed: npx hardhat verify --network goreli 0x2AE3E889A0dEE690884E9c01bAf6d98CB1e6707E 40000000000000000000000 80000000000000000000000 1000000000000000000 500000000000000000000 1 0 0x56454C9d4C7856A54ac8EFF8EFe0910eBa294A28
+Error in plugin @nomiclabs/hardhat-etherscan: Failed to send contract verification request.
+Endpoint URL: https://api-goerli.etherscan.io/api
+Reason: The Etherscan API responded that the address 0x2AE3E889A0dEE690884E9c01bAf6d98CB1e6707E does not have bytecode.
+This can happen if the contract was recently deployed and this fact hasn't propagated to the backend yet.
+Try waiting for a minute before verifying your contract. If you are invoking this from a script,
+try to wait for five confirmations of your contract deployment transaction before running the verification subtask.
+For more info run Hardhat with --show-stack-traces
+ 
+Mon Jul 04 2022 10:43:27 | ---Verify BRIDGE contract--- 
+Mon Jul 04 2022 10:44:12 | stdout: Nothing to compile
+Compiling 1 file with 0.8.6
+Successfully submitted source code for contract
+contracts/Bridge.sol:Bridge at 0x2AE3E889A0dEE690884E9c01bAf6d98CB1e6707E
+for verification on the block explorer. Waiting for verification result...
+
+Successfully verified contract Bridge on Etherscan.
+https://goerli.etherscan.io/address/0x2AE3E889A0dEE690884E9c01bAf6d98CB1e6707E#code
+ 
+Mon Jul 04 2022 10:44:12 | ---Verify BRIDGE contract Done--- 
+Mon Jul 04 2022 10:45:47 | ---Set reporters for bridge--- 
+Mon Jul 04 2022 10:45:48 | Set Reporters... 
+Mon Jul 04 2022 10:45:54 | https://goerli.etherscan.io/tx/0x84612ee9dffae1606731866ecee984908d5c9384f1cfdbc8279237f5bb7ef272 
+Mon Jul 04 2022 10:45:54 | Set Reporters Done 
+Mon Jul 04 2022 10:45:54 | ---Set reporters for bridge Done--- 
+Mon Jul 04 2022 16:02:27 | xTransfersEnabled: true 
+Mon Jul 04 2022 16:02:28 | current lock limit: 40000000000000000000000 
+Mon Jul 04 2022 16:02:30 | BBS locked in bridge (wei): 0 
+Mon Jul 04 2022 16:02:31 | BBS balance of token owner (wei): 998699000000000000000000000 
+Mon Jul 04 2022 16:02:37 | https://goerli.etherscan.io/tx/0x187d00607366556db2e1d51c5eadce70e07a5d8474465aa001e30f26727b03c6 

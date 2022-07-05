@@ -1,6 +1,6 @@
 const hardhat = require('hardhat');
 const common = require('../common/common.js');
-const {signPermit, getSigner} = require('../utils/utils');
+const {signPermit, getSigner} = require('./utils');
 const log = common.log;
 
 const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
@@ -16,9 +16,6 @@ async function main() {
 
     if (!BRIDGE_ADDRESS)
         throw new Error('Bridge address is missing. aborting.');
-
-    if (common.artifactExists(XTRANSFER_ARTIFACT_FILE))
-        throw new Error('script already run. aborting.');
 
     const provider = await (ethers.getDefaultProvider(hardhat.network.config.url));
     const deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
