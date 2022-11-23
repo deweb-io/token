@@ -178,3 +178,12 @@ Thu May 19 2022 17:28:55 | ---Promote Quarter---
 Thu May 19 2022 17:28:59 | current quarter is:0 
 Thu May 19 2022 17:29:06 | https://etherscan.io/tx/0xfec405b6ad50c30ce1c782432cf1223a6894132b66cc3ee7806a1ab75938e62d 
 Thu May 19 2022 17:29:06 | ---Promote Quarter Done--- 
+Thu Aug 18 2022 16:31:12 | ---Promote Quarter--- 
+Thu Aug 18 2022 16:31:17 | current quarter is:1
+Thu Aug 18 2022 16:31:32 | https://etherscan.io/tx/0xf2fd17a74eb8683e151f0f50477b04b17e0dd5b7a677d945addd7031928f2cb6
+Thu Aug 18 2022 16:31:32 | ---Promote Quarter Done---
+Thu Nov 17 2022 16:28:12 | ---Promote Quarter--- 
+Thu Nov 17 2022 16:28:17 | current quarter is:2 
+Thu Nov 17 2022 16:28:32 | https://etherscan.io/tx/0xd5696993d53101b0bbf7373420645759e1d39a8392d512a7acb4d463f72ac479 
+Thu Nov 17 2022 16:28:32 | ---Promote Quarter Done---
+

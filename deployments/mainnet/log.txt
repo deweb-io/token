@@ -166,11 +166,23 @@ Tue Feb 22 2022 17:17:58 | ---Set min limit for bridge---
 Tue Feb 22 2022 17:17:59 | Set min limit amount...
 Tue Feb 22 2022 17:18:06 | https://etherscan.io/tx/0x6d88cdab80844e8fe6cb7f52145da46be7aa2adf8a62bd22c07e7b98dee418cd
 Tue Feb 22 2022 17:18:06 | Set min limit Done
-Thu Feb 24 2022 18:24:52 | ---Set comission amount for bridge---
-Thu Feb 24 2022 18:24:54 | Set comission amount...
-Thu Feb 24 2022 18:24:59 | https://etherscan.io/tx/0xec15083ddef62b6d7c488d12938e2be54f5f61259eab757b1bdce07bb41d1795
-Thu Feb 24 2022 18:24:59 | Set comission amount Done
-Sun Feb 27 2022 16:07:49 | ---Transfer ownership---
-Sun Feb 27 2022 16:07:51 | Transfering ownership of Bridge to 0x6F8F0Fc5887dDf09A1D3e84E60438FF37B6604ad
-Sun Feb 27 2022 16:07:58 | https://etherscan.io/tx/0xb1573b727002f0c837b2eddf91279c34871094711d3611fddb9c9d36bebff3cb
-Sun Feb 27 2022 16:07:58 | ---Transfer ownership Done---
+Thu Feb 24 2022 18:24:52 | ---Set comission amount for bridge--- 
+Thu Feb 24 2022 18:24:54 | Set comission amount... 
+Thu Feb 24 2022 18:24:59 | https://etherscan.io/tx/0xec15083ddef62b6d7c488d12938e2be54f5f61259eab757b1bdce07bb41d1795 
+Thu Feb 24 2022 18:24:59 | Set comission amount Done 
+Sun Feb 27 2022 16:07:49 | ---Transfer ownership--- 
+Sun Feb 27 2022 16:07:51 | Transfering ownership of Bridge to 0x6F8F0Fc5887dDf09A1D3e84E60438FF37B6604ad 
+Sun Feb 27 2022 16:07:58 | https://etherscan.io/tx/0xb1573b727002f0c837b2eddf91279c34871094711d3611fddb9c9d36bebff3cb 
+Sun Feb 27 2022 16:07:58 | ---Transfer ownership Done--- 
+Thu May 19 2022 17:28:55 | ---Promote Quarter--- 
+Thu May 19 2022 17:28:59 | current quarter is:0 
+Thu May 19 2022 17:29:06 | https://etherscan.io/tx/0xfec405b6ad50c30ce1c782432cf1223a6894132b66cc3ee7806a1ab75938e62d 
+Thu May 19 2022 17:29:06 | ---Promote Quarter Done--- 
+Thu Aug 18 2022 16:31:12 | ---Promote Quarter--- 
+Thu Aug 18 2022 16:31:17 | current quarter is:1
+Thu Aug 18 2022 16:31:32 | https://etherscan.io/tx/0xf2fd17a74eb8683e151f0f50477b04b17e0dd5b7a677d945addd7031928f2cb6
+Thu Aug 18 2022 16:31:32 | ---Promote Quarter Done---
+Thu Nov 17 2022 16:28:12 | ---Promote Quarter--- 
+Thu Nov 17 2022 16:28:17 | current quarter is:2 
+Thu Nov 17 2022 16:28:32 | https://etherscan.io/tx/0xd5696993d53101b0bbf7373420645759e1d39a8392d512a7acb4d463f72ac479 
+Thu Nov 17 2022 16:28:32 | ---Promote Quarter Done---
