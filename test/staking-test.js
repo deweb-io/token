@@ -267,9 +267,28 @@ describe('Staking', () => {
                     const stakingBBSBalance = (await bbsToken.balanceOf(staking.address)).toNumber();
                     const stakingRTBBalance = (await rtbToken.balanceOf(staking.address)).toNumber();
 
+                    await bbsToken.connect(staker).approve(staking.address, amount);
+
+                    const res = await staking.connect(staker)['migrate(uint256)'](amount);
+                    await expect (res).to.emit(staking, TOKENS_MIGRATED_EVENT).withArgs(staker.address, amount);
+
+                    expect((await bbsToken.balanceOf(staker.address)).toNumber()) .to.equal(stakerBBSBalance - amount);
+                    expect((await rtbToken.balanceOf(staker.address)).toNumber()).to.equal(stakerRTBBalance + amount);
+                    expect((await bbsToken.balanceOf(staking.address)).toNumber()).to.equal(stakingBBSBalance + amount);
+                    expect((await rtbToken.balanceOf(staking.address)).toNumber()).to.equal(stakingRTBBalance - amount);
+                }
+            });
+
+            it('token migration using permit', async() => {
+                for (const amount of [1, 1000, tokenAmount - (1 + 1000)]) {
+                    const stakerBBSBalance = (await bbsToken.balanceOf(staker.address)).toNumber();
+                    const stakerRTBBalance = (await rtbToken.balanceOf(staker.address)).toNumber();
+                    const stakingBBSBalance = (await bbsToken.balanceOf(staking.address)).toNumber();
+                    const stakingRTBBalance = (await rtbToken.balanceOf(staking.address)).toNumber();
+
                     const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, bbsTokenName);
 
-                    const res = await staking.connect(staker).migrate(amount, deadline, v, r, s);
+                    const res = await staking.connect(staker)['migrate(uint256,uint256,uint8,bytes32,bytes32)'](amount, deadline, v, r, s);
                     await expect (res).to.emit(staking, TOKENS_MIGRATED_EVENT).withArgs(staker.address, amount);
 
                     expect((await bbsToken.balanceOf(staker.address)).toNumber()) .to.equal(stakerBBSBalance - amount);

@@ -289,6 +289,16 @@ contract StakingUpgrade2 is OwnableUpgradeable {
     /**
      * @dev Migrate BBS to RTB.
      * @param amount Amount of BBS tokens to migrate to RTB.
+     */
+    function migrate(uint256 amount) external {
+        require(amount > 0, "invalid amount");
+
+        _migrate(msg.sender, amount);
+    }
+
+    /**
+     * @dev Migrate BBS to RTB.
+     * @param amount Amount of BBS tokens to migrate to RTB.
      * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
      * @param v, r, s The signature parameters for the permit.
      */
@@ -296,9 +306,21 @@ contract StakingUpgrade2 is OwnableUpgradeable {
         require(amount > 0, "invalid amount");
 
         bbsToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
-        bbsToken.safeTransferFrom(msg.sender, address(this), amount);
-        rtbToken.safeTransfer(msg.sender, amount);
 
-        emit TokensMigrated(msg.sender, amount);
+        _migrate(msg.sender, amount);
+    }
+
+    /**
+     * @dev Migrate BBS to RTB.
+     * @param sender  The address of the sender.
+     * @param amount Amount of BBS tokens to migrate to RTB.
+     */
+    function _migrate(address sender, uint256 amount) private {
+        require(amount > 0, "invalid amount");
+
+        bbsToken.safeTransferFrom(sender, address(this), amount);
+        rtbToken.safeTransfer(sender, amount);
+
+        emit TokensMigrated(sender, amount);
     }
 }
