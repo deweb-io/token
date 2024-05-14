@@ -6,8 +6,11 @@ pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract StakingUpgrade2 is OwnableUpgradeable {
+    using SafeERC20 for ERC20Permit;
+
     ERC20Permit __deprecated;
 
     ERC20Permit public immutable bbsToken;
@@ -108,7 +111,7 @@ contract StakingUpgrade2 is OwnableUpgradeable {
     ) external {
         require(quarterIdx >= currentQuarter, "can not declare rewards for past quarters");
         rtbToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
-        rtbToken.transferFrom(msg.sender, address(this), amount);
+        rtbToken.safeTransferFrom(msg.sender, address(this), amount);
         quarters[quarterIdx].reward += amount;
         emit RewardDeclared(quarterIdx, amount, quarters[quarterIdx].reward);
     }
@@ -203,7 +206,7 @@ contract StakingUpgrade2 is OwnableUpgradeable {
     ) external {
         validateUnlockQuarter(unlockQuarter);
         rtbToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
-        rtbToken.transferFrom(msg.sender, address(this), amount);
+        rtbToken.safeTransferFrom(msg.sender, address(this), amount);
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
         updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
@@ -217,7 +220,7 @@ contract StakingUpgrade2 is OwnableUpgradeable {
      */
     function lock(uint256 amount, uint16 unlockQuarter) external {
         validateUnlockQuarter(unlockQuarter);
-        rtbToken.transferFrom(msg.sender, address(this), amount);
+        rtbToken.safeTransferFrom(msg.sender, address(this), amount);
         stakes[msg.sender].push(Stake(amount, block.timestamp, currentQuarter, unlockQuarter, currentQuarter));
         shares[msg.sender].push();
         updateShare(msg.sender, uint16(stakes[msg.sender].length - 1));
@@ -271,7 +274,7 @@ contract StakingUpgrade2 is OwnableUpgradeable {
             stakes[msg.sender][stakeIdx].amount = 0;
         }
         require(claimAmount > 0, "nothing to claim");
-        rtbToken.transfer(msg.sender, claimAmount);
+        rtbToken.safeTransfer(msg.sender, claimAmount);
         emit RewardsClaimed(msg.sender, stakeIdx, claimAmount, stakeAmount);
     }
 }
