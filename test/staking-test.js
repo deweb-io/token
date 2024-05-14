@@ -279,5 +279,74 @@ describe('Staking', () => {
                 }
             });
         });
+
+        describe('staking', () => {
+            async function stake(token, amount, endQuarter) {
+                const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, token, await token.name());
+
+                await staking.connect(staker).lock(amount, endQuarter, deadline, v, r, s);
+            }
+
+            async function claim() {
+                const res = await staking.connect(staker).claim(0);
+                const rewardsClaimed = (await res.wait()).events[1];
+                const { amount } = rewardsClaimed.args;
+
+                return amount.toNumber();
+            }
+
+            const totalAmount = 10**6;
+            let staker;
+
+            beforeEach(async() => {
+                staker = stakers[1];
+
+                await bbsToken.connect(owner).mint(staker.address, totalAmount);
+
+                const Staking = await ethers.getContractFactory('Staking');
+                staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
+
+                await stake(bbsToken, 100_000, 8);
+                await increaseTime(14);
+            });
+
+
+            context('before the upgrade', () => {
+                it('stake and rewards are in BBS', async() => {
+                    let stakerBBSBalance = (await bbsToken.balanceOf(staker.address)).toNumber();
+                    let stakerRTBBalance = (await rtbToken.balanceOf(staker.address)).toNumber();
+
+                    const claimedAmount = await claim();
+
+                    // Rewards are still in BBS
+                    expect((await bbsToken.balanceOf(staker.address)).toNumber()).to.equal(stakerBBSBalance + claimedAmount);
+                    expect((await rtbToken.balanceOf(staker.address)).toNumber()).to.equal(stakerRTBBalance);
+                });
+            });
+
+            context('after the upgrade', () => {
+                beforeEach(async() => {
+                    staking = await upgrades.upgradeProxy(staking.address, await ethers.getContractFactory('StakingUpgrade2'), {
+                        constructorArgs: [bbsToken.address, rtbToken.address],
+                        unsafeAllow: ['delegatecall']
+                    });
+
+                    // Make sure that the upgraded contract has enough RTB to support stakes and rewards
+                    const stakingBalance = await bbsToken.balanceOf(staking.address);
+                    await rtbToken.connect(owner).mint(staking.address, stakingBalance);
+                });
+
+                it('stake and rewards are in RTB', async() => {
+                    let stakerBBSBalance = (await bbsToken.balanceOf(staker.address)).toNumber();
+                    let stakerRTBBalance = (await rtbToken.balanceOf(staker.address)).toNumber();
+
+                    const claimedAmount = await claim();
+
+                    // Rewards are now in RTB
+                    expect((await bbsToken.balanceOf(staker.address)).toNumber()).to.equal(stakerBBSBalance);
+                    expect((await rtbToken.balanceOf(staker.address)).toNumber()).to.equal(stakerRTBBalance + claimedAmount);
+                });
+            });
+        });
     });
 });
