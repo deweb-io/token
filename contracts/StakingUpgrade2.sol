@@ -11,6 +11,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract StakingUpgrade2 is OwnableUpgradeable {
     using SafeERC20 for ERC20Permit;
 
+    /// @custom:oz-renamed-from bbsToken
+    // Note: As part of the V2 upgrade optimizations, we are reducing gas costs by converting bbsToken and rtbToken to
+    // immutable state variables. Consequently, the previously used slot is now marked as `__deprecated`.
     ERC20Permit __deprecated;
 
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
