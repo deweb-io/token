@@ -13,7 +13,10 @@ contract StakingUpgrade2 is OwnableUpgradeable {
 
     ERC20Permit __deprecated;
 
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ERC20Permit public immutable bbsToken;
+
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     ERC20Permit public immutable rtbToken;
 
     uint256 public constant QUARTER_LENGTH = 91 days;
@@ -47,12 +50,14 @@ contract StakingUpgrade2 is OwnableUpgradeable {
         address indexed staker, uint16 stakeIdx, uint256 amount, uint16 unlockQuarter,
         uint256 originalAmount, uint16 originalUnlockQuarter);
     event RewardsClaimed(address indexed staker, uint16 stakeIdx, uint256 amount, uint256 stakeAmount);
+    event TokensMigrated(address indexed holder, uint256 amount);
 
     /**
      * @dev Constructor function.
      * @param _bbsToken The address of the BBS token contract.
      * @param _rtbToken The address of the RTB token contract.
      */
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(ERC20Permit _bbsToken, ERC20Permit _rtbToken) {
         require(address(_bbsToken) != address(0), "invalid BBS token");
         require(address(_rtbToken) != address(0), "invalid RTB token");
@@ -276,5 +281,21 @@ contract StakingUpgrade2 is OwnableUpgradeable {
         require(claimAmount > 0, "nothing to claim");
         rtbToken.safeTransfer(msg.sender, claimAmount);
         emit RewardsClaimed(msg.sender, stakeIdx, claimAmount, stakeAmount);
+    }
+
+    /**
+     * @dev Migrate BBS to RTB.
+     * @param amount Amount of BBS tokens to migrate to RTB.
+     * @param deadline A deadline for the permit to transfer tokens on behalf of that address.
+     * @param v, r, s The signature parameters for the permit.
+     */
+    function migrate(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        require(amount > 0, "invalid amount");
+
+        bbsToken.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bbsToken.safeTransferFrom(msg.sender, address(this), amount);
+        rtbToken.safeTransfer(msg.sender, amount);
+
+        emit TokensMigrated(msg.sender, amount);
     }
 }

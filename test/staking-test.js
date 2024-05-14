@@ -14,7 +14,7 @@ describe('Staking', () => {
     const STAKE_LOCKED_EVENT = 'StakeLocked';
     const REWARD_DECLARED_EVENT = 'RewardDeclared';
     const REWARD_CLAIMED_EVENT = 'RewardsClaimed';
-    let owner, stakers, bbsToken, staking, quarterLength, tokenName;
+    let owner, stakers, bbsToken, staking, quarterLength, bbsTokenName;
 
     async function mintAndDoAs(signer, amount){
         await bbsToken.mint(signer.address, amount);
@@ -22,7 +22,7 @@ describe('Staking', () => {
     }
 
     async function signPermitData(signer, value) {
-        return await signPermit(signer, staking.address, value, deadline, bbsToken, tokenName);
+        return await signPermit(signer, staking.address, value, deadline, bbsToken, bbsTokenName);
     }
 
     async function increaseTime(quarters){
@@ -69,7 +69,7 @@ describe('Staking', () => {
         const Staking = await ethers.getContractFactory('Staking');
         bbsToken = await BBSToken.deploy();
         staking = await upgrades.deployProxy(Staking, [bbsToken.address]);
-        tokenName = await bbsToken.name();
+        bbsTokenName = await bbsToken.name();
         quarterLength = (await staking.QUARTER_LENGTH()).toNumber();
         [owner, ...stakers] = await ethers.getSigners();
     });
@@ -231,5 +231,53 @@ describe('Staking', () => {
         await stake(4);
         expectBigNum((await staking.shares(stakers[0].address, 1, 3))).to.equal(stakeAmount * 100);
         expectBigNum((await staking.shares(stakers[0].address, 1, 2))).to.equal(stakeAmount * 150);
+    });
+
+    describe('staking v2', () => {
+        const TOKENS_MIGRATED_EVENT = 'TokensMigrated';
+        let rtbToken;
+
+        beforeEach(async() => {
+            const RTBToken = await ethers.getContractFactory('RTBToken');
+            const Staking = await ethers.getContractFactory('StakingUpgrade2');
+
+            rtbToken = await RTBToken.deploy();
+
+            staking = await upgrades.deployProxy(Staking, [], {
+                constructorArgs: [bbsToken.address, rtbToken.address],
+                unsafeAllow: ['delegatecall']
+            });
+        });
+
+        describe('migration', () => {
+            const tokenAmount = 10**9;
+            let staker;
+
+            beforeEach(async() => {
+                staker = stakers[0];
+
+                await bbsToken.connect(owner).mint(staker.address, tokenAmount);
+                await rtbToken.connect(owner).mint(staking.address, tokenAmount);
+            });
+
+            it('token migration', async() => {
+                for (const amount of [1, 1000, tokenAmount - (1 + 1000)]) {
+                    const stakerBBSBalance = (await bbsToken.balanceOf(staker.address)).toNumber();
+                    const stakerRTBBalance = (await rtbToken.balanceOf(staker.address)).toNumber();
+                    const stakingBBSBalance = (await bbsToken.balanceOf(staking.address)).toNumber();
+                    const stakingRTBBalance = (await rtbToken.balanceOf(staking.address)).toNumber();
+
+                    const {v, r, s} = await signPermit(staker, staking.address, amount, deadline, bbsToken, bbsTokenName);
+
+                    const res = await staking.connect(staker).migrate(amount, deadline, v, r, s);
+                    await expect (res).to.emit(staking, TOKENS_MIGRATED_EVENT).withArgs(staker.address, amount);
+
+                    expect((await bbsToken.balanceOf(staker.address)).toNumber()) .to.equal(stakerBBSBalance - amount);
+                    expect((await rtbToken.balanceOf(staker.address)).toNumber()).to.equal(stakerRTBBalance + amount);
+                    expect((await bbsToken.balanceOf(staking.address)).toNumber()).to.equal(stakingBBSBalance + amount);
+                    expect((await rtbToken.balanceOf(staking.address)).toNumber()).to.equal(stakingRTBBalance - amount);
+                }
+            });
+        });
     });
 });
