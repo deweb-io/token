@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// BBS staking rewards program.
+// RTB staking rewards program.
 // Token holders lock transfer approved tokens until the end of the current quarter plus 0 to 12 additional quarters.
 // Rewards are divided pro-rata, with a 25% boost given for every locked quarter beyond the current one.
 pragma solidity 0.8.6;
@@ -51,7 +51,7 @@ contract StakingUpgrade2 is OwnableUpgradeable {
     /**
      * @dev Constructor function.
      * @param _bbsToken The address of the BBS token contract.
-     * @param _rtbToken The address of the BBS token contract.
+     * @param _rtbToken The address of the RTB token contract.
      */
     constructor(ERC20Permit _bbsToken, ERC20Permit _rtbToken) {
         require(address(_bbsToken) != address(0), "invalid BBS token");
