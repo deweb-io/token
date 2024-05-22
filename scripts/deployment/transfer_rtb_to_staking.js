@@ -1,7 +1,6 @@
 const hardhat = require('hardhat');
 const config = require('./config.js');
 const common = require('../common/common.js');
-const {getSigner} = require('../utils/utils.js');
 const log = common.log;
 
 const STAKING_ADDRESS = common.getStakingAddress();
@@ -20,15 +19,9 @@ async function main() {
     const Token = await hardhat.ethers.getContractFactory('RTBToken');
     const rtbToken = Token.attach(RTB_TOKEN_ADDRESS);
 
-    const deployer = (await getSigner()).address;
     log(`Transfering ${config.mint.totalSupply} RTB tokens to ${STAKING_ADDRESS}`);
 
     const totalSupplyWei = hardhat.ethers.utils.parseEther(config.mint.totalSupply);
-    const approveTx = await rtbToken.approve(STAKING_ADDRESS, totalSupplyWei);
-    await approveTx.wait();
-
-    const currentAllowance = await rtbToken.allowance(deployer, STAKING_ADDRESS);
-    if (currentAllowance.lt(totalSupplyWei)) throw new Error('Not enough allowance');
 
     const tx = await rtbToken.transfer(STAKING_ADDRESS, totalSupplyWei);
     common.etherscanLogTx(tx.hash, tx.chainId);
