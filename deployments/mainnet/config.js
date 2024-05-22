@@ -4,7 +4,7 @@ module.exports = {
         'totalSupply': '1000000000'
     },
     'safe' : {
-        'address' : '0xeE294a573eA5B77b84880a109FAeD7FdC0136d2D'
+        'address' : '0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4'
     },
     'rewards': [
         { 'q' : 0, 'amount': '10000000'},

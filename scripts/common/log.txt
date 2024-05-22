@@ -194,3 +194,64 @@ Thu May 18 2023 17:28:31 | ---Promote Quarter---
 Thu May 18 2023 17:28:34 | current quarter is:4 
 Thu May 18 2023 17:28:40 | https://etherscan.io/tx/0x5c680420090e80019b2d0cfe5312b028c837d1837ac8d5c227ef5b77a7deff48 
 Thu May 18 2023 17:28:40 | ---Promote Quarter Done--- 
+Wed May 22 2024 14:36:09 | ---Deplyoment of RTB token--- 
+Wed May 22 2024 14:36:09 | Deploying RTB token... 
+Wed May 22 2024 14:36:17 | https://undefined.etherscan.io/address/0x055999B83f9cADE9E3988A0f34Ef72817566800D 
+Wed May 22 2024 14:36:17 | ---Deplyoment of RTB token Done--- 
+Wed May 22 2024 14:37:53 | ---Mint RTB tokens--- 
+Wed May 22 2024 14:37:54 | Minting 1000000000 tokens to 0xdb00922dF18FC18b307C54b550626fF6c728F811 
+Wed May 22 2024 14:38:00 | https://undefined.etherscan.io/tx/0xbcde9e631fde8f12554cad3694e3b1bed6bf482f93022420280f7756e97612ed 
+Wed May 22 2024 14:38:00 | ---Mint RTB tokens Done--- 
+Wed May 22 2024 14:40:20 | ---Transfer RTB to Staking contract--- 
+Wed May 22 2024 14:40:20 | Transfering 1000000000 RTB tokens to 0x70356056ee3D418b3C0CC50c6dC15df81D809593 
+Wed May 22 2024 14:40:26 | https://undefined.etherscan.io/tx/0x8e4c57a2a11837a5ec3ae1c2438863e7418070abf1be1a1e06226bf0abb227f8 
+Wed May 22 2024 14:40:26 | ---Transfer RTB to Staking contract Done--- 
+Wed May 22 2024 15:28:30 | ---Deplyoment of RTB token--- 
+Wed May 22 2024 15:28:30 | Deploying RTB token... 
+Wed May 22 2024 15:28:50 | https://etherscan.io/address/0x055999B83f9cADE9E3988A0f34Ef72817566800D 
+Wed May 22 2024 15:28:50 | ---Deplyoment of RTB token Done--- 
+Wed May 22 2024 15:31:23 | ---Verify RTB contract--- 
+Wed May 22 2024 15:31:31 | error: Command failed: npx hardhat verify --network mainnet 0x055999B83f9cADE9E3988A0f34Ef72817566800D
+(node:18177) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+DEPRECATION WARNING: 'hardhat-etherscan' has been deprecated in favor of 'hardhat-verify'. You can find more information about the migration in the readme.
+Error in plugin @nomiclabs/hardhat-etherscan: More than one contract was found to match the deployed bytecode.
+Please use the contract parameter with one of the following contracts:
+  * contracts/BBSToken.sol:BBSToken
+  * contracts/RTBToken.sol:RTBToken
+
+For example:
+
+  hardhat verify --contract contracts/Example.sol:ExampleContract <other args>
+
+If you are running the verify subtask from within Hardhat instead:
+
+  await run("verify:verify", {
+    <other args>,
+    contract: "contracts/Example.sol:ExampleContract"
+  };
+For more info run Hardhat with --show-stack-traces
+ 
+Wed May 22 2024 15:33:47 | ---Mint RTB tokens--- 
+Wed May 22 2024 15:33:47 | Minting 1000000000 tokens to 0xdb00922dF18FC18b307C54b550626fF6c728F811 
+Wed May 22 2024 15:34:01 | https://etherscan.io/tx/0xdb9433e6300f324b234ca706ba39b03a085f573b5a83617c9f110a89629a57ca 
+Wed May 22 2024 15:34:01 | ---Mint RTB tokens Done--- 
+Wed May 22 2024 16:09:18 | ---Transfer ownership--- 
+Wed May 22 2024 16:09:20 | Transfering ownership of RTBToken to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4 
+Wed May 22 2024 16:09:38 | https://etherscan.io/tx/0xc8500b5ab5061f8ac254d3b4a694e970cf11808a9e538d39e50dbcf23102169e 
+Wed May 22 2024 16:09:38 | ---Transfer ownership Done--- 
+Wed May 22 2024 16:15:41 | ---Staking upgrade 2--- 
+Wed May 22 2024 16:15:41 | Upgrading Staking... 
+Wed May 22 2024 16:16:11 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572"}, method="estimateGas", transaction={"from":"0xdb00922dF18FC18b307C54b550626fF6c728F811","to":"0xAb1E3fb4D35A0eA4e369463743f964Ae90ac09AF","data":"0x99a88ec4000000000000000000000000cee4510fc056fd7dccf8109f9ed9fe452d732b4c0000000000000000000000009896bf7c7b86b2d489a14e4b3f5bbe9520e5da6d","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Wed May 22 2024 16:31:34 | ---Staking upgrade 2--- 
+Wed May 22 2024 16:31:34 | Upgrading Staking... 
+Wed May 22 2024 16:32:04 | https://etherscan.io/address/0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c 
+Wed May 22 2024 16:32:04 | ---Staking upgrade 2 done--- 
+Wed May 22 2024 16:40:10 | ---Transfer RTB to Staking contract--- 
+Wed May 22 2024 16:40:11 | Transfering 1000000000 RTB tokens to 0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c 
+Wed May 22 2024 16:40:30 | https://etherscan.io/tx/0x1b21dd03de326a51a12d80419afa9aa6c37138ce90d91ef356e7cc4f08bdb5e0 
+Wed May 22 2024 16:40:30 | ---Transfer RTB to Staking contract Done--- 
+Wed May 22 2024 16:43:45 | ---Transfer ownership--- 
+Wed May 22 2024 16:43:47 | Transfering ownership of Staking to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4 
+Wed May 22 2024 16:44:00 | https://etherscan.io/tx/0x4c41985b7648cc43e0ac243d6ac974cf18d76130f1845d802f20d13cd08eea86 
+Wed May 22 2024 16:44:00 | ---Transfer ownership Done--- 

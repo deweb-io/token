@@ -3,7 +3,6 @@ const common = require('../common/common.js');
 
 const RTB_TOKEN_ADDRESS = common.getRTBtokenAddress();
 
-
 async function main() {
     await common.transferOwnership('RTBToken', RTB_TOKEN_ADDRESS, config.safe.address);
 }

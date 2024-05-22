@@ -7,7 +7,6 @@ const STAKING_ADDRESS = common.getStakingAddress();
 const RTB_TOKEN_ADDRESS = common.getRTBtokenAddress();
 const TRANSFER_RTB_TO_STAKING_ARTIFACT_FILE = 'transfer_rtb_to_staking_tx.txt';
 
-
 async function main() {
     log('---Transfer RTB to Staking contract---');
     if (!RTB_TOKEN_ADDRESS)
