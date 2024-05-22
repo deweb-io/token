@@ -2,6 +2,7 @@ require('@nomiclabs/hardhat-etherscan');
 require('@nomiclabs/hardhat-waffle');
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-gas-reporter');
+require('hardhat-storage-layout');
 require('solidity-coverage');
 /**
  * @type import('hardhat/config').HardhatUserConfig
