@@ -255,3 +255,83 @@ Wed May 22 2024 16:43:45 | ---Transfer ownership---
 Wed May 22 2024 16:43:47 | Transfering ownership of Staking to 0x8fFf2c4517708d51540eD6ef9124BB48b5Db50e4 
 Wed May 22 2024 16:44:00 | https://etherscan.io/tx/0x4c41985b7648cc43e0ac243d6ac974cf18d76130f1845d802f20d13cd08eea86 
 Wed May 22 2024 16:44:00 | ---Transfer ownership Done--- 
+Sun Sep 28 2025 12:00:47 | ---Declare rewards--- 
+Sun Sep 28 2025 12:00:47 GMT+0300 (Israel Daylight Time) | HardhatError: HH700: Artifact for contract "Staking" not found. 
+Sun Sep 28 2025 12:02:58 | ---Declare rewards--- 
+Sun Sep 28 2025 12:02:58 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 12:02:58 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 12:12:02 | ---Declare rewards--- 
+Sun Sep 28 2025 12:12:03 | Required rewards for quarter 13 is 10000000000000000000000000 (wei) 
+Sun Sep 28 2025 12:12:03 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 12:12:47 | ---Declare rewards--- 
+Sun Sep 28 2025 12:12:47 GMT+0300 (Israel Daylight Time) | TypeError: Cannot read properties of undefined (reading 'amount')
+Sun Sep 28 2025 12:12:55 | ---Declare rewards--- 
+Sun Sep 28 2025 12:12:55 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 12:12:55 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 12:28:33 | ---Declare rewards--- 
+Sun Sep 28 2025 12:28:33 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 12:28:33 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 12:28:49 | ---Declare rewards--- 
+Sun Sep 28 2025 12:28:49 | Required rewards for quarter 13 is 10000000000000000000000000 (wei) 
+Sun Sep 28 2025 12:28:49 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 13:42:14 | ---Declare rewards--- 
+Sun Sep 28 2025 13:42:14 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 13:42:14 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 13:43:24 | ---Declare rewards--- 
+Sun Sep 28 2025 13:43:25 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 13:43:25 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 13:46:18 | ---Declare rewards--- 
+Sun Sep 28 2025 13:46:18 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 13:46:18 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 14:03:38 | ---Declare rewards--- 
+Sun Sep 28 2025 14:03:39 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:03:39 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 14:05:28 | ---Declare rewards--- 
+Sun Sep 28 2025 14:05:29 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:05:29 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 14:06:22 | ---Declare rewards--- 
+Sun Sep 28 2025 14:06:22 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:06:22 GMT+0300 (Israel Daylight Time) | Error: call revert exception (method="quarters(uint16)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.5.0)
+Sun Sep 28 2025 14:12:28 | ---Declare rewards--- 
+Sun Sep 28 2025 14:12:29 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:12:31 | Current rewards for quarter 14 is 0 (wei) 
+Sun Sep 28 2025 14:12:31 | Adding rewards for quarter 14, amount (wei): 1000000000000000000 
+Sun Sep 28 2025 14:12:36 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001e45524332305065726d69743a20696e76616c6964207369676e61747572650000"}, method="estimateGas", transaction={"from":"0x8653D2d419d8d42C501bbA32C00d271Ee6713145","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0x41b61722000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000002bce4fc17000000000000000000000000000000000000000000000000000000000000001c8f98c3d75f6e6b125407588a90292663d6ee418674ac663fa99dd3b2a390c02144b69eaa0b31c54995c88c32b530b52003740b8f218c7d47ccc3a87af44265eb","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Sun Sep 28 2025 14:14:48 | ---Declare rewards--- 
+Sun Sep 28 2025 14:14:49 | Required rewards for quarter 14 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:14:50 | Current rewards for quarter 14 is 0 (wei) 
+Sun Sep 28 2025 14:14:50 | Adding rewards for quarter 14, amount (wei): 1000000000000000000 
+Sun Sep 28 2025 14:15:00 | https://etherscan.io/tx/0xb19f7acf850890716736263e495ef2d9fca7ba8a73ea4599828be745fb6e6645 
+Sun Sep 28 2025 14:15:00 | ---Declare rewards Done--- 
+Sun Sep 28 2025 14:16:21 | ---Promote Quarter--- 
+Sun Sep 28 2025 14:16:24 | current quarter is:13 
+Sun Sep 28 2025 14:16:26 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001d63757272656e74207175617274657220686173206e6f20726577617264000000"}, method="estimateGas", transaction={"from":"0x8653D2d419d8d42C501bbA32C00d271Ee6713145","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0x4fa14abc","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Sun Sep 28 2025 14:16:40 | ---Promote Quarter--- 
+Sun Sep 28 2025 14:16:43 | current quarter is:13 
+Sun Sep 28 2025 14:16:45 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001d63757272656e74207175617274657220686173206e6f20726577617264000000"}, method="estimateGas", transaction={"from":"0x8653D2d419d8d42C501bbA32C00d271Ee6713145","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0x4fa14abc","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Sun Sep 28 2025 14:17:06 | ---Declare rewards--- 
+Sun Sep 28 2025 14:17:06 | Required rewards for quarter 13 is 10000000000000000000000000 (wei) 
+Sun Sep 28 2025 14:17:08 | Current rewards for quarter 13 is 0 (wei) 
+Sun Sep 28 2025 14:17:08 | Adding rewards for quarter 13, amount (wei): 10000000000000000000000000 
+Sun Sep 28 2025 14:17:13 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002645524332303a207472616e7366657220616d6f756e7420657863656564732062616c616e63650000000000000000000000000000000000000000000000000000"}, method="estimateGas", transaction={"from":"0x8653D2d419d8d42C501bbA32C00d271Ee6713145","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0x41b61722000000000000000000000000000000000000000000000000000000000000000d000000000000000000000000000000000000000000084595161401484a00000000000000000000000000000000000000000000000000000000000002bce4fd2b000000000000000000000000000000000000000000000000000000000000001b8f08162531da2c435117588db876636322c2ea3576e8d15688b102e140dd15940757b7dcb21f94519d05eb42364274fef9900bea9e00777127c966db50b9b1a9","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Sun Sep 28 2025 14:17:42 | ---Declare rewards--- 
+Sun Sep 28 2025 14:17:43 | Required rewards for quarter 13 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:17:45 | Current rewards for quarter 13 is 0 (wei) 
+Sun Sep 28 2025 14:17:45 | Adding rewards for quarter 13, amount (wei): 1000000000000000000 
+Sun Sep 28 2025 14:17:55 | https://etherscan.io/tx/0xb0a61bfe9269f03dd24e4a0afb4084ccff629967f39ffacb6bb809225fe00664 
+Sun Sep 28 2025 14:17:55 | ---Declare rewards Done--- 
+Sun Sep 28 2025 14:18:03 | ---Promote Quarter--- 
+Sun Sep 28 2025 14:18:05 | current quarter is:13 
+Sun Sep 28 2025 14:18:54 | ---Promote Quarter--- 
+Sun Sep 28 2025 14:18:57 | current quarter is:13 
+Sun Sep 28 2025 14:19:05 | https://etherscan.io/tx/0xb348d5550c0610fd60a776148c55ca2d5f0648bba6ace6f32dced14a7a9a3e08 
+Sun Sep 28 2025 14:19:05 | ---Promote Quarter Done--- 
+Sun Sep 28 2025 14:20:16 | ---Promote Quarter--- 
+Sun Sep 28 2025 14:20:18 | current quarter is:14 
+Sun Sep 28 2025 14:20:20 GMT+0300 (Israel Daylight Time) | Error: cannot estimate gas; transaction may fail or may require manual gas limit (error={"name":"ProviderError","code":3,"_isProviderError":true,"data":"0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001f63757272656e742071756172746572206973206e6f7420796574206f76657200"}, method="estimateGas", transaction={"from":"0x8653D2d419d8d42C501bbA32C00d271Ee6713145","to":"0xCeE4510fc056fd7dCCf8109F9Ed9fe452D732B4c","data":"0x4fa14abc","accessList":null}, code=UNPREDICTABLE_GAS_LIMIT, version=providers/5.5.2)
+Sun Sep 28 2025 14:21:56 | ---Declare rewards--- 
+Sun Sep 28 2025 14:21:57 | Required rewards for quarter 15 is 1000000000000000000 (wei) 
+Sun Sep 28 2025 14:21:59 | Current rewards for quarter 15 is 0 (wei) 
+Sun Sep 28 2025 14:21:59 | Adding rewards for quarter 15, amount (wei): 1000000000000000000 
+Sun Sep 28 2025 14:22:09 | https://etherscan.io/tx/0xe62ab63b5359591e4a52ecdd16dc2a0a14b9cd5bfd4a1b0db5e3f9cfd97c1f10 
+Sun Sep 28 2025 14:22:09 | ---Declare rewards Done--- 

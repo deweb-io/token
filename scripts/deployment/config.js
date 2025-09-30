@@ -20,7 +20,11 @@ module.exports = {
         { 'q' : 10, 'amount': '10000000'},
         { 'q' : 11, 'amount': '10000000'},
         { 'q' : 12, 'amount': '10000000'},
-        { 'q' : 13, 'amount': '10000000'}],
+        { 'q': 13, 'amount': '1' },
+        { 'q': 14, 'amount': '1' },
+        { 'q': 15, 'amount': '1' },
+    ],
+    
     'bridge': {
         'maxLockLimit' : '357142',
         'maxReleaseLimit': '357142',

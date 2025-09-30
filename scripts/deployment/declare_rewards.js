@@ -4,7 +4,7 @@ const common = require('../common/common');
 const {signPermit, getSigner} = require('../utils/utils');
 const log = common.log;
 
-const BBS_TOKEN_ADDRESS = common.getBBStokenAddress();
+const RTB_TOKEN_ADDRESS = common.getRTBtokenAddress();
 const STACKING_ADDRESS = common.getStakingAddress();
 
 const QUARTER_INDEX = process.env.QUARTER_INDEX;
@@ -13,8 +13,8 @@ const ARTIFACT_FILE = `reward_quarter_${QUARTER_INDEX}_tx.txt`;
 async function main() {
     log('---Declare rewards---');
 
-    if (!BBS_TOKEN_ADDRESS)
-        throw new Error('BBS token address is missing. aborting.');
+    if (!RTB_TOKEN_ADDRESS)
+        throw new Error('RTB token address is missing. aborting.');
 
     if (!STACKING_ADDRESS)
         throw new Error('No Stacking address is missing. aborting.');
@@ -27,6 +27,7 @@ async function main() {
 
     const rewardConfig = config.rewards.find(reward => reward.q == QUARTER_INDEX);
     const rewardAmountWei = hardhat.ethers.BigNumber.from(hardhat.ethers.utils.parseEther(rewardConfig.amount));
+
     log(`Required rewards for quarter ${rewardConfig.q} is ${rewardAmountWei} (wei)`);
     const currentRewardWei = (await staking.quarters(QUARTER_INDEX)).reward;
     log(`Current rewards for quarter ${rewardConfig.q} is ${currentRewardWei} (wei)`);
@@ -49,12 +50,12 @@ async function main() {
     const provider = await (ethers.getDefaultProvider(hardhat.network.config.url));
     const deadline = (await provider.getBlock(await provider.getBlockNumber())).timestamp + 10000000000;
 
-    const Token = await hardhat.ethers.getContractFactory('BBSToken');
-    const bbsToken = Token.attach(BBS_TOKEN_ADDRESS);
-    const tokenName = await bbsToken.name();
+    const Token = await hardhat.ethers.getContractFactory('RTBToken');
+    const rtbToken = Token.attach(RTB_TOKEN_ADDRESS);
+    const tokenName = await rtbToken.name();
 
     const holder = await getSigner();
-    const {v, r, s} = await signPermit(holder, STACKING_ADDRESS, rewardToAddWei, deadline, bbsToken, tokenName);
+    const {v, r, s} = await signPermit(holder, STACKING_ADDRESS, rewardToAddWei, deadline, rtbToken, tokenName);
 
     const tx = await staking.declareReward(QUARTER_INDEX, rewardToAddWei, deadline, v, r, s);
     common.etherscanLogTx(tx.hash, tx.chainId);

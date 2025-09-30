@@ -10,7 +10,7 @@ async function main() {
     if (!STACKING_ADDRESS)
         throw new Error('No Stacking address is missing. aborting.');
 
-    const Staking = await hardhat.ethers.getContractFactory('StakingUpgrade1');
+    const Staking = await hardhat.ethers.getContractFactory('StakingUpgrade2');
     const staking = Staking.attach(STACKING_ADDRESS);
 
     const currentQuarter = await staking.currentQuarter();
